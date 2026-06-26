@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.vscode/
+.idea/
+*.log
+.env
+.env.*
+.npm/
+playwright-report/
+test-results/
+artifacts/
+tmp/
+.cache/
+*.tgz
