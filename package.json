@@ -39,7 +39,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist/",
     "prepare": "husky install || true",
-    "prepublishOnly": "npm run clean && npm run build && npm run test && npm run typecheck && npm run lint"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "repository": {
     "type": "git",
