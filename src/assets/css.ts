@@ -146,21 +146,39 @@ ul { list-style-type: disc; }
 ul ul { list-style-type: circle; }
 ul ul ul { list-style-type: square; }
 
+/* Lists */
 ul, ol {
   padding-left: 2em;
-  list-style-position: outside;
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+li {
+  margin: 0.25em 0;
 }
 
 li > p {
   margin-top: 16px;
 }
 
-/* Task lists */
-li.task-list-item {
-  list-style-type: none;
+li + li {
+  margin-top: 0.25em;
 }
-li.task-list-item > input[type="checkbox"] {
-  margin: 0 0.5em 0 -1.5em;
+
+/* Task lists */
+.contains-task-list {
+  list-style-type: none;
+  padding-left: 1.5em;
+}
+
+.task-list-item {
+  position: relative;
+}
+
+.task-list-item input[type="checkbox"] {
+  position: absolute;
+  left: -1.5em;
+  top: 0.25em;
 }
 `;
 
