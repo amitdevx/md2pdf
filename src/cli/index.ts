@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name('md2pdf')
   .description('Production-quality Markdown to PDF rendering engine')
-  .version('0.0.1')
+  .version('0.1.0')
   .argument('<input>', 'Input markdown file')
   .option('-o, --output <output>', 'Output PDF file')
   .action(async (input: string, options: { output?: string }) => {
@@ -23,8 +23,14 @@ program
     const spinner = ora('Converting markdown to PDF...').start();
 
     try {
-      await convert({ input, output });
-      spinner.succeed(pc.green(`Successfully generated ${output}`));
+      const result = await convert({ input, output });
+      
+      if (result.warnings && result.warnings.length > 0) {
+        spinner.warn(pc.yellow(`Generated ${output} in ${result.renderTimeMs}ms with warnings:`));
+        result.warnings.forEach(w => console.warn(pc.yellow(`  ⚠ ${w}`)));
+      } else {
+        spinner.succeed(pc.green(`Successfully generated ${output} in ${result.renderTimeMs}ms`));
+      }
     } catch (error) {
       spinner.fail(pc.red('Failed to generate PDF'));
       console.error(error);

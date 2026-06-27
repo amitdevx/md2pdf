@@ -195,5 +195,12 @@ export const printCss = `
   a[href^="http"] > img::after {
     content: "";
   }
+  
+  /* Ensure code blocks wrap in PDF instead of being cut off */
+  pre, code, pre code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-x: hidden !important;
+  }
 }
 `;

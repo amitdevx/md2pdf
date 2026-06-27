@@ -6,7 +6,9 @@ import rehypeStringify from 'rehype-stringify';
 import rehypeSlug from 'rehype-slug';
 import rehypeShiki from '@shikijs/rehype';
 
-export async function parseMarkdown(markdown: string): Promise<string> {
+export async function parseMarkdown(markdown: string): Promise<{ html: string; warnings: string[] }> {
+  const warnings: string[] = [];
+  
   const file = await unified()
     .use(remarkParse)
     .use(remarkGfm)
@@ -18,9 +20,16 @@ export async function parseMarkdown(markdown: string): Promise<string> {
         dark: 'one-dark-pro',
       },
       defaultColor: false,
+      fallbackLanguage: 'txt',
+      onError: (err: any) => {
+        warnings.push(err.message || String(err));
+      }
     })
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdown);
 
-  return String(file);
+  // Add any warnings from unified itself
+  file.messages.forEach(msg => warnings.push(msg.reason || msg.message));
+  
+  return { html: String(file), warnings };
 }

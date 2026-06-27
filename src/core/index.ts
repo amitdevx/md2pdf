@@ -14,14 +14,15 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   const dir = path.dirname(inputPath);
   const processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:)([^)]+)\)/g, (match, alt, src) => {
-    const absPath = path.resolve(dir, src);
-    return `![${alt}](file://${absPath})`;
+    const absPath = path.resolve(dir, decodeURIComponent(src));
+    const fileUrl = 'file://' + encodeURI(absPath.replace(/\\/g, '/'));
+    return `![${alt}](${fileUrl})`;
   });
 
-  const contentHtml = await parseMarkdown(processedMarkdown);
+  const parsed = await parseMarkdown(processedMarkdown);
 
   const title = path.basename(input, path.extname(input));
-  const html = renderHtmlTemplate(contentHtml, title);
+  const html = renderHtmlTemplate(parsed.html, title);
 
   const outputPath = path.resolve(process.cwd(), output);
   await generatePdf({ html, outputPath, format: paper, margin });
@@ -30,6 +31,6 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     outputPath,
     pageCounts: 0, // Placeholder until PDF parsing is implemented
     renderTimeMs: Date.now() - startTime,
-    warnings: [],
+    warnings: parsed.warnings,
   };
 }
