@@ -89,4 +89,4 @@ MIT License. See `LICENSE` for details.
 
 ## Author
 
-Amit Divekar
+[Amit Divekar](https://github.com/amitdevx)
