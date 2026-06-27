@@ -8,7 +8,7 @@ describe('HTML Renderer', () => {
     expect(html).toContain('<!DOCTYPE html>');
     expect(html).toContain('<title>Test Doc</title>');
     expect(html).toContain('<style>');
-    expect(html).toContain('--bg-main: #fff;');
+    expect(html).toContain('--md2pdf-font-size: 11pt;');
     expect(html).toContain('<div class="markdown-body">');
     expect(html).toContain('<p>Hello</p>');
   });

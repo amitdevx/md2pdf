@@ -24,6 +24,7 @@ describe('Markdown Parser', () => {
     const markdown = '```javascript\nconst a = 1;\n```';
     const html = await parseMarkdown(markdown);
     
-    expect(html).toContain('<pre><code class="language-javascript">const a = 1;\n</code></pre>');
+    expect(html).toContain('class="shiki shiki-themes github-light one-dark-pro"');
+    expect(html).toContain('const</span>');
   });
 });

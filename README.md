@@ -8,13 +8,19 @@ Production-quality Markdown to PDF rendering engine.
 
 It was built because existing solutions often fail to handle complex CSS, rely on deprecated browser engines, or lack proper extensibility. `md2pdf` leverages the `unified` ecosystem (Remark/Rehype) for robust Abstract Syntax Tree (AST) manipulation and utilizes Playwright to drive headless Chromium. This ensures that the generated PDF perfectly reflects modern web standards, complete with professional typography, precise margins, and correct pagination.
 
-## Features (v0.0.1)
+## Features (v0.1.0)
 
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Unified Pipeline:** Built entirely on `remark` and `rehype` ASTs for robustness.
-- **Professional Typography:** Default theme is optimized for readability and print.
+- **Professional Typography:** Modular CSS system optimized for readability and print with `Inter` and `JetBrains Mono`.
 - **Core Markdown:** Supports headings, paragraphs, lists, bold, italics, blockquotes, code blocks, and local images.
+- **Syntax Highlighting:** Integrated `shiki` internal plugin for beautiful syntax highlighting across 20+ languages.
 - **GitHub Flavored Markdown:** Natively supports GFM tables and strikethrough.
+
+## Documentation
+
+- [Getting Started](./docs/getting-started.md)
+- [Programmatic API Reference](./docs/api.md)
 
 ## Planned Roadmap
 
@@ -48,12 +54,6 @@ Specify a custom output path:
 md2pdf input.md --output custom.pdf
 ```
 
-Convert an entire directory:
-
-```bash
-md2pdf docs/
-```
-
 ## Library Usage
 
 You can embed the rendering engine directly in your Node.js applications.
@@ -61,10 +61,13 @@ You can embed the rendering engine directly in your Node.js applications.
 ```typescript
 import { convert } from '@amitdevx/md2pdf';
 
-await convert({
+const result = await convert({
   input: 'README.md',
-  output: 'README.pdf'
+  output: 'README.pdf',
+  paper: 'A4',
+  margin: '20mm'
 });
+console.log(result.renderTimeMs);
 ```
 
 ## Development Setup
@@ -76,21 +79,9 @@ npm install
 npx playwright install chromium
 ```
 
-## Build Instructions
-
-```bash
-npm run build
-```
-
-## Test Instructions
-
-```bash
-npm run test
-```
-
 ## Contributing
 
-Please refer to `CONTRIBUTING.md` for our guidelines, branch naming conventions, and coding standards.
+Please refer to `docs/CONTRIBUTING.md` for our guidelines, branch naming conventions, and coding standards.
 
 ## License
 
