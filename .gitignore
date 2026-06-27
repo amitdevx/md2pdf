@@ -24,3 +24,8 @@ tests/diff/
 
 # Incremental render cache (added v0.8.0)
 .md2pdf-cache/
+
+# Ignore generated PDFs globally
+*.pdf
+# But allow approved golden snapshot PDFs
+!tests/snapshots/**/*.pdf
