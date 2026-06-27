@@ -14,7 +14,7 @@
     }
   },
   "bin": {
-    "md2pdf": "./dist/cli/index.js"
+    "md2pdf": "dist/cli/index.js"
   },
   "files": [
     "dist",
@@ -30,7 +30,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -43,7 +43,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/amitdevx/md2pdf.git"
+    "url": "git+https://github.com/amitdevx/md2pdf.git"
   },
   "homepage": "https://github.com/amitdevx/md2pdf#readme",
   "bugs": {
