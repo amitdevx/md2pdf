@@ -25,6 +25,9 @@ const result: ConvertResult = await convert(options);
 | `tocDepth` | `number` | `3` | Maximum heading depth to include in the TOC. |
 | `tocTitle` | `string` | `'Table of Contents'` | Title used for the TOC section. |
 | `metadata` | `PdfMetadata` | `undefined` | PDF Document metadata overrides (author, title, etc). |
+| `header` | `boolean \| { template?: string }` | `undefined` | Enables running headers on PDF pages. |
+| `footer` | `boolean \| { template?: string }` | `undefined` | Enables running footers on PDF pages. |
+| `pageBreaks` | `{ h1NewPage?: boolean, hrAsPageBreak?: boolean }` | `undefined` | Configuration for automatic page breaks. |
 
 ### `ConvertResult`
 

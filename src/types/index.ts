@@ -18,6 +18,12 @@ export interface ConvertOptions {
   tocDepth?: number;
   tocTitle?: string;
   metadata?: PdfMetadata;
+  header?: boolean | { enabled?: boolean; template?: string };
+  footer?: boolean | { enabled?: boolean; template?: string };
+  pageBreaks?: {
+    h1NewPage?: boolean;
+    hrAsPageBreak?: boolean;
+  };
 }
 
 export interface ConvertResult {

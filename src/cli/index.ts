@@ -17,6 +17,10 @@ interface CliOptions {
   toc?: boolean;
   tocDepth?: number;
   tocTitle?: string;
+  header?: boolean;
+  footer?: boolean;
+  headerTemplate?: string;
+  footerTemplate?: string;
 }
 
 program
@@ -28,6 +32,10 @@ program
   .option('--toc', 'Generate a Table of Contents')
   .option('--toc-depth <depth>', 'Maximum heading depth for TOC', parseInt)
   .option('--toc-title <title>', 'Title for the TOC section')
+  .option('--header', 'Enable default running header')
+  .option('--footer', 'Enable default running footer')
+  .option('--header-template <template>', 'Custom HTML template for header')
+  .option('--footer-template <template>', 'Custom HTML template for footer')
   .action(async (input: string, options: CliOptions) => {
     if (!fs.existsSync(input)) {
       console.error(pc.red(`Error: Input file '${input}' does not exist.`));
@@ -43,7 +51,9 @@ program
         output,
         toc: options.toc,
         tocDepth: options.tocDepth,
-        tocTitle: options.tocTitle
+        tocTitle: options.tocTitle,
+        header: options.headerTemplate ? { template: options.headerTemplate } : options.header,
+        footer: options.footerTemplate ? { template: options.footerTemplate } : options.footer,
       });
       
       if (result.warnings && result.warnings.length > 0) {

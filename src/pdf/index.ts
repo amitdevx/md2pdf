@@ -5,6 +5,11 @@ export interface PdfOptions {
   outputPath: string;
   format?: 'A4' | 'Letter' | 'Legal';
   margin?: string;
+  marginTop?: string;
+  marginBottom?: string;
+  displayHeaderFooter?: boolean;
+  headerTemplate?: string;
+  footerTemplate?: string;
 }
 
 export async function generatePdf(options: PdfOptions): Promise<void> {
@@ -29,12 +34,14 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       format: options.format || 'A4',
       printBackground: true,
       margin: {
-        top: marginValue,
+        top: options.marginTop || marginValue,
         right: marginValue,
-        bottom: marginValue,
+        bottom: options.marginBottom || marginValue,
         left: marginValue,
       },
-      displayHeaderFooter: false,
+      displayHeaderFooter: options.displayHeaderFooter || false,
+      headerTemplate: options.headerTemplate,
+      footerTemplate: options.footerTemplate,
     });
   } finally {
     await browser.close();

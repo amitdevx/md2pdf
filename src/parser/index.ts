@@ -6,10 +6,19 @@ import rehypeSlug from 'rehype-slug';
 import rehypeShiki from '@shikijs/rehype';
 import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/toc.js';
+import rehypePageBreaks from '../plugins/page-breaks.js';
 
 export async function parseMarkdown(
   markdown: string,
-  options?: { toc?: boolean; tocDepth?: number; tocTitle?: string }
+  options?: { 
+    toc?: boolean; 
+    tocDepth?: number; 
+    tocTitle?: string;
+    pageBreaks?: {
+      h1NewPage?: boolean;
+      hrAsPageBreak?: boolean;
+    };
+  }
 ): Promise<{ html: string; warnings: string[] }> {
   const warnings: string[] = [];
   
@@ -19,6 +28,7 @@ export async function parseMarkdown(
     // allowDangerousHtml: true passes raw HTML tags in Markdown directly to the PDF output.
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeSlug)
+    .use(rehypePageBreaks, options?.pageBreaks)
     .use(rehypeToc, {
       enable: options?.toc,
       depth: options?.tocDepth,

@@ -186,7 +186,7 @@ phase/
 ├── v0.0.2-packaging.md               ← Done: npm publish, CI
 ├── v0.1.0-core-rendering.md          ← Done: typography, Shiki, tables, images
 ├── v0.1.1-toc-footnotes.md           ← Done: TOC, footnotes, frontmatter, pdf metadata
-├── v0.1.2-headers-footers.md         ← Planned
+├── v0.1.3-headers-footers.md         ← Done: Headers, footers, page breaks
 ├── v0.2.0-mermaid.md                 ← Planned (flagship feature)
 ├── v0.2.1-mermaid-improvements.md    ← Planned
 ├── v0.3.0-math.md                    ← Planned

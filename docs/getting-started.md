@@ -32,6 +32,11 @@ md2pdf document.md --output custom-name.pdf
 md2pdf document.md --toc --toc-depth 3
 ```
 
+### Add Headers and Footers
+```bash
+md2pdf document.md --header --footer
+```
+
 ## Programmatic API Usage
 
 If you're building a Node.js application, you can use the `convert` API directly.

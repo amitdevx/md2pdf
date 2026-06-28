@@ -273,5 +273,11 @@ export const printCss = `
     word-wrap: break-word !important;
     overflow-x: hidden !important;
   }
+
+  .md2pdf-page-break,
+  .md2pdf-page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
 }
 `;
