@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-28
+
+### Added
+- Running Headers and Footers support (`--header`, `--footer`).
+- Manual Page Breaks via `<!-- pagebreak -->`.
+- Automatic Page Breaks before `h1` and optionally `hr`.
+- Robust HTML escaping for metadata titles.
+- Dynamic version inference for PDF creator metadata.
+
+### Fixed
+- Fixed bug where PDF metadata merge overwrote earlier fields.
+- Fixed `__dirname` resolution in ESM tests.
+
 ## [0.1.1] - 2026-06-28
 
 ### Added
