@@ -63,7 +63,9 @@
   "dependencies": {
     "@shikijs/rehype": "^4.3.0",
     "commander": "^11.1.0",
+    "gray-matter": "^4.0.3",
     "ora": "^5.4.1",
+    "pdf-lib": "^1.17.1",
     "picocolors": "^1.0.0",
     "playwright": "^1.40.0",
     "rehype-slug": "^6.0.0",
