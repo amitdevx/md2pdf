@@ -16,6 +16,7 @@ export async function parseMarkdown(
   const file = await unified()
     .use(remarkParse)
     .use(remarkGfm)
+    // allowDangerousHtml: true passes raw HTML tags in Markdown directly to the PDF output.
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeSlug)
     .use(rehypeToc, {
@@ -30,10 +31,15 @@ export async function parseMarkdown(
       },
       defaultColor: false,
       fallbackLanguage: 'txt',
-      onError: (err: any) => {
-        warnings.push(err.message || String(err));
+      onError: (err: unknown) => {
+        if (err instanceof Error) {
+          warnings.push(err.message);
+        } else {
+          warnings.push(String(err));
+        }
       }
     })
+    // allowDangerousHtml: true stringifies any raw HTML nodes so they render correctly.
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdown);
 

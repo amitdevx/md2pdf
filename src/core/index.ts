@@ -42,18 +42,18 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   // Patch PDF Metadata
   const metadata: PdfMetadata = {
+    ...options.metadata,
     title,
-    author: options.metadata?.author || frontmatter.author,
-    subject: options.metadata?.subject || frontmatter.subject,
-    keywords: options.metadata?.keywords || frontmatter.keywords,
-    ...options.metadata
+    author: options.metadata?.author ?? frontmatter.author,
+    subject: options.metadata?.subject ?? frontmatter.subject,
+    keywords: options.metadata?.keywords ?? frontmatter.keywords,
   };
 
-  await injectMetadata(outputPath, metadata);
+  const pageCounts = await injectMetadata(outputPath, metadata);
 
   return {
     outputPath,
-    pageCounts: 0, // Placeholder until PDF parsing is implemented
+    pageCounts,
     renderTimeMs: Date.now() - startTime,
     warnings: parsed.warnings,
     metadata

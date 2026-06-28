@@ -23,7 +23,7 @@ export default function rehypeToc(options: TocOptions = {}) {
           const id = (node.properties?.id as string) || '';
           // Extract text content of heading
           let value = '';
-          visit(node, 'text', (textNode: any) => {
+          visit(node, 'text', (textNode: import('hast').Text) => {
             value += textNode.value;
           });
           headings.push({ depth: headingDepth, id, value });

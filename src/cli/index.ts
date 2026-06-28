@@ -4,19 +4,31 @@ import { convert } from '../core/index.js';
 import ora from 'ora';
 import pc from 'picocolors';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8'));
 
 const program = new Command();
+
+interface CliOptions {
+  output?: string;
+  toc?: boolean;
+  tocDepth?: number;
+  tocTitle?: string;
+}
 
 program
   .name('md2pdf')
   .description('Production-quality Markdown to PDF rendering engine')
-  .version('0.1.1')
+  .version(pkg.version)
   .argument('<input>', 'Input markdown file')
   .option('-o, --output <output>', 'Output PDF file')
   .option('--toc', 'Generate a Table of Contents')
   .option('--toc-depth <depth>', 'Maximum heading depth for TOC', parseInt)
   .option('--toc-title <title>', 'Title for the TOC section')
-  .action(async (input: string, options: any) => {
+  .action(async (input: string, options: CliOptions) => {
     if (!fs.existsSync(input)) {
       console.error(pc.red(`Error: Input file '${input}' does not exist.`));
       process.exit(1);

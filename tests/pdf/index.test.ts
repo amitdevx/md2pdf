@@ -3,6 +3,10 @@ import { generatePdf } from '../../src/pdf/index.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { fileURLToPath } from 'node:url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
 describe('PDF Engine', () => {
   const outputPath = path.resolve(__dirname, 'test-output.pdf');
 
