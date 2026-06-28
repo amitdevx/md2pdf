@@ -214,18 +214,23 @@ li + li {
 /* Footnotes */
 .footnotes {
   font-size: 9pt;
-  margin-top: 3em;
+  margin-top: 2em;
+}
+.footnotes::before {
+  content: "";
+  display: block;
+  width: 40%;
   border-top: 1px solid var(--md2pdf-color-border);
-  padding-top: 1em;
+  margin: 1em 0;
 }
 .footnotes ol {
-  padding-left: 1.5em;
+  padding-left: 1.2em;
 }
 .footnotes .sr-only {
   display: none;
 }
 sup[data-footnote-ref] a {
-  font-size: 0.8em;
+  font-size: 0.7em;
   text-decoration: none;
 }
 `;
