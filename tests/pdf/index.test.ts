@@ -27,4 +27,46 @@ describe('PDF Engine', () => {
     expect(stat.isFile()).toBe(true);
     expect(stat.size).toBeGreaterThan(0);
   }, 30000); // Allow 30 seconds for Playwright to launch
+
+  it('should support header and footer templates', async () => {
+    const html = '<html><body><h1>Header Footer Test</h1></body></html>';
+    await generatePdf({ 
+      html, 
+      outputPath,
+      displayHeaderFooter: true,
+      headerTemplate: '<div>Header</div>',
+      footerTemplate: '<div>Footer</div>',
+      marginTop: '50mm',
+      marginBottom: '50mm'
+    });
+    
+    const stat = await fs.stat(outputPath);
+    expect(stat.size).toBeGreaterThan(0);
+  }, 30000);
+});
+
+import { injectMetadata } from '../../src/pdf/metadata.js';
+
+describe('PDF Metadata', () => {
+  const outputPath = path.resolve(__dirname, 'test-meta.pdf');
+
+  afterAll(async () => {
+    try {
+      await fs.unlink(outputPath);
+    } catch {
+      // ignore
+    }
+  });
+
+  it('should inject metadata and return page count', async () => {
+    const html = '<html><body><h1>Page 1</h1><div style="page-break-before: always"></div><h1>Page 2</h1></body></html>';
+    await generatePdf({ html, outputPath });
+    
+    const pageCount = await injectMetadata(outputPath, {
+      title: 'Test Title',
+      author: 'Test Author'
+    });
+    
+    expect(pageCount).toBe(2);
+  }, 30000);
 });

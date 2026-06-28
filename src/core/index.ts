@@ -50,7 +50,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   let headerTemplate = undefined;
   let marginTop = margin;
-  if (options.header) {
+  const headerEnabled = options.header === true || 
+    (typeof options.header === 'object' && options.header.enabled !== false);
+  
+  if (headerEnabled && options.header !== undefined) {
     marginTop = '30mm';
     if (typeof options.header === 'object' && options.header.template) {
       headerTemplate = options.header.template;
@@ -65,7 +68,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   let footerTemplate = undefined;
   let marginBottom = margin;
-  if (options.footer) {
+  const footerEnabled = options.footer === true || 
+    (typeof options.footer === 'object' && options.footer.enabled !== false);
+
+  if (footerEnabled && options.footer !== undefined) {
     marginBottom = '30mm';
     if (typeof options.footer === 'object' && options.footer.template) {
       footerTemplate = options.footer.template;
@@ -84,7 +90,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     margin,
     marginTop,
     marginBottom,
-    displayHeaderFooter: !!options.header || !!options.footer,
+    displayHeaderFooter: (headerEnabled && options.header !== undefined) || (footerEnabled && options.footer !== undefined),
     headerTemplate,
     footerTemplate,
   });

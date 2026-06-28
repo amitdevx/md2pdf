@@ -27,4 +27,18 @@ describe('Markdown Parser', () => {
     expect(html).toContain('class="shiki shiki-themes github-light one-dark-pro"');
     expect(html).toContain('const</span>');
   });
+
+  it('should parse pagebreaks', async () => {
+    const markdown = '# Hello\n<!-- pagebreak -->\n# World';
+    const { html } = await parseMarkdown(markdown, { pageBreaks: { h1NewPage: true } });
+    
+    // First H1 should not have page break
+    expect(html).toContain('<h1 id="hello">Hello</h1>');
+    
+    // Second H1 should have page break
+    expect(html).toContain('<h1 id="world" class="md2pdf-page-break-before">World</h1>');
+    
+    // Manual page break
+    expect(html).toContain('<div class="md2pdf-page-break" style="page-break-before: always;"></div>');
+  });
 });

@@ -1,2 +1,2 @@
 export { convert } from './core/index.js';
-export type { ConvertOptions, ConvertResult } from './types/index.js';
+export type { ConvertOptions, ConvertResult, PdfMetadata } from './types/index.js';
