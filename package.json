@@ -41,10 +41,7 @@
     "prepare": "husky install || true",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/amitdevx/md2pdf.git"
-  },
+  "repository": "amitdevx/md2pdf",
   "homepage": "https://github.com/amitdevx/md2pdf#readme",
   "bugs": {
     "url": "https://github.com/amitdevx/md2pdf/issues"
