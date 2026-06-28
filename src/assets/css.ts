@@ -180,6 +180,54 @@ li + li {
   left: -1.5em;
   top: 0.25em;
 }
+
+/* TOC */
+.table-of-contents {
+  margin: 2em 0;
+}
+.toc-title {
+  font-size: 1.5em;
+  border-bottom: none;
+}
+.toc-list {
+  list-style: none;
+  padding-left: 0;
+}
+.toc-list li {
+  margin: 0.2em 0;
+}
+.toc-list a {
+  text-decoration: none;
+  color: var(--md2pdf-color-link);
+}
+.toc-level-1 { padding-left: 0; font-weight: bold; }
+.toc-level-2 { padding-left: 1.5em; }
+.toc-level-3 { padding-left: 3.0em; color: #555; }
+.toc-level-4 { padding-left: 4.5em; color: #777; }
+.toc-level-5 { padding-left: 6.0em; color: #999; }
+.toc-level-6 { padding-left: 7.5em; color: #aaa; }
+
+.toc-separator {
+  margin-top: 2em;
+}
+
+/* Footnotes */
+.footnotes {
+  font-size: 9pt;
+  margin-top: 3em;
+  border-top: 1px solid var(--md2pdf-color-border);
+  padding-top: 1em;
+}
+.footnotes ol {
+  padding-left: 1.5em;
+}
+.footnotes .sr-only {
+  display: none;
+}
+sup[data-footnote-ref] a {
+  font-size: 0.8em;
+  text-decoration: none;
+}
 `;
 
 export const printCss = `

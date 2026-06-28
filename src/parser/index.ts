@@ -2,11 +2,15 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
-import rehypeStringify from 'rehype-stringify';
 import rehypeSlug from 'rehype-slug';
 import rehypeShiki from '@shikijs/rehype';
+import rehypeStringify from 'rehype-stringify';
+import rehypeToc from '../plugins/toc.js';
 
-export async function parseMarkdown(markdown: string): Promise<{ html: string; warnings: string[] }> {
+export async function parseMarkdown(
+  markdown: string,
+  options?: { toc?: boolean; tocDepth?: number; tocTitle?: string }
+): Promise<{ html: string; warnings: string[] }> {
   const warnings: string[] = [];
   
   const file = await unified()
@@ -14,6 +18,11 @@ export async function parseMarkdown(markdown: string): Promise<{ html: string; w
     .use(remarkGfm)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeSlug)
+    .use(rehypeToc, {
+      enable: options?.toc,
+      depth: options?.tocDepth,
+      title: options?.tocTitle,
+    })
     .use(rehypeShiki, {
       themes: {
         light: 'github-light',
