@@ -27,6 +27,11 @@ This will automatically generate `document.pdf` in the same directory.
 md2pdf document.md --output custom-name.pdf
 ```
 
+### Generate Table of Contents
+```bash
+md2pdf document.md --toc --toc-depth 3
+```
+
 ## Programmatic API Usage
 
 If you're building a Node.js application, you can use the `convert` API directly.

@@ -67,7 +67,9 @@ src/
 ├── parser/index.ts    ← Markdown → HTML via unified (remark + rehype)
 ├── renderer/index.ts  ← HTML template assembly (CSS injection, fonts, slots)
 ├── pdf/index.ts       ← Playwright PDF generation wrapper
-├── plugins/           ← remark/rehype/render plugins (markdown/, html/, obsidian/, renderer/)
+├── pdf/metadata.ts    ← PDF-lib metadata injection via frontmatter
+├── plugins/toc.ts     ← Rehype plugin for Table of Contents generation
+├── plugins/           ← Future plugins (obsidian, custom blockquotes)
 ├── themes/            ← Theme CSS + metadata (default/, github/, obsidian-light/, obsidian-dark/)
 ├── config/            ← Config file loading, merging, validation
 ├── assets/            ← Static CSS (base.css, print.css, typography.css)
@@ -182,8 +184,8 @@ phase/
 ├── GOLDEN-DOCUMENTS.md               ← Golden document strategy (read early)
 ├── v0.0.1-foundation.md              ← Done: core pipeline
 ├── v0.0.2-packaging.md               ← Done: npm publish, CI
-├── v0.1.0-core-rendering.md          ← In Progress: typography, Shiki, tables, images
-├── v0.1.1-toc-footnotes.md           ← Planned
+├── v0.1.0-core-rendering.md          ← Done: typography, Shiki, tables, images
+├── v0.1.1-toc-footnotes.md           ← Done: TOC, footnotes, frontmatter, pdf metadata
 ├── v0.1.2-headers-footers.md         ← Planned
 ├── v0.2.0-mermaid.md                 ← Planned (flagship feature)
 ├── v0.2.1-mermaid-improvements.md    ← Planned

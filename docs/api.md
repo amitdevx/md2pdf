@@ -21,6 +21,10 @@ const result: ConvertResult = await convert(options);
 | `theme` | `string` | `'default'` | The CSS theme to apply (feature in progress). |
 | `paper` | `'A4' \| 'Letter' \| 'Legal'` | `'A4'` | The paper format for the PDF. |
 | `margin` | `string` | `'20mm'` | The margin string applied to all sides. |
+| `toc` | `boolean` | `false` | Enables Table of Contents generation. |
+| `tocDepth` | `number` | `3` | Maximum heading depth to include in the TOC. |
+| `tocTitle` | `string` | `'Table of Contents'` | Title used for the TOC section. |
+| `metadata` | `PdfMetadata` | `undefined` | PDF Document metadata overrides (author, title, etc). |
 
 ### `ConvertResult`
 
@@ -30,3 +34,16 @@ const result: ConvertResult = await convert(options);
 | `pageCounts` | `number` | The number of pages in the generated PDF (0 if not parsed). |
 | `renderTimeMs` | `number` | The total execution time of the conversion in milliseconds. |
 | `warnings` | `string[]` | A list of non-fatal warnings generated during conversion. |
+| `metadata` | `PdfMetadata` | The final computed metadata injected into the PDF. |
+
+### `PdfMetadata`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `title` | `string` | The PDF document title. |
+| `author` | `string` | The PDF document author. |
+| `subject` | `string` | The PDF document subject/description. |
+| `keywords` | `string` | Comma-separated keywords for the PDF. |
+| `creator` | `string` | Software used to create the document (defaults to `md2pdf`). |
+| `producer` | `string` | PDF generator (defaults to `Playwright`). |
+| `creationDate` | `Date` | Creation timestamp. |
