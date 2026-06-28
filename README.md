@@ -10,23 +10,23 @@ Production-quality Markdown to PDF rendering engine for Node.js.
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available
-- [x] **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
-- [x] **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
-- [x] **Professional Typography:** Modular CSS system optimized for readability and print with Inter and JetBrains Mono.
-- [x] **Syntax Highlighting:** Integrated shiki plugin for syntax highlighting across 20+ languages.
-- [x] **GitHub Flavored Markdown:** Natively supports GFM tables and strikethrough.
-- [x] **Table of Contents:** Auto-generate hyperlinked TOC with depth configuration.
-- [x] **Footnotes:** Full support for footnotes with bidirectional backlinks.
-- [x] **Document Metadata:** Automatically extracts YAML frontmatter to inject native PDF metadata properties.
+### Available (v0.1.3)
+- **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
+- **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
+- **Professional Typography:** Modular CSS system optimized for readability and print with Inter and JetBrains Mono.
+- **Syntax Highlighting:** Integrated shiki plugin for syntax highlighting across 20+ languages.
+- **GitHub Flavored Markdown:** Natively supports GFM tables and strikethrough.
+- **Table of Contents:** Auto-generate hyperlinked TOC with depth configuration.
+- **Footnotes:** Full support for footnotes with bidirectional backlinks.
+- **Document Metadata:** Automatically extracts YAML frontmatter to inject native PDF metadata properties.
+- **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
 ### Coming Soon
-- [ ] **Headers and Footers:** Inject custom HTML headers/footers with dynamic page numbers.
-- [ ] **Mermaid Diagrams:** Native diagram generation and execution.
-- [ ] **Math Rendering:** LaTeX equations support via KaTeX.
-- [ ] **Obsidian Compatibility:** Support for wiki links, callouts, and embeds.
-- [ ] **Configuration and Theming:** Advanced CLI options and custom CSS themes.
-- [ ] **Plugin System:** Extensible architecture for custom rendering logic.
+- **Mermaid Diagrams:** Native diagram generation and execution.
+- **Math Rendering:** LaTeX equations support via KaTeX.
+- **Obsidian Compatibility:** Support for wiki links, callouts, and embeds.
+- **Configuration and Theming:** Advanced CLI options and custom CSS themes.
+- **Plugin System:** Extensible architecture for custom rendering logic.
 
 ## Installation
 
