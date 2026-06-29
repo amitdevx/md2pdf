@@ -17,7 +17,7 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Syntax Highlighting:** Integrated shiki plugin for syntax highlighting across 20+ languages.
 - **GitHub Flavored Markdown:** Natively supports GFM tables and strikethrough.
 - **Table of Contents:** Auto-generate hyperlinked TOC with depth configuration.
-- **Footnotes:** Full support for footnotes with bidirectional backlinks.
+- **Footnotes:** Standard GFM footnotes with bidirectional backlinks. Note: inline footnote syntax (`^[...]`) is not supported.
 - **Document Metadata:** Automatically extracts YAML frontmatter to inject native PDF metadata properties.
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
@@ -49,6 +49,18 @@ Specify a custom output path and generate a Table of Contents:
 ```bash
 md2pdf input.md --output custom.pdf --toc
 ```
+
+Convert with custom paper size and margins:
+```bash
+md2pdf input.md --paper Letter --margin 15mm
+```
+
+Force a page break before every H1 heading:
+```bash
+md2pdf input.md --h1-new-page
+```
+
+> **Note:** Typography uses Inter and JetBrains Mono served from Google Fonts CDN. Internet access is required during conversion for correct typography. Offline environments will fall back to system fonts.
 
 ## Library Usage
 

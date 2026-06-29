@@ -21,7 +21,14 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    await page.setContent(options.html, { waitUntil: 'networkidle' });
+    // Load HTML — use domcontentloaded first, then briefly wait for networkidle
+    // (covers Google Fonts CDN). Falls back gracefully if fonts are slow/offline.
+    await page.setContent(options.html, { waitUntil: 'domcontentloaded' });
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 3000 });
+    } catch {
+      // Font CDN timed out — PDF renders with fallback fonts, no crash
+    }
 
     await page.evaluate(async () => {
       await document.fonts.ready;

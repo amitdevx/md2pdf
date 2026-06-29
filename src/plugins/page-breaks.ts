@@ -7,7 +7,7 @@ export interface PageBreakOptions {
 }
 
 export default function rehypePageBreaks(options: PageBreakOptions = {}) {
-  const { h1NewPage = true, hrAsPageBreak = false } = options;
+  const { h1NewPage = false, hrAsPageBreak = false } = options;
 
   return (tree: Root) => {
     let firstH1Seen = false;
