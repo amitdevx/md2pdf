@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-29
+
+### Fixed
+- Fixed an issue where Playwright Chromium binaries were not automatically downloaded during a global `npm install -g`, causing a failure on first run.
+- Added a `postinstall` script to seamlessly download the required Chromium dependencies.
+- Added a fallback guard so local project installations do not forcefully download Chromium.
+- Improved CLI error handling to gracefully detect missing browsers and provide actionable installation commands instead of raw stack traces.
+
 ## [0.1.3] - 2026-06-28
 
 ### Added
