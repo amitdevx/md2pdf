@@ -7,10 +7,24 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+const EXIT = {
+  OK: 0,
+  USAGE_ERROR: 1,
+  INPUT_ERROR: 2,
+  CONFIG_ERROR: 3,
+  DEPENDENCY_ERROR: 4,
+  RENDER_ERROR: 5,
+};
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8'));
 
 const program = new Command();
+
+program.configureOutput({
+  writeErr: (str) => process.stderr.write(str)
+});
+program.showHelpAfterError('(run md2pdf --help for usage)');
 
 interface CliOptions {
   output?: string;
@@ -33,7 +47,14 @@ program
   .argument('<input>', 'Input markdown file')
   .option('-o, --output <output>', 'Output PDF file')
   .option('--toc', 'Generate a Table of Contents')
-  .option('--toc-depth <depth>', 'Maximum heading depth for TOC', parseInt)
+  .option('--toc-depth <depth>', 'Maximum heading depth for TOC', (val) => {
+    const n = parseInt(val);
+    if (isNaN(n) || n < 1 || n > 6) {
+      console.error(pc.red(`Invalid --toc-depth '${val}': must be a number between 1 and 6`));
+      process.exit(EXIT.USAGE_ERROR);
+    }
+    return n;
+  })
   .option('--toc-title <title>', 'Title for the TOC section')
   .option('--header', 'Enable default running header')
   .option('--footer', 'Enable default running footer')
@@ -43,25 +64,44 @@ program
   .option('--margin <size>', 'Page margin (e.g. 20mm, 1in)', '20mm')
   .option('--hr-page-break', 'Treat --- as a page break')
   .action(async (input: string, options: CliOptions) => {
+    const spinner = ora('Converting markdown to PDF...').start();
+
     if (!fs.existsSync(input)) {
-      console.error(pc.red(`Error: Input file '${input}' does not exist.`));
-      process.exit(1);
+      spinner.fail(pc.red(`Input file '${input}' does not exist`));
+      console.error(pc.dim('  Provide a valid path to a .md file'));
+      process.exit(EXIT.INPUT_ERROR);
     }
 
-    if (fs.statSync(input).isDirectory()) {
-      console.error(pc.red(`Error: '${input}' is a directory, not a markdown file.`));
-      process.exit(1);
+    const stat = fs.statSync(input);
+    if (stat.isDirectory()) {
+      spinner.fail(pc.red(`'${input}' is a directory, not a file`));
+      console.error(pc.dim('  Provide a path to a .md file, not a folder'));
+      process.exit(EXIT.INPUT_ERROR);
     }
 
-    if (options.tocDepth && !options.toc) {
-      console.warn(pc.yellow('⚠ --toc-depth has no effect without --toc'));
+    if ((options.tocDepth || options.tocTitle) && !options.toc) {
+      console.warn(pc.yellow('⚠  --toc-depth and --toc-title have no effect without --toc'));
     }
     if (options.headerTemplate && !options.header) {
-      console.warn(pc.yellow('⚠ --header-template has no effect without --header'));
+      console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
+    }
+    if (options.footerTemplate && !options.footer) {
+      console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
     }
 
-    const output = options.output || input.replace(/\.md$/i, '.pdf');
-    const spinner = ora('Converting markdown to PDF...').start();
+    let output = options.output || input.replace(/\.md$/i, '.pdf');
+    
+    if (path.extname(output) === '') {
+      output = output + '.pdf';
+      console.warn(pc.yellow(`⚠  No extension given, writing to ${output}`));
+    }
+
+    const resolvedInput = path.resolve(input);
+    const resolvedOutput = path.resolve(output);
+    if (resolvedInput === resolvedOutput) {
+      spinner.fail(pc.red('Input and output cannot be the same file'));
+      process.exit(EXIT.USAGE_ERROR);
+    }
 
     try {
       const result = await convert({ 
@@ -89,21 +129,26 @@ program
         error?.message?.includes('browserType.launch') ||
         error?.message?.includes('playwright install');
         
-      const isPublishFalse = error?.message?.includes('publish: false');
-
-      if (isPublishFalse) {
-        spinner.fail(pc.yellow('Skipped — this file has publish: false in frontmatter'));
-        process.exit(0);
+      if (error?.message?.includes('publish: false')) {
+        spinner.warn(pc.yellow(`Skipped — '${input}' has publish: false in frontmatter`));
+        console.error(pc.dim('  Remove the publish: false line or set it to true to convert this file'));
+        process.exit(EXIT.CONFIG_ERROR);
+      } else if (error?.name === 'YAMLException' || error?.message?.includes('YAMLException')) {
+        spinner.fail(pc.red('Invalid frontmatter YAML'));
+        console.error(pc.dim(`  ${error.message.split('\\n')[0]}`));
+        console.error(pc.dim('  Fix the YAML block at the top of your file'));
+        process.exit(EXIT.CONFIG_ERROR);
       } else if (isBrowserMissing) {
         spinner.fail(pc.red('Chromium browser not found.'));
         console.error(pc.yellow('\nRun this to fix it:'));
         console.error(pc.cyan('\n  npx playwright install chromium\n'));
         console.error(pc.dim('Then try md2pdf again.'));
+        process.exit(EXIT.DEPENDENCY_ERROR);
       } else {
         spinner.fail(pc.red('Failed to generate PDF'));
         console.error(error);
+        process.exit(EXIT.RENDER_ERROR);
       }
-      process.exit(1);
     }
   });
 
