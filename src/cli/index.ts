@@ -62,9 +62,20 @@ program
       } else {
         spinner.succeed(pc.green(`Successfully generated ${output} in ${result.renderTimeMs}ms`));
       }
-    } catch (error) {
-      spinner.fail(pc.red('Failed to generate PDF'));
-      console.error(error);
+    } catch (error: any) {
+      const isBrowserMissing =
+        error?.message?.includes('Executable doesn') ||
+        error?.message?.includes('browserType.launch');
+
+      if (isBrowserMissing) {
+        spinner.fail(pc.red('Chromium browser not found.'));
+        console.error(pc.yellow('\nRun this to fix it:'));
+        console.error(pc.cyan('\n  npx playwright install chromium\n'));
+        console.error(pc.dim('Then try md2pdf again.'));
+      } else {
+        spinner.fail(pc.red('Failed to generate PDF'));
+        console.error(error);
+      }
       process.exit(1);
     }
   });
