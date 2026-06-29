@@ -24,6 +24,7 @@ export async function parseMarkdown(
   
   const file = await unified()
     .use(remarkParse)
+    // remark-gfm natively enables GFM footnotes, tables, and tasklists
     .use(remarkGfm)
     // allowDangerousHtml: true passes raw HTML tags in Markdown directly to the PDF output.
     .use(remarkRehype, { allowDangerousHtml: true })
