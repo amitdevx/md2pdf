@@ -64,8 +64,9 @@ program
       }
     } catch (error: any) {
       const isBrowserMissing =
-        error?.message?.includes('Executable doesn') ||
-        error?.message?.includes('browserType.launch');
+        error?.message?.includes("Executable doesn't exist") ||
+        error?.message?.includes('browserType.launch') ||
+        error?.message?.includes('playwright install');
 
       if (isBrowserMissing) {
         spinner.fail(pc.red('Chromium browser not found.'));
