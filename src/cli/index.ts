@@ -147,6 +147,7 @@ program
       } else {
         spinner.fail(pc.red('Failed to generate PDF'));
         console.error(error);
+        console.error(pc.cyan('\nPlease report this issue at https://github.com/amitdevx/md2pdf/issues it means a lot to help us ❤️\n'));
         process.exit(EXIT.RENDER_ERROR);
       }
     }
