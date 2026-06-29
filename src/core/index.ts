@@ -22,10 +22,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   }
 
   const dir = path.dirname(inputPath);
-  const processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:)([^)]+)\)/g, (match, alt, src) => {
+  const processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)/g, (match, alt, fullSrc) => {
+    const parts = fullSrc.trim().split(/\s+/);
+    const src = parts[0];
+    const title = parts.slice(1).join(' ');
     const absPath = path.resolve(dir, decodeURIComponent(src));
     const fileUrl = 'file://' + encodeURI(absPath.replace(/\\/g, '/'));
-    return `![${alt}](${fileUrl})`;
+    return `![${alt}](${fileUrl}${title ? ' ' + title : ''})`;
   });
 
   const parsed = await parseMarkdown(processedMarkdown, {

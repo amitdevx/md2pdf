@@ -193,6 +193,9 @@ li + li {
   list-style: none;
   padding-left: 0;
 }
+.toc-list .toc-list {
+  padding-left: 1.5em;
+}
 .toc-list li {
   margin: 0.2em 0;
 }
@@ -200,12 +203,11 @@ li + li {
   text-decoration: none;
   color: var(--md2pdf-color-link);
 }
-.toc-level-1 { padding-left: 0; font-weight: bold; }
-.toc-level-2 { padding-left: 1.5em; }
-.toc-level-3 { padding-left: 3.0em; color: #555; }
-.toc-level-4 { padding-left: 4.5em; color: #777; }
-.toc-level-5 { padding-left: 6.0em; color: #999; }
-.toc-level-6 { padding-left: 7.5em; color: #aaa; }
+.toc-level-1 > a { font-weight: bold; }
+.toc-level-3 > a { color: #555; }
+.toc-level-4 > a { color: #777; }
+.toc-level-5 > a { color: #999; }
+.toc-level-6 > a { color: #aaa; }
 
 .toc-separator {
   margin-top: 2em;

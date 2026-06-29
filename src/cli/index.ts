@@ -195,9 +195,9 @@ program
         console.error(pc.dim('  Remove the publish: false line or set it to true to convert this file'));
         process.exit(EXIT.CONFIG_ERROR);
       } else if (err?.name === 'YAMLException' || err?.message?.includes('YAMLException')) {
-        // CONFIG: bad YAML — BUG-12: fixed \\n -> \n
+        // CONFIG: bad YAML — BUG-12: fixed \n -> \n
         spinner.fail(pc.red('Invalid frontmatter YAML'));
-        console.error(pc.dim(`  ${err.message?.split('\n')[0]}`));
+        console.error(pc.dim(`  ${err.message ? err.message.split('\n')[0] : 'Malformed YAML frontmatter'}`));
         console.error(pc.dim('  Fix the YAML block at the top of your file'));
         process.exit(EXIT.CONFIG_ERROR);
       } else if (err?.code === 'EACCES') {
