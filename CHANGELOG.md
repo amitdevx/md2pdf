@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-06-29
+
+### Added
+- `--paper` strict runtime option validation (`A4`, `Letter`, `Legal`).
+- `--margin` robust unit validation (CSS units `mm`, `cm`, `in`, `px`, `pt`, `em`, etc.).
+- Explicit `stdin` (`-`) input validation and user-friendly error guidance.
+- Output directory auto-creation warning and overwrite existing file warning.
+- Success messages now print the fully resolved absolute path to the generated PDF.
+
+### Fixed
+- Fixed silent npm `postinstall` output by explicitly using `process.stderr.write` to announce Chromium checks and readiness.
+- Fixed an issue where `.txt` and binary files incorrectly triggered a "same file" error by adding an explicit `.md` extension check.
+- Fixed `EACCES` permission denied errors on input files to display actionable `chmod` guidance instead of raw stack traces.
+- Fixed trailing slash output path issue where a hidden dotfile (`.pdf`) was created in directories like `/tmp/`.
+- Fixed `YAMLException` multiline parsing escape from `\\n` to `\n` to cleanly show the first line of YAML syntax errors.
+- Fixed TOC indentation compounding and `pruneEmpty` runtime crash by verifying element types and emitting a semantically nested `<ul>` tree.
+- Changed `h1NewPage` default to `false` and exposed `--h1-new-page` CLI option to avoid unexpected breaking page breaks.
+
 ## [0.1.5] - 2026-06-29
 
 ### Fixed
