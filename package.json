@@ -30,6 +30,7 @@
     "access": "public"
   },
   "scripts": {
+    "postinstall": "node scripts/install-browser.mjs",
     "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "tsup --watch",
     "test": "vitest run",
