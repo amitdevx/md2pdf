@@ -1,12 +1,15 @@
 import { PDFDocument } from 'pdf-lib';
 import fs from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PdfMetadata } from '../types/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkgPath = path.resolve(__dirname, '../../package.json');
+// Try both paths to handle both src (ts-node) and dist (bundled) environments gracefully
+const pkgPath1 = path.resolve(__dirname, '../../package.json');
+const pkgPath2 = path.resolve(__dirname, '../package.json');
+const pkgPath = existsSync(pkgPath1) ? pkgPath1 : pkgPath2;
 const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
 const version = pkg.version as string;
 

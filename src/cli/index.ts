@@ -21,6 +21,9 @@ interface CliOptions {
   footer?: boolean;
   headerTemplate?: string;
   footerTemplate?: string;
+  paper?: string;
+  margin?: string;
+  hrPageBreak?: boolean;
 }
 
 program
@@ -36,10 +39,25 @@ program
   .option('--footer', 'Enable default running footer')
   .option('--header-template <template>', 'Custom HTML template for header')
   .option('--footer-template <template>', 'Custom HTML template for footer')
+  .option('--paper <format>', 'Page format: A4, Letter, Legal', 'A4')
+  .option('--margin <size>', 'Page margin (e.g. 20mm, 1in)', '20mm')
+  .option('--hr-page-break', 'Treat --- as a page break')
   .action(async (input: string, options: CliOptions) => {
     if (!fs.existsSync(input)) {
       console.error(pc.red(`Error: Input file '${input}' does not exist.`));
       process.exit(1);
+    }
+
+    if (fs.statSync(input).isDirectory()) {
+      console.error(pc.red(`Error: '${input}' is a directory, not a markdown file.`));
+      process.exit(1);
+    }
+
+    if (options.tocDepth && !options.toc) {
+      console.warn(pc.yellow('⚠ --toc-depth has no effect without --toc'));
+    }
+    if (options.headerTemplate && !options.header) {
+      console.warn(pc.yellow('⚠ --header-template has no effect without --header'));
     }
 
     const output = options.output || input.replace(/\.md$/i, '.pdf');
@@ -54,6 +72,9 @@ program
         tocTitle: options.tocTitle,
         header: options.headerTemplate ? { template: options.headerTemplate } : options.header,
         footer: options.footerTemplate ? { template: options.footerTemplate } : options.footer,
+        paper: options.paper as any,
+        margin: options.margin,
+        pageBreaks: options.hrPageBreak ? { hrAsPageBreak: true } : undefined,
       });
       
       if (result.warnings && result.warnings.length > 0) {
@@ -67,8 +88,13 @@ program
         error?.message?.includes("Executable doesn't exist") ||
         error?.message?.includes('browserType.launch') ||
         error?.message?.includes('playwright install');
+        
+      const isPublishFalse = error?.message?.includes('publish: false');
 
-      if (isBrowserMissing) {
+      if (isPublishFalse) {
+        spinner.fail(pc.yellow('Skipped — this file has publish: false in frontmatter'));
+        process.exit(0);
+      } else if (isBrowserMissing) {
         spinner.fail(pc.red('Chromium browser not found.'));
         console.error(pc.yellow('\nRun this to fix it:'));
         console.error(pc.cyan('\n  npx playwright install chromium\n'));

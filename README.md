@@ -17,7 +17,6 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Syntax Highlighting:** Integrated shiki plugin for syntax highlighting across 20+ languages.
 - **GitHub Flavored Markdown:** Natively supports GFM tables and strikethrough.
 - **Table of Contents:** Auto-generate hyperlinked TOC with depth configuration.
-- **Footnotes:** Full support for footnotes with bidirectional backlinks.
 - **Document Metadata:** Automatically extracts YAML frontmatter to inject native PDF metadata properties.
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
