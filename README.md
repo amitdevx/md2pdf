@@ -10,7 +10,7 @@ Production-quality Markdown to PDF rendering engine for Node.js.
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.1.4)
+### Available (v0.1.5)
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
 - **Professional Typography:** Modular CSS system optimized for readability and print with Inter and JetBrains Mono.
