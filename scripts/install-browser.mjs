@@ -3,12 +3,6 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Skip if being installed as a dependency, not a global tool
-if (process.env.npm_config_global !== 'true') {
-  console.log('md2pdf: Skipping browser install (not a global install). Run: npx playwright install chromium');
-  process.exit(0);
-}
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
