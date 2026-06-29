@@ -80,9 +80,11 @@ export default function rehypeToc(options: TocOptions = {}) {
 
       // Clean up empty trailing nested lists
       const pruneEmpty = (el: Element) => {
+        if (!el.children) return;
         el.children = el.children.filter(child => {
+          if (child.type !== 'element') return true;
           const c = child as Element;
-          if (c.tagName === 'ul' && c.children.length === 0) return false;
+          if (c.tagName === 'ul' && (!c.children || c.children.length === 0)) return false;
           pruneEmpty(c);
           return true;
         });

@@ -1,6 +1,6 @@
 {
   "name": "@amitdevx/md2pdf",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Production-quality Markdown to PDF rendering engine.",
   "type": "module",
   "main": "./dist/index.cjs",
