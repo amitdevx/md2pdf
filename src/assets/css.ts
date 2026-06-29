@@ -229,7 +229,7 @@ li + li {
 .footnotes .sr-only {
   display: none;
 }
-sup[data-footnote-ref] a {
+sup a[data-footnote-ref] {
   font-size: 0.7em;
   text-decoration: none;
 }
