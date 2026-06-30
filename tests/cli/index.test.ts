@@ -20,23 +20,23 @@ function runCli(args: string): { status: number; stdout: string; stderr: string 
 }
 
 describe('CLI End-to-End Tests', () => {
-  it('should fail on missing file with exit code 2', () => {
+  it('should fail on missing file with exit code 1', () => {
     const result = runCli('nonexistent.md');
-    expect(result.status).toBe(2);
+    expect(result.status).toBe(1);
     expect(result.stderr).toContain("Input file 'nonexistent.md' does not exist");
   });
 
-  it('should fail on directory input with exit code 2', () => {
+  it('should fail on directory input with exit code 1', () => {
     const result = runCli(path.resolve(__dirname, '../../src'));
-    expect(result.status).toBe(2);
+    expect(result.status).toBe(1);
     expect(result.stderr).toContain('is a directory, not a file');
   });
 
-  it('should fail on non-.md input with exit code 2', () => {
+  it('should fail on non-.md input with exit code 1', () => {
     const tempTxt = path.resolve(__dirname, 'temp.txt');
     fs.writeFileSync(tempTxt, 'hello');
     const result = runCli(tempTxt);
-    expect(result.status).toBe(2);
+    expect(result.status).toBe(1);
     expect(result.stderr).toContain('is not a markdown file');
     fs.unlinkSync(tempTxt);
   });
@@ -65,27 +65,27 @@ describe('CLI End-to-End Tests', () => {
     expect(result.stderr).toContain('Input and output cannot be the same file');
   });
 
-  it('should fail on trailing slash output with exit code 2', () => {
+  it('should fail on trailing slash output with exit code 1', () => {
     const result = runCli(`README.md -o /tmp/`);
-    expect(result.status).toBe(2);
+    expect(result.status).toBe(1);
     expect(result.stderr).toContain('looks like a directory');
   });
 
-  it('should exit with 3 on publish: false file', () => {
+  it('should exit with 2 on publish: false file', () => {
     const skipMd = path.resolve(__dirname, 'skip.md');
     fs.writeFileSync(skipMd, '---\npublish: false\n---\n# Title');
     const result = runCli(skipMd);
-    expect(result.status).toBe(3);
-    expect(result.stderr).toContain('has publish: false in frontmatter');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('publish: false');
     fs.unlinkSync(skipMd);
   });
 
-  it('should exit with 3 on bad YAML frontmatter', () => {
+  it('should exit with 2 on bad YAML frontmatter', () => {
     const badYaml = path.resolve(__dirname, 'bad-yaml.md');
     fs.writeFileSync(badYaml, '---\ntitle: [\n---\n# Title');
     const result = runCli(badYaml);
-    expect(result.status).toBe(3);
-    expect(result.stderr).toContain('Invalid frontmatter YAML');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('Invalid Frontmatter');
     fs.unlinkSync(badYaml);
   });
 

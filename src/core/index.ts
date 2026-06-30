@@ -15,8 +15,22 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   const inputPath = path.resolve(process.cwd(), input);
   const rawMarkdown = await fs.readFile(inputPath, 'utf-8');
 
-  // Parse frontmatter
-  const { data: frontmatter, content: markdown } = matter(rawMarkdown);
+  let frontmatter: any;
+  let markdown: string;
+  try {
+    const parsed = matter(rawMarkdown);
+    frontmatter = parsed.data;
+    markdown = parsed.content;
+  } catch (error: any) {
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_CONFIG_ERROR,
+      'Invalid Frontmatter',
+      'Invalid frontmatter YAML: ' + (error.message || String(error)),
+      { markdownFile: inputPath }
+    );
+  }
+
   if (frontmatter.publish === false) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
     throw new Md2PdfError(
