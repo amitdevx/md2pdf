@@ -94,9 +94,10 @@ export async function renderMermaidBlocks(
 
       let processedSvg = svgHtml.svg || '';
       
-      // We can apply max-width: 100%; height: auto;
-      if (processedSvg && processedSvg.startsWith('<svg')) {
-        processedSvg = processedSvg.replace('<svg ', '<svg style="max-width: 100%; height: auto;" ');
+      // Mermaid natively outputs style="max-width: 123px;" which prevents small diagrams from blowing up.
+      // But large diagrams will overflow the PDF page. We need to inject min(100%, <original>).
+      if (processedSvg) {
+        processedSvg = processedSvg.replace(/style="max-width:\s*([0-9.]+(?:px|em|rem|%));"/, 'style="max-width: min(100%, $1); height: auto;"');
       }
 
       results.push({
