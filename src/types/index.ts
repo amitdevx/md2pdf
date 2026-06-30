@@ -24,6 +24,10 @@ export interface ConvertOptions {
     h1NewPage?: boolean;
     hrAsPageBreak?: boolean;
   };
+  mermaid?: {
+    theme?: 'default' | 'dark' | 'base' | 'neutral';
+    timeout?: number;
+  };
 }
 
 export interface ConvertResult {

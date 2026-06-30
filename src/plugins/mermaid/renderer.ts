@@ -2,6 +2,7 @@ import { Browser } from 'playwright';
 import path from 'node:path';
 import { MermaidBlock } from './detector.js';
 import { createRequire } from 'node:module';
+import { getMermaidTheme, MermaidTheme } from './theme-map.js';
 
 const require = createRequire(import.meta.url);
 
@@ -13,7 +14,9 @@ export interface RenderedMermaid {
 export async function renderMermaidBlocks(
   browser: Browser,
   blocks: MermaidBlock[],
-  theme: 'default' | 'dark' | 'base' | 'neutral' = 'default'
+  md2pdfTheme: string = 'default',
+  globalMermaidTheme?: MermaidTheme,
+  timeoutMs: number = 10000
 ): Promise<RenderedMermaid[]> {
   if (blocks.length === 0) return [];
 
@@ -37,25 +40,31 @@ export async function renderMermaidBlocks(
   // Inject mermaid into the page
   await page.addScriptTag({ path: mermaidScriptPath });
 
-  // Initialize mermaid globally
-  await page.evaluate((theme) => {
-    // @ts-ignore
-    window.mermaid.initialize({
-      startOnLoad: false,
-      theme: theme,
-    });
-  }, theme);
-
   const results: RenderedMermaid[] = [];
 
   for (const block of blocks) {
+    // Resolve theme for this block
+    const blockTheme = getMermaidTheme(md2pdfTheme, block.theme, globalMermaidTheme);
+
     try {
       // Evaluate the render function in the browser
-      const svgHtml = await page.evaluate(async ({ id, source }) => {
+      const svgHtml = await page.evaluate(async ({ id, source, theme, timeout }) => {
         try {
           // @ts-ignore
-          const { svg } = await window.mermaid.render(id + '-svg', source);
-          return svg;
+          window.mermaid.initialize({ startOnLoad: false, theme });
+          
+          // Execute with timeout
+          const renderPromise = (async () => {
+            // @ts-ignore
+            const { svg } = await window.mermaid.render(id + '-svg', source);
+            return svg;
+          })();
+
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
+          });
+
+          return await Promise.race([renderPromise, timeoutPromise]);
         } catch (err: any) {
           // Return error placeholder
           return `
@@ -69,7 +78,7 @@ export async function renderMermaidBlocks(
             </div>
           `;
         }
-      }, { id: block.id, source: block.source });
+      }, { id: block.id, source: block.source, theme: blockTheme, timeout: timeoutMs });
 
       // Clean up the generated SVG (remove explicit id to prevent conflicts if deduplicated, set responsive width/height)
       // Actually we will process the SVG html in Node to make it responsive

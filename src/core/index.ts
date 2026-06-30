@@ -96,7 +96,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   try {
     const { processBeforeRender } = await import('../renderer/pipeline.js');
-    const processedHtml = await processBeforeRender(html, browser, mermaidBlocks);
+    const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, {
+      theme: options.theme,
+      globalMermaidTheme: options.mermaid?.theme,
+      timeout: options.mermaid?.timeout
+    });
 
     await generatePdf({ 
       html: processedHtml, 
