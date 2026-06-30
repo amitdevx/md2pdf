@@ -10,11 +10,13 @@ Production-quality Markdown to PDF rendering engine for Node.js.
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.1.6)
+### Available (v0.2.0)
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
 - **Professional Typography:** Modular CSS system optimized for readability and print with Inter and JetBrains Mono.
 - **Syntax Highlighting:** Integrated shiki plugin for syntax highlighting across 20+ languages.
+- **Mermaid Diagrams:** Native diagram generation directly from code blocks with intrinsic SVG scaling and error reporting.
+- **Diagnostic Tooling:** Run `md2pdf doctor` and `md2pdf init` for comprehensive pipeline debugging and auto-repair.
 - **GitHub Flavored Markdown:** Natively supports GFM tables and strikethrough.
 - **Table of Contents:** Auto-generate hyperlinked TOC with depth configuration.
 - **Footnotes:** Standard GFM footnotes with bidirectional backlinks. Note: inline footnote syntax (`^[...]`) is not supported.
@@ -22,7 +24,6 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
 ### Coming Soon
-- **Mermaid Diagrams:** Native diagram generation and execution.
 - **Math Rendering:** LaTeX equations support via KaTeX.
 - **Obsidian Compatibility:** Support for wiki links, callouts, and embeds.
 - **Configuration and Theming:** Advanced CLI options and custom CSS themes.
@@ -58,6 +59,22 @@ md2pdf input.md --paper Letter --margin 15mm
 Force a page break before every H1 heading:
 ```bash
 md2pdf input.md --h1-new-page
+```
+
+### Environment Diagnostics & Setup
+Initialize a new environment and download dependencies automatically:
+```bash
+md2pdf init
+```
+
+Check your system health and Playwright pipeline status:
+```bash
+md2pdf doctor
+```
+
+Print advanced internal variables and stack traces if an error occurs:
+```bash
+md2pdf input.md --debug
 ```
 
 > **Note:** Typography uses Inter and JetBrains Mono served from Google Fonts CDN. Internet access is required during conversion for correct typography. Offline environments will fall back to system fonts.
