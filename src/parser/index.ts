@@ -8,6 +8,8 @@ import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/toc.js';
 import rehypePageBreaks from '../plugins/page-breaks.js';
 
+import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
+
 export async function parseMarkdown(
   markdown: string,
   options?: { 
@@ -18,9 +20,11 @@ export async function parseMarkdown(
       h1NewPage?: boolean;
       hrAsPageBreak?: boolean;
     };
+    mermaidBlocks?: MermaidBlock[];
   }
 ): Promise<{ html: string; warnings: string[] }> {
   const warnings: string[] = [];
+  const mermaidBlocks = options?.mermaidBlocks || [];
   
   const file = await unified()
     .use(remarkParse)
@@ -35,6 +39,7 @@ export async function parseMarkdown(
       depth: options?.tocDepth,
       title: options?.tocTitle,
     })
+    .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
     .use(rehypeShiki, {
       themes: {
         light: 'github-light',

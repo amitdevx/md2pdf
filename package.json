@@ -63,6 +63,7 @@
     "@shikijs/rehype": "^4.3.0",
     "commander": "^11.1.0",
     "gray-matter": "^4.0.3",
+    "mermaid": "^11.16.0",
     "ora": "^5.4.1",
     "pdf-lib": "^1.17.1",
     "picocolors": "^1.0.0",

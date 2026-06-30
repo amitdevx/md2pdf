@@ -31,11 +31,14 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     return `![${alt}](${fileUrl}${title ? ' ' + title : ''})`;
   });
 
+  const mermaidBlocks: any[] = []; // Using any to avoid importing MermaidBlock type here for now, or we can just let it be any array
+
   const parsed = await parseMarkdown(processedMarkdown, {
     toc: options.toc,
     tocDepth: options.tocDepth,
     tocTitle: options.tocTitle,
     pageBreaks: options.pageBreaks,
+    mermaidBlocks,
   });
 
   const title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
@@ -86,17 +89,30 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     }
   }
 
-  await generatePdf({ 
-    html, 
-    outputPath, 
-    format: paper, 
-    margin,
-    marginTop,
-    marginBottom,
-    displayHeaderFooter: (headerEnabled && options.header !== undefined) || (footerEnabled && options.footer !== undefined),
-    headerTemplate,
-    footerTemplate,
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
+
+  try {
+    const { processBeforeRender } = await import('../renderer/pipeline.js');
+    const processedHtml = await processBeforeRender(html, browser, mermaidBlocks);
+
+    await generatePdf({ 
+      html: processedHtml, 
+      outputPath, 
+      format: paper, 
+      margin,
+      marginTop,
+      marginBottom,
+      displayHeaderFooter: (headerEnabled && options.header !== undefined) || (footerEnabled && options.footer !== undefined),
+      headerTemplate,
+      footerTemplate,
+      browser,
+    });
+  } finally {
+    await browser.close();
+  }
 
   const pageCounts = await injectMetadata(outputPath, metadata);
 

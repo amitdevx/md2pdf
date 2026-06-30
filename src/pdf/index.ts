@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { chromium, Browser } from 'playwright';
 
 export interface PdfOptions {
   html: string;
@@ -10,10 +10,11 @@ export interface PdfOptions {
   displayHeaderFooter?: boolean;
   headerTemplate?: string;
   footerTemplate?: string;
+  browser?: Browser;
 }
 
 export async function generatePdf(options: PdfOptions): Promise<void> {
-  const browser = await chromium.launch({
+  const browser = options.browser || await chromium.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
@@ -51,6 +52,8 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       footerTemplate: options.footerTemplate,
     });
   } finally {
-    await browser.close();
+    if (!options.browser) {
+      await browser.close();
+    }
   }
 }
