@@ -1,10 +1,10 @@
 import { Command } from 'commander';
-import ora from 'ora';
 import pc from 'picocolors';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EXIT } from './index.js';
+import { Md2PdfError } from '../errors/index.js';
 import { detectBrowserError } from '../errors/detect.js';
 import { getRecommendation } from '../errors/recommendations.js';
 
@@ -16,7 +16,7 @@ function getPkgData() {
     if (fs.existsSync(pkgPath)) {
       return JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
     }
-  } catch (e) {
+  } catch {
     // Ignore
   }
   return { version: 'unknown', dependencies: {} };
@@ -48,9 +48,9 @@ export default new Command('doctor')
       { name: `Playwright (${results.playwright})`, status: true },
     ];
 
-    let browser: any;
-    let page: any;
-    let mdError: any = null;
+    let browser: import('playwright').Browser | undefined;
+    let page: import('playwright').Page | undefined;
+    let mdError: Md2PdfError | null = null;
 
     try {
       const { chromium } = await import('playwright');
@@ -84,7 +84,7 @@ export default new Command('doctor')
       results.checks.filesystem = true;
       checks.push({ name: 'Filesystem write', status: true });
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       mdError = detectBrowserError(e, { platform: process.platform });
       results.errorContext = {
         code: mdError.code,

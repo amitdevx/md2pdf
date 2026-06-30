@@ -24,7 +24,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
   }
 
   // 2. Missing Linux Dependencies
-  const libMatch = fullText.match(/(lib[a-z0-9\-]+\.so(?:\.[0-9]+)?)/i);
+  const libMatch = fullText.match(/(lib[a-z0-9-]+\.so(?:\.[0-9]+)?)/i);
   if (fullText.match(/error while loading shared libraries/i) || libMatch) {
     if (libMatch) {
       context.missingLibraries = [libMatch[1]];

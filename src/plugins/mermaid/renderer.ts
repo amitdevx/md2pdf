@@ -1,5 +1,5 @@
 import { Browser } from 'playwright';
-import path from 'node:path';
+
 import { MermaidBlock } from './detector.js';
 import { createRequire } from 'node:module';
 import { getMermaidTheme, MermaidTheme } from './theme-map.js';
@@ -33,7 +33,7 @@ export async function renderMermaidBlocks(
   let mermaidScriptPath = '';
   try {
     mermaidScriptPath = require.resolve('mermaid/dist/mermaid.min.js');
-  } catch (e) {
+  } catch {
     throw new Error('Could not find mermaid library. Ensure it is installed.');
   }
 
@@ -50,12 +50,12 @@ export async function renderMermaidBlocks(
       // Evaluate the render function in the browser
       const svgHtml = await page.evaluate(async ({ id, source, theme, timeout }) => {
         try {
-          // @ts-ignore
+          // @ts-expect-error window.mermaid is injected at runtime
           window.mermaid.initialize({ startOnLoad: false, theme });
           
           // Execute with timeout
           const renderPromise = (async () => {
-            // @ts-ignore
+            // @ts-expect-error window.mermaid is injected at runtime
             const { svg } = await window.mermaid.render(id + '-svg', source);
             return { svg };
           })();

@@ -55,7 +55,7 @@ interface CliOptions {
   jsonErrors?: boolean;
 }
 
-function renderCliError(err: Md2PdfError, options: CliOptions, spinner: any) {
+function renderCliError(err: Md2PdfError, options: CliOptions) {
   if (options.jsonErrors) {
     console.error(JSON.stringify({
       success: false,
@@ -238,7 +238,7 @@ program
       if (!options.jsonErrors) (spinner as any).fail(pc.red('Conversion failed'));
 
       if (error instanceof Md2PdfError) {
-        renderCliError(error, options, spinner);
+        renderCliError(error, options);
       } else {
         const err = error as Error;
         const mdError = new Md2PdfError(
@@ -248,7 +248,7 @@ program
           { platform: process.platform },
           error
         );
-        renderCliError(mdError, options, spinner);
+        renderCliError(mdError, options);
       }
     }
   });

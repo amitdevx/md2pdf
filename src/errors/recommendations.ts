@@ -1,7 +1,5 @@
 import { Md2PdfError, Md2PdfErrorCode } from './index.js';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+
 
 export interface Recommendation {
   summary: string;
@@ -9,22 +7,7 @@ export interface Recommendation {
   docs?: string;
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function getPlaywrightVersion(): string {
-  try {
-    const pkgPath = path.resolve(__dirname, '../../package.json');
-    if (fs.existsSync(pkgPath)) {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-      if (pkg.dependencies && pkg.dependencies.playwright) {
-        return pkg.dependencies.playwright;
-      }
-    }
-  } catch (e) {
-    // Ignore
-  }
-  return 'latest';
-}
 
 function getPlatformRecommendation(contextPlatform?: string): string {
   const platform = contextPlatform || process.platform;
@@ -49,13 +32,14 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
         docs: 'https://playwright.dev/docs/browsers'
       };
       
-    case Md2PdfErrorCode.ERR_MISSING_DEPENDENCIES:
+    case Md2PdfErrorCode.ERR_MISSING_DEPENDENCIES: {
       const libs = error.context.missingLibraries;
       const libString = libs && libs.length > 0 ? ` (e.g., ${libs[0]})` : '';
       return {
         summary: `Your system is missing shared libraries${libString} required to run Chromium.`,
         commands: [getPlatformRecommendation(platform)],
       };
+    }
 
     case Md2PdfErrorCode.ERR_SANDBOX:
       return {

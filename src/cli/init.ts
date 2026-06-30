@@ -4,7 +4,6 @@ import pc from 'picocolors';
 import { execSync } from 'node:child_process';
 import { EXIT } from './index.js';
 import fs from 'node:fs';
-import path from 'node:path';
 
 export default new Command('init')
   .description('Interactive guided setup for new environments')
@@ -28,7 +27,7 @@ export default new Command('init')
       }
       spinner.succeed(`Chromium exists at ${chromiumExecutable}`);
       
-    } catch (e: any) {
+    } catch {
       spinner.fail('Chromium browser missing');
       console.log(pc.cyan('\nDownloading Chromium for md2pdf. This may take a minute...'));
       
@@ -42,7 +41,7 @@ export default new Command('init')
         }
         
         spinner.succeed('Successfully installed browser dependencies!');
-      } catch (installErr) {
+      } catch {
         spinner.fail('Failed to install dependencies automatically.');
         console.error(pc.red('Please run the installation commands manually.'));
         process.exit(EXIT.ENVIRONMENT_ERROR);
