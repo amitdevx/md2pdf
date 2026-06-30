@@ -51,7 +51,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     title,
     author: options.metadata?.author ?? frontmatter.author,
     subject: options.metadata?.subject ?? frontmatter.subject,
-    keywords: options.metadata?.keywords ?? frontmatter.keywords,
+    keywords: options.metadata?.keywords ?? (Array.isArray(frontmatter.keywords) ? frontmatter.keywords.join(', ') : frontmatter.keywords),
+    creationDate: options.metadata?.creationDate ?? (frontmatter.date ? new Date(frontmatter.date) : undefined),
   };
 
   let headerTemplate = undefined;

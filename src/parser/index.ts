@@ -9,6 +9,18 @@ import rehypeToc from '../plugins/toc.js';
 import rehypePageBreaks from '../plugins/page-breaks.js';
 
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
+import { visit } from 'unist-util-visit';
+
+function rehypeExpandDetails() {
+  return (tree: any) => {
+    visit(tree, 'element', (node) => {
+      if (node.tagName === 'details') {
+        node.properties = node.properties || {};
+        node.properties.open = true;
+      }
+    });
+  };
+}
 
 export async function parseMarkdown(
   markdown: string,
@@ -40,12 +52,9 @@ export async function parseMarkdown(
       title: options?.tocTitle,
     })
     .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
+    .use(rehypeExpandDetails)
     .use(rehypeShiki, {
-      themes: {
-        light: 'github-light',
-        dark: 'one-dark-pro',
-      },
-      defaultColor: false,
+      theme: 'github-light',
       fallbackLanguage: 'txt',
       onError: (err: unknown) => {
         if (err instanceof Error) {

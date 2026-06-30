@@ -58,10 +58,13 @@ a { color: var(--md2pdf-color-link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 blockquote {
-  padding: 0 1em;
-  color: #666;
-  border-left: 3px solid var(--md2pdf-color-blockquote-border);
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  color: #555;
+  background-color: #f9f9f9;
+  border-left: 4px solid var(--md2pdf-color-blockquote-border);
   font-style: italic;
+  border-radius: 0 4px 4px 0;
 }
 
 code, kbd, pre {
@@ -145,6 +148,11 @@ hr {
 ul { list-style-type: disc; }
 ul ul { list-style-type: circle; }
 ul ul ul { list-style-type: square; }
+
+ul ul, ol ol, ul ol, ol ul {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+}
 
 /* Lists */
 ul, ol {
@@ -235,6 +243,22 @@ sup a[data-footnote-ref] {
   font-size: 0.7em;
   text-decoration: none;
 }
+
+/* Details and Summary */
+details {
+  padding: 1em;
+  border: 1px solid var(--md2pdf-color-border);
+  border-radius: 6px;
+  margin: 1em 0;
+  background-color: #fbfbfb;
+}
+details > summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+details[open] > summary {
+  margin-bottom: 0.5em;
+}
 `;
 
 export const printCss = `
@@ -256,12 +280,6 @@ export const printCss = `
     box-shadow: none !important;
     text-shadow: none !important;
     transition: none !important;
-  }
-  
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 90%;
-    color: #333;
   }
   
   /* Remove link expansion for images */
