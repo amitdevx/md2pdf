@@ -57,35 +57,45 @@ export async function renderMermaidBlocks(
           const renderPromise = (async () => {
             // @ts-ignore
             const { svg } = await window.mermaid.render(id + '-svg', source);
-            return svg;
+            return { svg };
           })();
 
-          const timeoutPromise = new Promise((_, reject) => {
+          const timeoutPromise = new Promise<{ svg?: string, error?: string }>((_, reject) => {
             setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
           });
 
           return await Promise.race([renderPromise, timeoutPromise]);
         } catch (err: any) {
-          // Return error placeholder
-          return `
-            <div class="mermaid-error" style="border: 1px solid red; padding: 10px; color: red; font-family: sans-serif;">
+          return {
+            svg: null,
+            error: err.message || String(err)
+          };
+        }
+      }, { id: block.id, source: block.source, theme: blockTheme, timeout: timeoutMs }) as { svg?: string, error?: string };
+
+      if (svgHtml.error) {
+        const lineInfo = block.line ? ` at line ${block.line}` : '';
+        console.warn(`\x1b[33m⚠ Mermaid Error${lineInfo}: ${svgHtml.error}\x1b[0m`);
+        results.push({
+          id: block.id,
+          svgHtml: `
+            <div class="mermaid-error" style="border: 1px solid red; padding: 10px; color: red; font-family: sans-serif; page-break-inside: avoid;">
               <strong>Mermaid Error</strong>
-              <pre style="white-space: pre-wrap; overflow-x: auto;">${err.message || String(err)}</pre>
+              <pre style="white-space: pre-wrap; overflow-x: auto;">${svgHtml.error}</pre>
               <details>
                 <summary>Source</summary>
-                <pre style="white-space: pre-wrap; color: black;">${source}</pre>
+                <pre style="white-space: pre-wrap; color: black;">${block.source}</pre>
               </details>
             </div>
-          `;
-        }
-      }, { id: block.id, source: block.source, theme: blockTheme, timeout: timeoutMs });
+          `
+        });
+        continue;
+      }
 
-      // Clean up the generated SVG (remove explicit id to prevent conflicts if deduplicated, set responsive width/height)
-      // Actually we will process the SVG html in Node to make it responsive
-      let processedSvg = svgHtml;
+      let processedSvg = svgHtml.svg || '';
       
       // We can apply max-width: 100%; height: auto;
-      if (processedSvg.startsWith('<svg')) {
+      if (processedSvg && processedSvg.startsWith('<svg')) {
         processedSvg = processedSvg.replace('<svg ', '<svg style="max-width: 100%; height: auto;" ');
       }
 

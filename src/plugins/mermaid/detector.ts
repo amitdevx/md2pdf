@@ -6,6 +6,7 @@ export interface MermaidBlock {
   id: string;
   source: string;
   theme?: string;
+  line?: number;
 }
 
 export interface MermaidDetectorOptions {
@@ -35,14 +36,23 @@ export const rehypeMermaidDetector: Plugin<[MermaidDetectorOptions], Root> = (op
           source = source.trim();
           if (!source) return; // Skip empty blocks
 
+          // Extract meta theme if available e.g., {theme=dark}
+          let theme: string | undefined;
+          if (codeNode.data && typeof codeNode.data.meta === 'string') {
+            const match = codeNode.data.meta.match(/{theme=([^}]+)}/);
+            if (match && match[1]) {
+              theme = match[1];
+            }
+          }
+
           const id = `mermaid-placeholder-${counter++}`;
 
           // Save to blocks array
           options.blocks.push({
             id,
             source,
-            // We could parse {theme=dark} from meta if it existed on the codeNode
-            // But remark-parse might store it in data.meta or properties.
+            theme,
+            line: node.position?.start.line,
           });
 
           // Replace the <pre> node with our placeholder <div>

@@ -40,6 +40,9 @@ interface CliOptions {
   margin?: string;
   hrPageBreak?: boolean;
   h1NewPage?: boolean;
+  theme?: string;
+  mermaidTheme?: string;
+  mermaidTimeout?: string;
 }
 
 program
@@ -79,6 +82,9 @@ program
   }, '20mm')
   .option('--hr-page-break', 'Treat --- as a page break')
   .option('--h1-new-page', 'Force a page break before each H1 heading')
+  .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)')
+  .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)')
+  .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds')
   .action(async (input: string, options: CliOptions) => {
     const spinner = ora('Converting markdown to PDF...').start();
 
@@ -169,6 +175,11 @@ program
         footer: options.footerTemplate ? { template: options.footerTemplate } : options.footer,
         paper: options.paper as ConvertOptions['paper'],
         margin: options.margin,
+        theme: options.theme,
+        mermaid: {
+          theme: options.mermaidTheme as any,
+          timeout: options.mermaidTimeout ? parseInt(options.mermaidTimeout as string) : undefined
+        },
         pageBreaks: {
           hrAsPageBreak: options.hrPageBreak ?? false,
           h1NewPage: options.h1NewPage ?? false,
