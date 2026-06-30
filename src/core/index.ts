@@ -18,7 +18,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   // Parse frontmatter
   const { data: frontmatter, content: markdown } = matter(rawMarkdown);
   if (frontmatter.publish === false) {
-    throw new Error('File has publish: false in frontmatter');
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_CONFIG_ERROR,
+      'Skipped Conversion',
+      'The file has `publish: false` in its frontmatter.',
+      { markdownFile: inputPath }
+    );
   }
 
   const dir = path.dirname(inputPath);
@@ -90,12 +96,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     }
   }
 
-  const { chromium } = await import('playwright');
-  const browser = await chromium.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-
+  let browser;
   try {
+    const { chromium } = await import('playwright');
+    browser = await chromium.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
     const { processBeforeRender } = await import('../renderer/pipeline.js');
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, {
       theme: options.theme || frontmatter.theme,
@@ -115,8 +122,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       footerTemplate,
       browser,
     });
+  } catch (error) {
+    const { detectBrowserError } = await import('../errors/detect.js');
+    throw detectBrowserError(error, { markdownFile: inputPath, outputPath });
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
   }
 
   const pageCounts = await injectMetadata(outputPath, metadata);

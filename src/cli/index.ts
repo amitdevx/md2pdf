@@ -7,14 +7,17 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import type { ConvertOptions } from '../types/index.js';
+import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
+import { getRecommendation } from '../errors/recommendations.js';
 
-const EXIT = {
+import doctorCmd from './doctor.js';
+import initCmd from './init.js';
+
+export const EXIT = {
   OK: 0,
   USAGE_ERROR: 1,
-  INPUT_ERROR: 2,
-  CONFIG_ERROR: 3,
-  DEPENDENCY_ERROR: 4,
-  RENDER_ERROR: 5,
+  ENVIRONMENT_ERROR: 2,
+  INTERNAL_BUG: 3,
 };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,6 +29,10 @@ program.configureOutput({
   writeErr: (str) => process.stderr.write(str)
 });
 program.showHelpAfterError('(run md2pdf --help for usage)');
+
+// Register subcommands
+program.addCommand(doctorCmd);
+program.addCommand(initCmd);
 
 interface CliOptions {
   output?: string;
@@ -43,6 +50,62 @@ interface CliOptions {
   theme?: string;
   mermaidTheme?: string;
   mermaidTimeout?: string;
+  debug?: boolean;
+  verbose?: boolean;
+  jsonErrors?: boolean;
+}
+
+function renderCliError(err: Md2PdfError, options: CliOptions, spinner: any) {
+  if (options.jsonErrors) {
+    console.error(JSON.stringify({
+      success: false,
+      error: {
+        code: err.code,
+        title: err.title,
+        reason: err.reason,
+        context: err.context
+      }
+    }, null, 2));
+    process.exit(EXIT.ENVIRONMENT_ERROR);
+  }
+
+  const rec = getRecommendation(err);
+  
+  console.error('\n' + pc.dim('────────────────────────────────────────'));
+  console.error(pc.red(`✖ ${err.title}`));
+  console.error(err.reason);
+  
+  if (rec) {
+    console.error(pc.yellow('\nReason'));
+    console.error(rec.summary);
+    
+    if (rec.commands.length > 0) {
+      console.error(pc.green('\nRecommendation'));
+      rec.commands.forEach(cmd => console.error(`  ${cmd}`));
+    }
+  }
+
+  console.error(pc.cyan(`\nError Code: ${err.code}`));
+  
+  if (options.debug) {
+    console.error(pc.dim('\n--- DEBUG DIAGNOSTICS ---'));
+    console.error(pc.dim(`Node: ${process.version} (${process.arch})`));
+    console.error(pc.dim(`OS: ${process.platform}`));
+    console.error(pc.dim(`PLAYWRIGHT_BROWSERS_PATH: ${process.env.PLAYWRIGHT_BROWSERS_PATH || 'Not set'}`));
+    if (err.originalError && (err.originalError as Error).stack) {
+      console.error(pc.dim((err.originalError as Error).stack!));
+    }
+    console.error(pc.dim('-------------------------'));
+  } else if (!options.verbose) {
+    console.error(pc.dim('\nRun with --verbose or --debug for more information, or try `md2pdf doctor`'));
+  }
+  
+  console.error(pc.dim('────────────────────────────────────────\n'));
+
+  // Exit code mapping
+  if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) process.exit(EXIT.INTERNAL_BUG);
+  if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN) process.exit(EXIT.USAGE_ERROR);
+  process.exit(EXIT.ENVIRONMENT_ERROR);
 }
 
 program
@@ -85,83 +148,60 @@ program
   .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)')
   .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)')
   .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds')
+  .option('--debug', 'Enable debug diagnostics')
+  .option('--verbose', 'Enable verbose output')
+  .option('--json-errors', 'Output errors in JSON format')
   .action(async (input: string, options: CliOptions) => {
-    const spinner = ora('Converting markdown to PDF...').start();
+    const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {} } : ora('Converting markdown to PDF...').start();
 
-    // BUG-07: explicit stdin check
     if (input === '-') {
-      spinner.fail(pc.red('stdin input is not supported'));
-      console.error(pc.dim('  Save content to a .md file and pass the path instead'));
-      process.exit(EXIT.INPUT_ERROR);
+      if (!options.jsonErrors) {
+        (spinner as any).fail(pc.red('stdin input is not supported'));
+        console.error(pc.dim('  Save content to a .md file and pass the path instead'));
+      }
+      process.exit(EXIT.USAGE_ERROR);
     }
 
-    // BUG-02 part 1: file existence
     if (!fs.existsSync(input)) {
-      spinner.fail(pc.red(`Input file '${input}' does not exist`));
-      console.error(pc.dim('  Provide a valid path to a .md file'));
-      process.exit(EXIT.INPUT_ERROR);
+      if (!options.jsonErrors) {
+        (spinner as any).fail(pc.red(`Input file '${input}' does not exist`));
+        console.error(pc.dim('  Provide a valid path to a .md file'));
+      }
+      process.exit(EXIT.USAGE_ERROR);
     }
 
-    // BUG-02 part 2: directory check
     const stat = fs.statSync(input);
     if (stat.isDirectory()) {
-      spinner.fail(pc.red(`'${input}' is a directory, not a file`));
-      console.error(pc.dim('  Provide a path to a .md file, not a folder'));
-      process.exit(EXIT.INPUT_ERROR);
+      if (!options.jsonErrors) {
+        (spinner as any).fail(pc.red(`'${input}' is a directory, not a file`));
+      }
+      process.exit(EXIT.USAGE_ERROR);
     }
 
-    // BUG-02 part 3: non-.md extension check
     if (path.extname(input).toLowerCase() !== '.md') {
-      spinner.fail(pc.red(`'${input}' is not a markdown file`));
-      console.error(pc.dim('  md2pdf only accepts .md files'));
-      process.exit(EXIT.INPUT_ERROR);
+      if (!options.jsonErrors) {
+        (spinner as any).fail(pc.red(`'${input}' is not a markdown file`));
+      }
+      process.exit(EXIT.USAGE_ERROR);
     }
 
-    // Orphan flag warnings
-    if ((options.tocDepth || options.tocTitle) && !options.toc) {
-      console.warn(pc.yellow('⚠  --toc-depth and --toc-title have no effect without --toc'));
-    }
-    if (options.headerTemplate && !options.header) {
-      console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
-    }
-    if (options.footerTemplate && !options.footer) {
-      console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
-    }
-
-    // BUG-06: trailing slash output check
     const rawOutput = options.output;
     if (rawOutput && (rawOutput.endsWith('/') || rawOutput.endsWith(path.sep))) {
-      spinner.fail(pc.red(`Output path '${rawOutput}' looks like a directory`));
-      console.error(pc.dim('  Provide a full file path, e.g. -o ./output.pdf'));
-      process.exit(EXIT.INPUT_ERROR);
+      if (!options.jsonErrors) (spinner as any).fail(pc.red(`Output path '${rawOutput}' looks like a directory`));
+      process.exit(EXIT.USAGE_ERROR);
     }
 
     let output = options.output || input.replace(/\.md$/i, '.pdf');
-
-    // BUG-09: no-extension guard
     if (path.extname(output) === '') {
       output = output + '.pdf';
-      console.warn(pc.yellow(`⚠  No extension given, writing to ${output}`));
     }
 
     const resolvedInput = path.resolve(input);
     const resolvedOutput = path.resolve(output);
 
-    // BUG-08: same-file guard
     if (resolvedInput === resolvedOutput) {
-      spinner.fail(pc.red('Input and output cannot be the same file'));
+      if (!options.jsonErrors) (spinner as any).fail(pc.red('Input and output cannot be the same file'));
       process.exit(EXIT.USAGE_ERROR);
-    }
-
-    // BUG-09: output dir warning
-    const outputDir = path.dirname(resolvedOutput);
-    if (!fs.existsSync(outputDir)) {
-      console.warn(pc.yellow(`⚠  Directory '${outputDir}' doesn't exist — it will be created`));
-    }
-
-    // BUG-10: overwrite warning
-    if (fs.existsSync(resolvedOutput)) {
-      console.warn(pc.yellow(`⚠  Overwriting: ${resolvedOutput}`));
     }
 
     try {
@@ -186,49 +226,29 @@ program
         },
       });
 
-      // BUG-11: use resolvedOutput in success messages
-      if (result.warnings && result.warnings.length > 0) {
-        spinner.warn(pc.yellow(`Generated ${resolvedOutput} in ${result.renderTimeMs}ms with warnings:`));
-        result.warnings.forEach(w => console.warn(pc.yellow(`  ⚠ ${w}`)));
-      } else {
-        spinner.succeed(pc.green(`Successfully generated ${resolvedOutput} in ${result.renderTimeMs}ms`));
+      if (!options.jsonErrors) {
+        if (result.warnings && result.warnings.length > 0) {
+          (spinner as any).warn(pc.yellow(`Generated ${resolvedOutput} in ${result.renderTimeMs}ms with warnings:`));
+          result.warnings.forEach((w: string) => console.warn(pc.yellow(`  ⚠ ${w}`)));
+        } else {
+          (spinner as any).succeed(pc.green(`Successfully generated ${resolvedOutput} in ${result.renderTimeMs}ms`));
+        }
       }
     } catch (error: unknown) {
-      const err = error as { message?: string; name?: string; code?: string };
-      const isBrowserMissing =
-        err?.message?.includes("Executable doesn't exist") ||
-        err?.message?.includes('browserType.launch') ||
-        err?.message?.includes('playwright install');
+      if (!options.jsonErrors) (spinner as any).fail(pc.red('Conversion failed'));
 
-      if (err?.message?.includes('publish: false')) {
-        // CONFIG: publish:false skip
-        spinner.warn(pc.yellow(`Skipped — '${input}' has publish: false in frontmatter`));
-        console.error(pc.dim('  Remove the publish: false line or set it to true to convert this file'));
-        process.exit(EXIT.CONFIG_ERROR);
-      } else if (err?.name === 'YAMLException' || err?.message?.includes('YAMLException')) {
-        // CONFIG: bad YAML — BUG-12: fixed \n -> \n
-        spinner.fail(pc.red('Invalid frontmatter YAML'));
-        console.error(pc.dim(`  ${err.message ? err.message.split('\n')[0] : 'Malformed YAML frontmatter'}`));
-        console.error(pc.dim('  Fix the YAML block at the top of your file'));
-        process.exit(EXIT.CONFIG_ERROR);
-      } else if (err?.code === 'EACCES') {
-        // BUG-04: permission denied
-        spinner.fail(pc.red(`Permission denied: cannot read '${input}'`));
-        console.error(pc.dim(`  Check file permissions: chmod 644 ${input}`));
-        process.exit(EXIT.INPUT_ERROR);
-      } else if (isBrowserMissing) {
-        // DEPENDENCY: Chromium not installed
-        spinner.fail(pc.red('Chromium browser not found.'));
-        console.error(pc.yellow('\nRun this to fix it:'));
-        console.error(pc.cyan('\n  npx playwright install chromium\n'));
-        console.error(pc.dim('Then try md2pdf again.'));
-        process.exit(EXIT.DEPENDENCY_ERROR);
+      if (error instanceof Md2PdfError) {
+        renderCliError(error, options, spinner);
       } else {
-        // Unknown internal error
-        spinner.fail(pc.red('Failed to generate PDF'));
-        console.error(error);
-        console.error(pc.cyan('\nPlease report this issue at https://github.com/amitdevx/md2pdf/issues it means a lot to help us ❤️\n'));
-        process.exit(EXIT.RENDER_ERROR);
+        const err = error as Error;
+        const mdError = new Md2PdfError(
+          Md2PdfErrorCode.ERR_UNKNOWN,
+          'Unexpected Internal Error',
+          err?.message || 'An unknown error occurred.',
+          { platform: process.platform },
+          error
+        );
+        renderCliError(mdError, options, spinner);
       }
     }
   });
