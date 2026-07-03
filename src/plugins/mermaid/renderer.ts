@@ -18,7 +18,7 @@ export async function renderMermaidBlocks(
   globalMermaidTheme?: MermaidTheme,
   timeoutMs: number = 10000,
   maxWidth: string = '100%',
-  maxHeight: string = '100%'
+  maxHeight: string = 'none'
 ): Promise<RenderedMermaid[]> {
   if (blocks.length === 0) return [];
 
@@ -56,7 +56,7 @@ export async function renderMermaidBlocks(
       for (const block of blocks) {
         try {
           // @ts-expect-error window.mermaid is injected at runtime
-          window.mermaid.initialize({ startOnLoad: false, theme: block.theme });
+          window.mermaid.initialize({ startOnLoad: false, theme: block.theme, flowchart: { htmlLabels: false } });
           
           const renderPromise = (async () => {
             // @ts-expect-error window.mermaid is injected at runtime
@@ -125,13 +125,15 @@ export async function renderMermaidBlocks(
         processedSvg = processedSvg.replace(/\s+width="[^"]+"/, '');
         processedSvg = processedSvg.replace(/\s+style="[^"]+"/, '');
         
-        // Apply responsive width based precisely on the diagram's intrinsic dimension, capped by user limits
-        // We include a generic font-family fallback to ensure text renders even if fonts are missing in the OS
-        processedSvg = processedSvg.replace('<svg ', `<svg style="width: ${width}px; max-width: ${maxWidth}; max-height: ${maxHeight}; height: auto; font-family: Inter, sans-serif;" `);
+        const finalMaxWidth = maxWidth || '100%';
+        const finalMaxHeight = maxHeight || 'none';
+
+        // Apply responsive width based precisely on the diagram's intrinsic dimension
+        processedSvg = processedSvg.replace('<svg ', `<svg style="width: ${width}px; max-width: ${finalMaxWidth}; max-height: ${finalMaxHeight}; height: auto; font-family: Inter, sans-serif;" `);
       }
       
       // Wrap in a div to prevent the PDF engine from breaking the SVG across multiple pages
-      processedSvg = `<div class="mermaid-diagram" style="page-break-inside: avoid; break-inside: avoid; overflow: hidden;">${processedSvg}</div>`;
+      processedSvg = `<div class="mermaid-diagram" style="page-break-inside: avoid; break-inside: avoid; overflow: hidden; display: flex; justify-content: center;">${processedSvg}</div>`;
     }
 
     results.push({
