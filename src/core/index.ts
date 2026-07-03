@@ -123,11 +123,12 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       globalMermaidTheme: options.mermaid?.theme || frontmatter.mermaid?.theme,
       timeout: options.mermaid?.timeout || frontmatter.mermaid?.timeout,
       mermaidEnabled: options.mermaid?.enabled,
-      maxWidth: options.mermaid?.maxWidth,
-      maxHeight: options.mermaid?.maxHeight
+      maxWidth: options.mermaid?.maxWidth || frontmatter.mermaid?.maxWidth,
+      maxHeight: options.mermaid?.maxHeight || frontmatter.mermaid?.maxHeight
     });
+    
 
-    await generatePdf({ 
+    await generatePdf({  
       html: processedHtml, 
       outputPath, 
       format: paper, 
