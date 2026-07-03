@@ -16,7 +16,9 @@ export async function renderMermaidBlocks(
   blocks: MermaidBlock[],
   md2pdfTheme: string = 'default',
   globalMermaidTheme?: MermaidTheme,
-  timeoutMs: number = 10000
+  timeoutMs: number = 10000,
+  maxWidth: string = '100%',
+  maxHeight: string = '100%'
 ): Promise<RenderedMermaid[]> {
   if (blocks.length === 0) return [];
 
@@ -40,95 +42,100 @@ export async function renderMermaidBlocks(
   // Inject mermaid into the page
   await page.addScriptTag({ path: mermaidScriptPath });
 
-  const results: RenderedMermaid[] = [];
+  const payloads = blocks.map(b => ({
+    id: b.id,
+    source: b.source,
+    theme: getMermaidTheme(md2pdfTheme, b.theme, globalMermaidTheme),
+    line: b.line
+  }));
 
-  for (const block of blocks) {
-    // Resolve theme for this block
-    const blockTheme = getMermaidTheme(md2pdfTheme, block.theme, globalMermaidTheme);
-
-    try {
-      // Evaluate the render function in the browser
-      const svgHtml = await page.evaluate(async ({ id, source, theme, timeout }) => {
+  let evaluatedResults: Array<{ id: string, svg: string | null, error: string | null }> = [];
+  try {
+    evaluatedResults = await page.evaluate(async ({ blocks, timeout }) => {
+      const results = [];
+      for (const block of blocks) {
         try {
           // @ts-expect-error window.mermaid is injected at runtime
-          window.mermaid.initialize({ startOnLoad: false, theme });
+          window.mermaid.initialize({ startOnLoad: false, theme: block.theme });
           
-          // Execute with timeout
           const renderPromise = (async () => {
             // @ts-expect-error window.mermaid is injected at runtime
-            const { svg } = await window.mermaid.render(id + '-svg', source);
-            return { svg };
+            const { svg } = await window.mermaid.render(block.id + '-svg', block.source);
+            return { id: block.id, svg, error: null };
           })();
 
-          const timeoutPromise = new Promise<{ svg?: string, error?: string }>((_, reject) => {
+          const timeoutPromise = new Promise<any>((_, reject) => {
             setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
           });
 
-          return await Promise.race([renderPromise, timeoutPromise]);
+          const res = await Promise.race([renderPromise, timeoutPromise]);
+          results.push(res);
         } catch (err: any) {
-          return {
-            svg: null,
-            error: err.message || String(err)
-          };
-        }
-      }, { id: block.id, source: block.source, theme: blockTheme, timeout: timeoutMs }) as { svg?: string, error?: string };
-
-      if (svgHtml.error) {
-        const lineInfo = block.line ? ` at line ${block.line}` : '';
-        console.warn(`\x1b[33m⚠ Mermaid Error${lineInfo}: ${svgHtml.error}\x1b[0m`);
-        results.push({
-          id: block.id,
-          svgHtml: `
-            <div class="mermaid-error" style="border: 1px solid red; padding: 10px; color: red; font-family: sans-serif; page-break-inside: avoid;">
-              <strong>Mermaid Error</strong>
-              <pre style="white-space: pre-wrap; overflow-x: auto;">${svgHtml.error}</pre>
-              <details>
-                <summary>Source</summary>
-                <pre style="white-space: pre-wrap; color: black;">${block.source}</pre>
-              </details>
-            </div>
-          `
-        });
-        continue;
-      }
-
-      let processedSvg = svgHtml.svg || '';
-      
-      if (processedSvg) {
-        // Extract the exact width from the SVG's viewBox (0 0 width height)
-        const viewBoxMatch = processedSvg.match(/viewBox="[^"]*?([0-9.]+)\s+([0-9.]+)"/);
-        if (viewBoxMatch) {
-          const width = viewBoxMatch[1];
-          // Strip any hardcoded width or style attributes outputted by Mermaid
-          processedSvg = processedSvg.replace(/\s+width="[^"]+"/, '');
-          processedSvg = processedSvg.replace(/\s+style="[^"]+"/, '');
-          
-          // Apply responsive width based precisely on the diagram's intrinsic dimension
-          processedSvg = processedSvg.replace('<svg ', `<svg style="width: ${width}px; max-width: 100%; height: auto;" `);
+          results.push({ id: block.id, svg: null, error: err.message || String(err) });
         }
       }
-
-      results.push({
-        id: block.id,
-        svgHtml: processedSvg,
-      });
-
-    } catch (e: any) {
-      // Fallback error in Node side
-      results.push({
-        id: block.id,
-        svgHtml: `
-          <div class="mermaid-error" style="border: 1px solid red; padding: 10px; color: red; font-family: sans-serif;">
-            <strong>Mermaid Error</strong>
-            <pre style="white-space: pre-wrap; overflow-x: auto;">${e.message}</pre>
-          </div>
-        `,
-      });
-    }
+      return results;
+    }, { blocks: payloads, timeout: timeoutMs });
+  } catch (e: any) {
+    // If the entire evaluate fails
+    console.warn(`\x1b[33m⚠ Mermaid Batch Render Error: ${e.message}\x1b[0m`);
+    evaluatedResults = payloads.map(b => ({
+      id: b.id,
+      svg: null,
+      error: 'Batch execution failed: ' + e.message
+    }));
   }
 
   await page.close();
   await context.close();
+
+  const results: RenderedMermaid[] = [];
+
+  for (let i = 0; i < evaluatedResults.length; i++) {
+    const res = evaluatedResults[i];
+    const block = payloads[i];
+
+    if (res.error) {
+      const lineInfo = block.line ? ` at line ${block.line}` : '';
+      console.warn(`\x1b[33m⚠ Mermaid Error${lineInfo}: ${res.error}\x1b[0m`);
+      results.push({
+        id: block.id,
+        svgHtml: `
+          <div class="mermaid-error" style="border: 1px solid red; padding: 10px; color: red; font-family: sans-serif; page-break-inside: avoid;">
+            <strong>Mermaid Error</strong>
+            <pre style="white-space: pre-wrap; overflow-x: auto;">${res.error}</pre>
+            <details>
+              <summary>Source</summary>
+              <pre style="white-space: pre-wrap; color: black;">${block.source}</pre>
+            </details>
+          </div>
+        `
+      });
+      continue;
+    }
+
+    let processedSvg = res.svg || '';
+    
+    if (processedSvg) {
+      // Extract the exact width from the SVG's viewBox (0 0 width height)
+      const viewBoxMatch = processedSvg.match(/viewBox="[^"]*?([0-9.]+)\s+([0-9.]+)"/);
+      if (viewBoxMatch) {
+        const width = viewBoxMatch[1];
+        // Strip any hardcoded width or style attributes outputted by Mermaid
+        processedSvg = processedSvg.replace(/\s+width="[^"]+"/, '');
+        processedSvg = processedSvg.replace(/\s+style="[^"]+"/, '');
+        
+        // Apply responsive width based precisely on the diagram's intrinsic dimension, capped by user limits
+        // We include a generic font-family fallback to ensure text renders even if fonts are missing in the OS
+        processedSvg = processedSvg.replace('<svg ', `<svg style="width: ${width}px; max-width: ${maxWidth}; max-height: ${maxHeight}; height: auto; font-family: Inter, sans-serif;" `);
+      }
+    }
+
+    results.push({
+      id: block.id,
+      svgHtml: processedSvg,
+    });
+  }
 
   return results;
 }

@@ -71,18 +71,34 @@ mermaid:
 md2pdf input.md --mermaid-theme neutral
 ```
 
-## Error Handling & Timeouts
+## Sizing and Layout Constraints
 
-If a diagram has invalid syntax, `md2pdf` will **not crash**. Instead, it will gracefully insert a styled error placeholder showing the syntax error and the source code, allowing the rest of the document to render successfully.
+By default, Mermaid diagrams automatically scale based on their intrinsic dimensions and will never overflow the page. They are strictly bounded to `100%` of the page width and `100%` of the page height.
 
-If a diagram takes too long to render (e.g., due to extreme complexity), it will timeout. The default timeout is 10,000ms (10 seconds).
-
-You can configure this timeout:
+You can override these bounding constraints globally:
 
 **Via Frontmatter:**
 ```yaml
 ---
 mermaid:
+  maxWidth: 80%
+  maxHeight: 400px
+---
+```
+
+## Error Handling & Timeouts
+
+If a diagram has invalid syntax, `md2pdf` will **not crash**. Instead, it will gracefully insert a styled error placeholder showing the syntax error and the source code, allowing the rest of the document to render successfully.
+
+If a diagram takes too long to render, it will timeout. The default timeout is 10,000ms (10 seconds).
+
+You can configure this timeout or completely disable Mermaid processing:
+
+**Via Frontmatter:**
+```yaml
+---
+mermaid:
+  enabled: false
   timeout: 15000
 ---
 ```

@@ -11,15 +11,24 @@ export async function processBeforeRender(
     theme?: string;
     globalMermaidTheme?: MermaidTheme;
     timeout?: number;
+    mermaidEnabled?: boolean;
+    maxWidth?: string;
+    maxHeight?: string;
   }
 ): Promise<string> {
+  if (options?.mermaidEnabled === false) {
+    return html;
+  }
+
   if (mermaidBlocks && mermaidBlocks.length > 0) {
     const renderedSvgs = await renderMermaidBlocks(
       browser, 
       mermaidBlocks, 
       options?.theme, 
       options?.globalMermaidTheme,
-      options?.timeout
+      options?.timeout,
+      options?.maxWidth,
+      options?.maxHeight
     );
     return inlineMermaidSvgs(html, renderedSvgs);
   }

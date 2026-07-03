@@ -25,8 +25,11 @@ export interface ConvertOptions {
     hrAsPageBreak?: boolean;
   };
   mermaid?: {
+    enabled?: boolean;
     theme?: 'default' | 'dark' | 'base' | 'neutral';
     timeout?: number;
+    maxWidth?: string;
+    maxHeight?: string;
   };
 }
 

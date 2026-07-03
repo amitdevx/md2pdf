@@ -121,7 +121,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, {
       theme: options.theme || frontmatter.theme,
       globalMermaidTheme: options.mermaid?.theme || frontmatter.mermaid?.theme,
-      timeout: options.mermaid?.timeout || frontmatter.mermaid?.timeout
+      timeout: options.mermaid?.timeout || frontmatter.mermaid?.timeout,
+      mermaidEnabled: options.mermaid?.enabled,
+      maxWidth: options.mermaid?.maxWidth,
+      maxHeight: options.mermaid?.maxHeight
     });
 
     await generatePdf({ 

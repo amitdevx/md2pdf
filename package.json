@@ -1,6 +1,6 @@
 {
   "name": "@amitdevx/md2pdf",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Production-quality Markdown to PDF rendering engine.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -36,6 +36,7 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bench:mermaid": "node dist/cli/index.js tests/benchmarks/mermaid-50-diagrams.md -o tests/output/mermaid-bench.pdf",
     "lint": "eslint src/ tests/",
     "lint:fix": "eslint src/ tests/ --fix",
     "typecheck": "tsc --noEmit",
