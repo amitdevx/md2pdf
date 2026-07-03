@@ -1,6 +1,6 @@
 # Mermaid Diagram Support
 
-md2pdf v0.2.0 includes robust, built-in support for rendering [Mermaid](https://mermaid.js.org/) diagrams perfectly inside your PDFs. The rendering is done locally and offline using Playwright, ensuring crisp vector graphics and perfect reproduction of all 12+ diagram types.
+md2pdf v0.2.1 includes robust, built-in support for rendering [Mermaid](https://mermaid.js.org/) diagrams perfectly inside your PDFs. The rendering is done locally and offline using Playwright, ensuring crisp vector graphics and perfect reproduction of all 12+ diagram types.
 
 ## Supported Diagrams
 

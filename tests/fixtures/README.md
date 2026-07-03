@@ -22,7 +22,7 @@ output against approved snapshots in `tests/snapshots/`.
 | `footnotes.md` | v0.1.1 | All footnote variants, multi-paragraph bodies, cross-page |
 | `toc.md` | v0.1.1 | 20+ headings at 3 levels — TOC generation and link accuracy |
 | `headers-footers.md` | v0.1.2 | Header/footer on long doc, manual page breaks |
-| `mermaid-all.md` | v0.2.0 | One of every Mermaid diagram type with realistic content |
+| `mermaid-all.md` | v0.2.1 | One of every Mermaid diagram type with realistic content |
 | `math.md` | v0.3.0 | KaTeX inline/display, environments, numbering, chemistry, macros |
 | `obsidian.md` | v0.4.0 | Wiki links, all callout types, tags, frontmatter |
 | `github-readme.md` | v0.6.0 | Realistic open-source README — github theme acceptance test |

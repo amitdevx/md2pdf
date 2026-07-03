@@ -29,7 +29,7 @@ As features ship, new examples will be added here:
 
 | File | Added In | Demonstrates |
 |------|----------|-------------|
-| `mermaid.md` + `.pdf` | v0.2.0 | Mermaid diagrams |
+| `mermaid.md` + `.pdf` | v0.2.1 | Mermaid diagrams |
 | `math.md` + `.pdf` | v0.3.0 | KaTeX equations |
 | `obsidian.md` + `.pdf` | v0.4.0 | Obsidian compatibility |
 | `academic.md` + `.pdf` | v0.6.0 | Academic paper with the academic theme |

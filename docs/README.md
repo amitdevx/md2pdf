@@ -27,7 +27,7 @@ See `/phase/` for the per-release plan.
 | `api.md` | v0.1.0 | `convert()` API reference |
 | `cli.md` | v0.1.0 | All CLI flags and examples |
 | `markdown-features.md` | v0.1.1 | Footnotes, TOC, extended Markdown |
-| `mermaid.md` | v0.2.0 | Diagram types, themes, config, troubleshooting |
+| `mermaid.md` | v0.2.1 | Diagram types, themes, config, troubleshooting |
 | `math.md` | v0.3.0 | KaTeX syntax, environments, macros |
 | `obsidian.md` | v0.4.0 | Wiki links, callouts, embeds, attachments |
 | `configuration.md` | v0.5.0 | Config file reference, all fields, profiles |
