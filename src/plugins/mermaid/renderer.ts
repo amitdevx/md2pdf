@@ -129,6 +129,9 @@ export async function renderMermaidBlocks(
         // We include a generic font-family fallback to ensure text renders even if fonts are missing in the OS
         processedSvg = processedSvg.replace('<svg ', `<svg style="width: ${width}px; max-width: ${maxWidth}; max-height: ${maxHeight}; height: auto; font-family: Inter, sans-serif;" `);
       }
+      
+      // Wrap in a div to prevent the PDF engine from breaking the SVG across multiple pages
+      processedSvg = `<div class="mermaid-diagram" style="page-break-inside: avoid; break-inside: avoid; overflow: hidden;">${processedSvg}</div>`;
     }
 
     results.push({
