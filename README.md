@@ -1,6 +1,15 @@
+<div align="center">
+
 # md2pdf
 
-Production-quality Markdown to PDF rendering engine for Node.js.
+[![npm version](https://img.shields.io/npm/v/@amitdevx/md2pdf.svg)](https://www.npmjs.com/package/@amitdevx/md2pdf)
+[![npm downloads](https://img.shields.io/npm/dm/@amitdevx/md2pdf.svg)](https://www.npmjs.com/package/@amitdevx/md2pdf)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/amitdevx/md2pdf/actions/workflows/ci.yml/badge.svg)](https://github.com/amitdevx/md2pdf/actions/workflows/ci.yml)
+
+<h3>Production-quality Markdown to PDF rendering engine for Node.js.</h3>
+
+</div>
 
 ## Overview
 
@@ -10,7 +19,7 @@ Production-quality Markdown to PDF rendering engine for Node.js.
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.2.1)
+### Available (v0.2.2)
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
 - **Professional Typography:** Modular CSS system optimized for readability and print with Inter and JetBrains Mono.
