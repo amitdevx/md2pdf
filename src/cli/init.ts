@@ -41,7 +41,9 @@ export default new Command('init')
           try {
             execSync('which sudo', { stdio: 'pipe' });
             hasSudo = true;
-          } catch {}
+          } catch {
+            // ignore error if sudo is missing
+          }
 
           if (!hasSudo) {
             console.warn(pc.yellow('⚠  sudo not available — skipping system library install'));
