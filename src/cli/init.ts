@@ -37,7 +37,19 @@ export default new Command('init')
         
         if (process.platform === 'linux') {
           console.log(pc.cyan('\nInstalling required Linux system libraries...'));
-          execSync('sudo npx playwright install-deps', { stdio: 'inherit' });
+          let hasSudo = false;
+          try {
+            execSync('which sudo', { stdio: 'pipe' });
+            hasSudo = true;
+          } catch {}
+
+          if (!hasSudo) {
+            console.warn(pc.yellow('⚠  sudo not available — skipping system library install'));
+            console.log(pc.dim('  If Playwright fails, install these manually as root:'));
+            console.log(pc.dim('  npx playwright install-deps chromium'));
+          } else {
+            execSync('sudo npx playwright install-deps chromium', { stdio: 'inherit' });
+          }
         }
         
         spinner.succeed('Successfully installed browser dependencies!');

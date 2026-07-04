@@ -145,50 +145,107 @@ program
   }, '20mm')
   .option('--hr-page-break', 'Treat --- as a page break')
   .option('--h1-new-page', 'Force a page break before each H1 heading')
-  .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)')
-  .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)')
-  .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds')
+  .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)', (val) => {
+    const valid = ['default', 'github', 'obsidian-light', 'obsidian-dark'];
+    if (!valid.includes(val)) {
+      console.error(pc.red(`Invalid --theme '${val}': must be one of: ${valid.join(', ')}`));
+      process.exit(EXIT.USAGE_ERROR);
+    }
+    return val;
+  })
+  .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)', (val) => {
+    const valid = ['default', 'dark', 'base', 'neutral'];
+    if (!valid.includes(val)) {
+      console.error(pc.red(`Invalid --mermaid-theme '${val}': must be one of: ${valid.join(', ')}`));
+      process.exit(EXIT.USAGE_ERROR);
+    }
+    return val;
+  })
+  .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds', (val) => {
+    const n = parseInt(val);
+    if (isNaN(n) || n <= 0) {
+      console.error(pc.red(`Invalid --mermaid-timeout '${val}': must be a positive integer in milliseconds`));
+      process.exit(EXIT.USAGE_ERROR);
+    }
+    return n;
+  })
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--json-errors', 'Output errors in JSON format')
   .action(async (input: string, options: CliOptions) => {
+    const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
+      console.log(JSON.stringify({
+        success: false,
+        error: { code, title, reason }
+      }, null, 2));
+      process.exit(EXIT.USAGE_ERROR);
+    };
+
     const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {} } : ora('Converting markdown to PDF...').start();
 
     if (input === '-') {
-      if (!options.jsonErrors) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_INPUT_UNSUPPORTED', 'Stdin Not Supported', 'stdin input is not supported. Save content to a .md file and pass the path instead.');
+      } else {
         (spinner as any).fail(pc.red('stdin input is not supported'));
         console.error(pc.dim('  Save content to a .md file and pass the path instead'));
+        process.exit(EXIT.USAGE_ERROR);
       }
-      process.exit(EXIT.USAGE_ERROR);
     }
 
     if (!fs.existsSync(input)) {
-      if (!options.jsonErrors) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_INPUT_NOT_FOUND', 'File Not Found', `Input file '${input}' does not exist.`);
+      } else {
         (spinner as any).fail(pc.red(`Input file '${input}' does not exist`));
         console.error(pc.dim('  Provide a valid path to a .md file'));
+        process.exit(EXIT.USAGE_ERROR);
       }
-      process.exit(EXIT.USAGE_ERROR);
+    }
+
+    try {
+      fs.accessSync(input, fs.constants.R_OK);
+    } catch {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Permission denied: cannot read '${input}'`);
+      } else {
+        (spinner as any).fail(pc.red(`Permission denied: cannot read '${input}'`));
+        console.error(pc.dim(`  Check file permissions: ls -la ${input}`));
+        process.exit(EXIT.USAGE_ERROR);
+      }
     }
 
     const stat = fs.statSync(input);
     if (stat.isDirectory()) {
-      if (!options.jsonErrors) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_INPUT_IS_DIRECTORY', 'Input is Directory', `'${input}' is a directory, not a file.`);
+      } else {
         (spinner as any).fail(pc.red(`'${input}' is a directory, not a file`));
+        process.exit(EXIT.USAGE_ERROR);
       }
-      process.exit(EXIT.USAGE_ERROR);
     }
 
     if (path.extname(input).toLowerCase() !== '.md') {
-      if (!options.jsonErrors) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_INVALID_EXTENSION', 'Invalid Extension', `'${input}' is not a markdown file.`);
+      } else {
         (spinner as any).fail(pc.red(`'${input}' is not a markdown file`));
+        process.exit(EXIT.USAGE_ERROR);
       }
-      process.exit(EXIT.USAGE_ERROR);
     }
 
     const rawOutput = options.output;
-    if (rawOutput && (rawOutput.endsWith('/') || rawOutput.endsWith(path.sep))) {
-      if (!options.jsonErrors) (spinner as any).fail(pc.red(`Output path '${rawOutput}' looks like a directory`));
-      process.exit(EXIT.USAGE_ERROR);
+    if (rawOutput) {
+      const outputStat = fs.existsSync(rawOutput) ? fs.statSync(rawOutput) : null;
+      if (outputStat?.isDirectory() || rawOutput.endsWith('/') || rawOutput.endsWith(path.sep)) {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_OUTPUT_IS_DIRECTORY', 'Output is Directory', `Output path '${rawOutput}' is a directory, not a file.`);
+        } else {
+          (spinner as any).fail(pc.red(`Output path '${rawOutput}' is a directory, not a file`));
+          console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
+          process.exit(EXIT.USAGE_ERROR);
+        }
+      }
     }
 
     let output = options.output || input.replace(/\.md$/i, '.pdf');
@@ -200,8 +257,22 @@ program
     const resolvedOutput = path.resolve(output);
 
     if (resolvedInput === resolvedOutput) {
-      if (!options.jsonErrors) (spinner as any).fail(pc.red('Input and output cannot be the same file'));
-      process.exit(EXIT.USAGE_ERROR);
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_SAME_FILE', 'Same File', 'Input and output cannot be the same file.');
+      } else {
+        (spinner as any).fail(pc.red('Input and output cannot be the same file'));
+        process.exit(EXIT.USAGE_ERROR);
+      }
+    }
+
+    if ((options.tocDepth || options.tocTitle) && !options.toc) {
+      console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
+    }
+    if (options.headerTemplate && !options.header) {
+      console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
+    }
+    if (options.footerTemplate && !options.footer) {
+      console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
     }
 
     try {
@@ -232,6 +303,15 @@ program
           result.warnings.forEach((w: string) => console.warn(pc.yellow(`  ⚠ ${w}`)));
         } else {
           (spinner as any).succeed(pc.green(`Successfully generated ${resolvedOutput} in ${result.renderTimeMs}ms`));
+        }
+        
+        if (options.verbose) {
+          console.log(pc.dim('\n--- VERBOSE INFO ---'));
+          console.log(pc.dim(`Pages: ${result.pageCounts || 'unknown'}`));
+          console.log(pc.dim(`Output Path: ${result.outputPath}`));
+          console.log(pc.dim(`Theme: ${options.theme || 'default'}`));
+          console.log(pc.dim(`Metadata: ${JSON.stringify(result.metadata || {})}`));
+          console.log(pc.dim('--------------------'));
         }
       }
     } catch (error: unknown) {
