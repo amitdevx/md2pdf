@@ -68,7 +68,7 @@ describe('CLI End-to-End Tests', () => {
   it('should fail on trailing slash output with exit code 1', () => {
     const result = runCli(`README.md -o /tmp/`);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('looks like a directory');
+    expect(result.stderr).toContain('is a directory, not a file');
   });
 
   it('should exit with 2 on publish: false file', () => {
