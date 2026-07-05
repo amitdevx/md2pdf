@@ -4,7 +4,7 @@
 > Any AI agent reading this file should be able to understand, modify, build, test,
 > and extend the project without reading any other file.
 >
-> **Last updated:** 2026-07-04 (v0.2.3)
+> **Last updated:** 2026-07-04 (v0.2.4)
 
 ---
 
@@ -32,7 +32,7 @@
 20. [npm Publish Rules](#20-npm-publish-rules)
 21. [Key Design Decisions](#21-key-design-decisions)
 22. [Research Findings Summary](#22-research-findings-summary)
-23. [Known Limitations (v0.2.3)](#23-known-limitations-v023)
+23. [Known Limitations (v0.2.4)](#23-known-limitations-v024)
 24. [Quick Reference for Common Tasks](#24-quick-reference-for-common-tasks)
 25. [Post-Mortems & Lessons Learned](#25-post-mortems--lessons-learned)
 
@@ -43,7 +43,7 @@
 | Field | Value |
 |-------|-------|
 | **Package name** | `@amitdevx/md2pdf` |
-| **Version** | `0.2.3` |
+| **Version** | `0.2.4` |
 | **Description** | Production-quality Markdown to PDF rendering engine |
 | **Author** | Amit Divekar |
 | **License** | MIT |
@@ -2415,7 +2415,7 @@ Or via GitHub Release → `release.yml` runs automatically.
 
 ---
 
-## 23. Known Limitations (v0.2.3)
+## 23. Known Limitations (v0.2.4)
 
 | Issue | Impact | Fixed In |
 |-------|--------|----------|
