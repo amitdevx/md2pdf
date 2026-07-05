@@ -114,7 +114,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   try {
     const { chromium } = await import('playwright');
     browser = await chromium.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--js-flags="--max-old-space-size=256"'],
     });
 
     const { processBeforeRender } = await import('../renderer/pipeline.js');
