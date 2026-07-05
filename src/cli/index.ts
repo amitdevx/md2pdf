@@ -256,6 +256,17 @@ program
     const resolvedInput = path.resolve(input);
     const resolvedOutput = path.resolve(output);
 
+    // Prevent path traversal to sensitive root directories (Linux/macOS)
+    const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
+    if (sensitiveDirs.some(dir => resolvedOutput.startsWith(dir))) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_PATH_TRAVERSAL', 'Access Denied', 'Cannot write output to protected system directory.');
+      } else {
+        (spinner as any).fail(pc.red(`Access Denied: Cannot write output to protected system directory.`));
+        process.exit(EXIT.USAGE_ERROR);
+      }
+    }
+
     if (resolvedInput === resolvedOutput) {
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_SAME_FILE', 'Same File', 'Input and output cannot be the same file.');
