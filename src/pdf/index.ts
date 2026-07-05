@@ -19,8 +19,27 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
   });
 
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext({
+      javaScriptEnabled: false
+    });
     const page = await context.newPage();
+
+    await page.route('**/*', route => {
+      const url = route.request().url();
+      
+      if (url.includes('169.254.169.254') || url.includes('127.0.0.1') || url.includes('localhost')) {
+        return route.abort('accessdenied');
+      }
+      
+      if (url.startsWith('file://')) {
+        const allowedDir = 'file://' + process.cwd().replace(/\\/g, '/');
+        if (!url.startsWith(allowedDir)) {
+          return route.abort('accessdenied');
+        }
+      }
+      
+      route.continue();
+    });
 
     // Load HTML — use domcontentloaded first, then briefly wait for networkidle
     // (covers Google Fonts CDN). Falls back gracefully if fonts are slow/offline.
@@ -31,9 +50,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       // Font CDN timed out — PDF renders with fallback fonts, no crash
     }
 
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-    });
+
 
     const marginValue = options.margin || '20mm';
 
