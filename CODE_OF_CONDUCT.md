@@ -10,7 +10,7 @@ documentation, submitting pull requests or patches, and other activities.
 We are committed to making participation in this project a harassment-free
 experience for everyone, regardless of level of experience, gender, gender
 identity and expression, sexual orientation, disability, personal appearance,
-body size, race, ethnicity, age, religion, or nationality.
+body size, race, ethnicity, age, religion, or the nationality.
 
 ## Our Standards
 
