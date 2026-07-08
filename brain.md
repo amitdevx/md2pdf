@@ -2584,3 +2584,17 @@ During the release of v0.1.1, the git tag `v0.1.1` was created and pushed *befor
 2. **NEVER push to remote** (`git push`) unless explicitly and unambiguously requested.
 3. **Commit step-by-step**: Changes must be committed incrementally in logically grouped commits, left in the local repository for the user to review, tag, and push.
 4. **Immutability of npm**: Never assume an npm version can be overwritten. Once published, a version is permanent. Reverting `package.json` versions after a tag publish causes CI failures (`403 Forbidden`).
+
+### The v0.3.0 ESM / CommonJS Node 18 CI Failure
+
+**What happened:**
+During the release of v0.3.0, the tests passed perfectly locally on Node 24 but immediately failed on GitHub Actions CI (Node 18 and Node 20 matrix runs). The error `(node:...) Warning: To load an ES module, set "type": "module"...` flooded the test stderr output and caused all CLI executions to fail with a `SyntaxError: Cannot use import statement outside a module` and exit code 1.
+
+**Root Cause:**
+- The `dist/cli/index.js` CLI output imported a CommonJS module (`katex/contrib/mhchem/mhchem.js`) dynamically at runtime.
+- The `mhchem.js` file internally contained ESM `import katex from "katex";` but the `katex` package's `package.json` did NOT declare `"type": "module"`. 
+- Node 18 and Node 20 strictly enforced ESM rules and crashed on encountering an `import` within what it treated as a CommonJS file. Newer Node versions like v24 have more lenient experimental ESM detection and didn't crash locally.
+
+**Strict Rules Moving Forward:**
+1. **Always Check the CI in GitHub Workflows**: Local execution is not enough, especially across Node versions. Always wait for the GitHub CI matrix to complete and review the actual remote logs if testing behavior across platforms.
+2. **Bundle External CJS Dependencies in ESM Packages**: When creating ESM tools (using `type: module`), configure `tsup` to bundle tricky external dependencies (`noExternal: [/^katex/]`). This avoids runtime syntax resolution errors by letting the bundler transpile `import` statements safely ahead of time.
