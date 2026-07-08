@@ -2,10 +2,11 @@
 
 # md2pdf
 
-[![npm version](https://img.shields.io/npm/v/@amitdevx/md2pdf.svg)](https://www.npmjs.com/package/@amitdevx/md2pdf)
-[![npm downloads](https://img.shields.io/npm/dm/@amitdevx/md2pdf.svg)](https://www.npmjs.com/package/@amitdevx/md2pdf)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/amitdevx/md2pdf/actions/workflows/ci.yml/badge.svg)](https://github.com/amitdevx/md2pdf/actions/workflows/ci.yml)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@amitdevx/md2pdf"><img src="https://img.shields.io/npm/v/@amitdevx/md2pdf.svg?style=flat-square" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@amitdevx/md2pdf"><img src="https://img.shields.io/npm/dt/@amitdevx/md2pdf.svg?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/amitdevx/md2pdf/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@amitdevx/md2pdf.svg?style=flat-square" alt="License: MIT"></a>
+</p>
 
 <h3>Production-quality Markdown to PDF rendering engine for Node.js.</h3>
 
@@ -19,8 +20,9 @@
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.2.4)
+### Available (v0.3.0)
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
+- **Math Rendering (New in v0.3.0):** Print-perfect LaTeX inline and display math via KaTeX. Full support for matrices, environments, and macros with zero-dependency embedded fonts.
 - **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
 - **Professional Typography:** Modular CSS system optimized for readability and print with Inter and JetBrains Mono.
 - **Syntax Highlighting:** Integrated shiki plugin for syntax highlighting across 20+ languages.
@@ -33,7 +35,6 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
 ### Coming Soon
-- **Math Rendering:** LaTeX equations support via KaTeX.
 - **Obsidian Compatibility:** Support for wiki links, callouts, and embeds.
 - **Configuration and Theming:** Advanced CLI options and custom CSS themes.
 - **Plugin System:** Extensible architecture for custom rendering logic.
