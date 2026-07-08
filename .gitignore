@@ -29,3 +29,11 @@ tests/diff/
 *.pdf
 # But allow approved golden snapshot PDFs
 !tests/snapshots/**/*.pdf
+
+# Local IDE and hooks
+.claude/
+.husky/
+
+# Temporary dev scripts
+debug-mermaid.js
+test-parser.js
