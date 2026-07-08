@@ -259,6 +259,32 @@ details > summary {
 details[open] > summary {
   margin-bottom: 0.5em;
 }
+
+/* Math */
+.katex-display {
+  display: block;
+  text-align: center;
+  margin: 1.5em 0;
+  page-break-inside: avoid;
+}
+
+.katex {
+  color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.katex:not(.katex-display) {
+  vertical-align: middle;
+}
+
+.math-error {
+  color: #cc0000;
+  background-color: #ffcccc;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-family: var(--md2pdf-font-family-mono);
+}
 `;
 
 export const printCss = `
