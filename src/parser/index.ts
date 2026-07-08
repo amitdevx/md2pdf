@@ -3,6 +3,8 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
 import rehypeSlug from 'rehype-slug';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import rehypeShiki from '@shikijs/rehype';
 import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/toc.js';
@@ -33,17 +35,38 @@ export async function parseMarkdown(
       hrAsPageBreak?: boolean;
     };
     mermaidBlocks?: MermaidBlock[];
+    math?: {
+      enabled?: boolean;
+      macros?: Record<string, string>;
+      strict?: boolean;
+    };
   }
 ): Promise<{ html: string; warnings: string[] }> {
   const warnings: string[] = [];
   const mermaidBlocks = options?.mermaidBlocks || [];
   
-  const file = await unified()
-    .use(remarkParse)
+  let processor: any = unified().use(remarkParse);
+
+  if (options?.math?.enabled !== false) {
+    processor = processor.use(remarkMath as any);
+  }
+
+  processor = processor
     // remark-gfm natively enables GFM footnotes, tables, and tasklists
     .use(remarkGfm)
     // allowDangerousHtml: true passes raw HTML tags in Markdown directly to the PDF output.
-    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(remarkRehype, { allowDangerousHtml: true });
+
+  if (options?.math?.enabled !== false) {
+    processor = processor.use(rehypeKatex as any, {
+      strict: options?.math?.strict ?? false,
+      macros: options?.math?.macros,
+      throwOnError: false,
+      errorColor: '#cc0000',
+    });
+  }
+
+  const file = await processor
     .use(rehypeSlug)
     .use(rehypePageBreaks, options?.pageBreaks)
     .use(rehypeToc, {
@@ -69,7 +92,7 @@ export async function parseMarkdown(
     .process(markdown);
 
   // Add any warnings from unified itself
-  file.messages.forEach(msg => warnings.push(msg.reason || msg.message));
+  file.messages.forEach((msg: any) => warnings.push(msg.reason || msg.message));
   
   return { html: String(file), warnings };
 }

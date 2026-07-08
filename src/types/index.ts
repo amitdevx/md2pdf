@@ -31,6 +31,11 @@ export interface ConvertOptions {
     maxWidth?: string;
     maxHeight?: string;
   };
+  math?: {
+    enabled?: boolean;
+    macros?: Record<string, string>;
+    strict?: boolean;
+  };
 }
 
 export interface ConvertResult {

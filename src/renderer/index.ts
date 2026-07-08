@@ -1,4 +1,5 @@
 import { baseCss, printCss } from '../assets/css.js';
+import { katexCss } from '../assets/katex.js';
 
 function escapeHtml(str: string): string {
   return str.replace(/[&<>'"]/g, tag => ({
@@ -24,6 +25,7 @@ export function renderHtmlTemplate(contentHtml: string, title: string = 'Documen
   <style>
     ${baseCss}
     ${printCss}
+    ${katexCss}
   </style>
 </head>
 <body>

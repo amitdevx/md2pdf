@@ -50,6 +50,7 @@ interface CliOptions {
   theme?: string;
   mermaidTheme?: string;
   mermaidTimeout?: string;
+  math?: boolean;
   debug?: boolean;
   verbose?: boolean;
   jsonErrors?: boolean;
@@ -169,6 +170,7 @@ program
     }
     return n;
   })
+  .option('--math', 'Enable KaTeX math rendering for LaTeX equations')
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--json-errors', 'Output errors in JSON format')
@@ -301,6 +303,9 @@ program
         mermaid: {
           theme: options.mermaidTheme as any,
           timeout: options.mermaidTimeout ? parseInt(options.mermaidTimeout as string) : undefined
+        },
+        math: {
+          enabled: options.math ?? true
         },
         pageBreaks: {
           hrAsPageBreak: options.hrPageBreak ?? false,
