@@ -170,7 +170,7 @@ program
     }
     return n;
   })
-  .option('--math', 'Enable KaTeX math rendering for LaTeX equations')
+  .option('--no-math', 'Disable KaTeX math rendering for LaTeX equations')
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--json-errors', 'Output errors in JSON format')
