@@ -58,7 +58,7 @@ interface CliOptions {
 
 function renderCliError(err: Md2PdfError, options: CliOptions) {
   if (options.jsonErrors) {
-    console.error(JSON.stringify({
+    console.log(JSON.stringify({
       success: false,
       error: {
         code: err.code,
@@ -104,9 +104,12 @@ function renderCliError(err: Md2PdfError, options: CliOptions) {
   console.error(pc.dim('────────────────────────────────────────\n'));
 
   // Exit code mapping
-  if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) process.exit(EXIT.INTERNAL_BUG);
-  if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN) process.exit(EXIT.USAGE_ERROR);
-  process.exit(EXIT.ENVIRONMENT_ERROR);
+  let code = EXIT.ENVIRONMENT_ERROR;
+  if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
+  if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN) code = EXIT.USAGE_ERROR;
+  
+  process.exitCode = code;
+  process.exit(code);
 }
 
 program
@@ -253,10 +256,24 @@ program
     let output = options.output || input.replace(/\.md$/i, '.pdf');
     if (path.extname(output) === '') {
       output = output + '.pdf';
+      if (!options.jsonErrors) {
+        console.warn(pc.yellow(`⚠  No extension given, writing to ${output}`));
+      }
     }
 
     const resolvedInput = path.resolve(input);
     const resolvedOutput = path.resolve(output);
+
+    const outDir = path.dirname(resolvedOutput);
+    if (!fs.existsSync(outDir)) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_OUTPUT_DIR_MISSING', 'Output Directory Missing', `The directory '${outDir}' does not exist.`);
+      } else {
+        (spinner as any).fail(pc.red(`Output directory '${outDir}' does not exist`));
+        console.error(pc.dim('  Please create the directory first or provide a valid path.'));
+        process.exit(EXIT.USAGE_ERROR);
+      }
+    }
 
     // Prevent path traversal to sensitive root directories (Linux/macOS)
     const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
@@ -320,6 +337,7 @@ program
         } else {
           (spinner as any).succeed(pc.green(`Successfully generated ${resolvedOutput} in ${result.renderTimeMs}ms`));
         }
+        
         
         if (options.verbose) {
           console.log(pc.dim('\n--- VERBOSE INFO ---'));

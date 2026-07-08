@@ -13,7 +13,22 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   const { input, output, paper, margin } = options;
 
   const inputPath = path.resolve(process.cwd(), input);
-  const rawMarkdown = await fs.readFile(inputPath, 'utf-8');
+  let rawMarkdown;
+  try {
+    rawMarkdown = await fs.readFile(inputPath, 'utf-8');
+  } catch (error: any) {
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    if (error.code === 'EACCES' || error.message.includes('Permission denied')) {
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+        'Permission Denied',
+        `Cannot read file '${inputPath}': Permission denied.`,
+        { markdownFile: inputPath },
+        error
+      );
+    }
+    throw error;
+  }
 
   let frontmatter: any;
   let markdown: string;
