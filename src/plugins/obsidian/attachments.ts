@@ -46,7 +46,7 @@ export async function getBase64DataUri(filePath: string, maxMb: number = 10): Pr
     const data = await fs.readFile(filePath);
     const mimeType = mime.lookup(filePath) || 'application/octet-stream';
     return `data:${mimeType};base64,${data.toString('base64')}`;
-  } catch (e) {
+  } catch {
     return null;
   }
 }

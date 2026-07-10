@@ -1,22 +1,16 @@
 import { visit } from 'unist-util-visit';
 
-function escapeHtml(str: string): string {
-  return str.replace(/[&<>'"]/g, tag => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[tag as keyof typeof escapeMap] || tag));
-}
-
-const escapeMap = {
+const escapeMap: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
   '>': '&gt;',
   "'": '&#39;',
   '"': '&quot;'
 };
+
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>'"]/g, tag => escapeMap[tag] || tag);
+}
 
 export default function remarkWikiLinks(options: { resolveLinks?: boolean } = {}) {
   return (tree: any) => {

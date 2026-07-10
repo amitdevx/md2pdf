@@ -34,7 +34,7 @@ function capitalize(s: string) {
 
 export default function rehypeCallouts() {
   return (tree: any) => {
-    visit(tree, 'element', (node, index, parent) => {
+    visit(tree, 'element', (node: any) => {
       if (node.tagName !== 'blockquote') return;
       if (!node.children || node.children.length === 0) return;
 

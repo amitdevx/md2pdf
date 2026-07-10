@@ -116,7 +116,7 @@ export async function resolveObsidianEmbeds(
                 }
               } else {
                 // Heading section
-                const escapedSection = section.replace(/[.*+?^$\{}()|[\]\\]/g, '\\$&');
+                const escapedSection = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const headingRegex = new RegExp(`^(#{1,6})\\s+${escapedSection}\\s*$([\\s\\S]*?)(?=^\\1\\s|$)`, 'im');
                 const hMatch = noteContent.match(headingRegex);
                 if (hMatch) {
@@ -162,7 +162,7 @@ export async function resolveObsidianEmbeds(
               newSeen
             );
 
-          } catch (e) {
+          } catch {
             replacement = `> [!FAILURE] Error Reading Note\n> Could not read \`${target}\`.`;
           }
         }

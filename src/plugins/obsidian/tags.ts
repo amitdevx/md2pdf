@@ -1,22 +1,16 @@
 import { visit } from 'unist-util-visit';
 
-function escapeHtml(str: string): string {
-  return str.replace(/[&<>'"]/g, tag => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[tag as keyof typeof escapeMap] || tag));
-}
-
-const escapeMap = {
+const escapeMap: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
   '>': '&gt;',
   "'": '&#39;',
   '"': '&quot;'
 };
+
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>'"]/g, tag => escapeMap[tag] || tag);
+}
 
 export default function remarkTags(options: { showTags?: boolean } = {}) {
   const showTags = options.showTags !== false;
@@ -26,7 +20,7 @@ export default function remarkTags(options: { showTags?: boolean } = {}) {
       if (!parent || typeof index !== 'number') return;
       const text = node.value;
       // Regex for tags: preceded by space or start of line, starts with #, contains word characters, hyphen, or slash
-      const regex = /(^|\s)#([a-zA-Z0-9_\-\/]+)(?=\s|$|[.,!?\)])/g;
+      const regex = /(^|\s)#([a-zA-Z0-9_/-]+)(?=\s|$|[.,!?)])/g;
       
       let match;
       let lastIndex = 0;
