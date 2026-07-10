@@ -5,14 +5,16 @@ import remarkHighlight from '../../src/plugins/obsidian/highlight.js';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import remarkGfm from 'remark-gfm';
+import remarkWikiLinks from '../../src/plugins/obsidian/wiki-links.js';
 
 function parse(md: string) {
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkWikiLinks as any)
     .use(remarkHighlight as any)
-    .use(remarkRehype)
-    .use(rehypeStringify);
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeStringify, { allowDangerousHtml: true });
 
   return String(processor.processSync(md)).trim();
 }
@@ -36,6 +38,10 @@ describe('remarkHighlight', () => {
 
   it('highlights links', () => {
     expect(parse('==[Google](https://google.com)==')).toBe('<p><mark><a href="https://google.com">Google</a></mark></p>');
+  });
+
+  it('highlights wiki-links', () => {
+    expect(parse('==[[Google]]==')).toBe('<p><mark><a class="wiki-link" data-target="Google" data-unresolved="true">Google</a></mark></p>');
   });
 
   it('highlights mixed sentence', () => {
