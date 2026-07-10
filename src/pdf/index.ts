@@ -26,7 +26,22 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     await page.route('**/*', (route: Route) => {
       const url = route.request().url();
       
-      if (url.includes('169.254.169.254') || url.includes('127.0.0.1') || url.includes('localhost')) {
+      const blockedPatterns = [
+        /^169\.254\.169\.254$/, /^127\.0\.0\.1$/, /^localhost$/,
+        /^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./,
+        /^::1$/, /^fc/, /^fe[89ab]/
+      ];
+      
+      const isBlocked = blockedPatterns.some(pattern => {
+        try {
+          const u = new URL(url);
+          return pattern.test(u.hostname);
+        } catch {
+          return pattern.test(url);
+        }
+      });
+
+      if (isBlocked) {
         return route.abort('accessdenied');
       }
       

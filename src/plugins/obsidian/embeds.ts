@@ -9,11 +9,12 @@ export async function resolveObsidianEmbeds(
   currentFilePath: string,
   maxEmbedDepth: number = 5,
   maxAttachmentSizeMb: number = 10,
+  warnings: string[] = [],
   seen: Set<string> = new Set()
 ): Promise<string> {
   // If we've hit the recursion limit, stop
   if (seen.size >= maxEmbedDepth) {
-    console.warn(`[md2pdf] Warning: Max embed depth reached (${maxEmbedDepth}). Stopping recursion.`);
+    warnings.push(`Max embed depth reached (${maxEmbedDepth}). Stopping recursion.`);
     return markdown;
   }
 
@@ -156,9 +157,10 @@ export async function resolveObsidianEmbeds(
               replacement,
               vaultRoot,
               attachmentFolder,
-              notePath, // The new "current" file
+              notePath,
               maxEmbedDepth,
               maxAttachmentSizeMb,
+              warnings,
               newSeen
             );
 
@@ -168,7 +170,7 @@ export async function resolveObsidianEmbeds(
         }
       }
     } else {
-      console.warn(`[md2pdf] Warning: attachment "${target}" not found`);
+      warnings.push(`attachment "${target}" not found`);
       replacement = `> [!FAILURE] Missing Attachment\n> \`${target}\` not found.`;
     }
 

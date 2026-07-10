@@ -84,6 +84,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     return `![${alt}](${fileUrl}${title ? ' ' + title : ''})`;
   });
 
+  const warnings: string[] = [];
+  
   // Resolve Obsidian Embeds
   processedMarkdown = await resolveObsidianEmbeds(
     processedMarkdown,
@@ -91,7 +93,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     options.obsidian?.attachmentFolder,
     inputPath,
     options.obsidian?.maxEmbedDepth,
-    options.obsidian?.maxAttachmentSizeMb
+    options.obsidian?.maxAttachmentSizeMb,
+    warnings
   );
 
   // Frontmatter title & date injection
@@ -99,12 +102,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   if (frontmatter.title && !processedMarkdown.match(/^#\s+/m)) {
     prependMarkdown += `# ${frontmatter.title}\n\n`;
   }
-  
-  if (frontmatter.date && options.obsidian?.showDate !== false) {
-    // If showDate is explicitly false, we don't render it. Otherwise we do.
-    prependMarkdown += `<div class="frontmatter-date">${frontmatter.date}</div>\n\n`;
+  if (frontmatter.date) {
+    const dateStr = new Date(frontmatter.date).toLocaleDateString();
+    prependMarkdown += `*${dateStr}*\n\n`;
   }
-
   processedMarkdown = prependMarkdown + processedMarkdown;
 
   const mermaidBlocks: any[] = []; // Using any to avoid importing MermaidBlock type here for now, or we can just let it be any array
@@ -213,7 +214,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     outputPath,
     pageCounts,
     renderTimeMs: Date.now() - startTime,
-    warnings: parsed.warnings,
+    warnings: [...warnings, ...parsed.warnings],
     metadata
   };
 }

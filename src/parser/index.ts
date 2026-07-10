@@ -105,7 +105,13 @@ export async function parseMarkdown(
     .process(markdown);
 
   // Add any warnings from unified itself
-  file.messages.forEach((msg: any) => warnings.push(msg.reason || msg.message));
+  file.messages.forEach((msg: any) => {
+    if (msg.source === 'rehype-katex' && msg.cause) {
+      warnings.push(`KaTeX warning (line ${msg.line || '?'}): ${msg.cause.message || msg.reason}`);
+    } else {
+      warnings.push(msg.reason || msg.message);
+    }
+  });
   
   return { html: String(file), warnings };
 }

@@ -29,7 +29,7 @@ export default new Command('doctor')
     const pkg = getPkgData();
     const results = {
       node: process.version,
-      playwright: pkg.dependencies.playwright || 'unknown',
+      playwright: pkg.dependencies['playwright-core'] || 'unknown',
       md2pdf: pkg.version,
       platform: process.platform,
       checks: {

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import { convert } from '../core/index.js';
 import ora from 'ora';
 import pc from 'picocolors';
@@ -127,8 +127,7 @@ program
   .option('--toc-depth <depth>', 'Maximum heading depth for TOC (1-6)', (val) => {
     const n = parseInt(val);
     if (isNaN(n) || n < 1 || n > 6) {
-      console.error(pc.red(`Invalid --toc-depth '${val}': must be a number between 1 and 6`));
-      process.exit(EXIT.USAGE_ERROR);
+      throw new InvalidArgumentError(`must be a number between 1 and 6`);
     }
     return n;
   })
@@ -140,15 +139,13 @@ program
   .option('--paper <format>', 'Page format: A4, Letter, Legal', (val) => {
     const valid = ['A4', 'Letter', 'Legal'];
     if (!valid.includes(val)) {
-      console.error(pc.red(`Invalid --paper '${val}': must be one of: A4, Letter, Legal`));
-      process.exit(EXIT.USAGE_ERROR);
+      throw new InvalidArgumentError(`must be one of: A4, Letter, Legal`);
     }
     return val;
   }, 'A4')
   .option('--margin <size>', 'Page margin (e.g. 20mm, 1in)', (val) => {
     if (!/^\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%)$/.test(val)) {
-      console.error(pc.red(`Invalid --margin '${val}': use CSS units like 20mm, 1in, 1.5cm`));
-      process.exit(EXIT.USAGE_ERROR);
+      throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm`);
     }
     return val;
   }, '20mm')
@@ -157,24 +154,21 @@ program
   .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)', (val) => {
     const valid = ['default', 'github', 'obsidian-light', 'obsidian-dark'];
     if (!valid.includes(val)) {
-      console.error(pc.red(`Invalid --theme '${val}': must be one of: ${valid.join(', ')}`));
-      process.exit(EXIT.USAGE_ERROR);
+      throw new InvalidArgumentError(`must be one of: ${valid.join(', ')}`);
     }
     return val;
   })
   .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)', (val) => {
     const valid = ['default', 'dark', 'base', 'neutral'];
     if (!valid.includes(val)) {
-      console.error(pc.red(`Invalid --mermaid-theme '${val}': must be one of: ${valid.join(', ')}`));
-      process.exit(EXIT.USAGE_ERROR);
+      throw new InvalidArgumentError(`must be one of: ${valid.join(', ')}`);
     }
     return val;
   })
   .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds', (val) => {
     const n = parseInt(val);
     if (isNaN(n) || n <= 0) {
-      console.error(pc.red(`Invalid --mermaid-timeout '${val}': must be a positive integer in milliseconds`));
-      process.exit(EXIT.USAGE_ERROR);
+      throw new InvalidArgumentError(`must be a positive integer in milliseconds`);
     }
     return n;
   })
@@ -189,8 +183,7 @@ program
   .option('--max-attachment-size <mb>', 'Max attachment size in MB (default: 10)', (val) => {
     const n = parseInt(val);
     if (isNaN(n) || n <= 0) {
-      console.error(pc.red(`Invalid --max-attachment-size '${val}': must be a positive integer`));
-      process.exit(EXIT.USAGE_ERROR);
+      throw new InvalidArgumentError(`must be a positive integer`);
     }
     return val;
   })
@@ -225,17 +218,7 @@ program
       }
     }
 
-    try {
-      fs.accessSync(input, fs.constants.R_OK);
-    } catch {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Permission denied: cannot read '${input}'`);
-      } else {
-        (spinner as any).fail(pc.red(`Permission denied: cannot read '${input}'`));
-        console.error(pc.dim(`  Check file permissions: ls -la ${input}`));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
+
 
     const stat = fs.statSync(input);
     if (stat.isDirectory()) {
@@ -252,6 +235,18 @@ program
         emitJsonErrorAndExit('ERR_INVALID_EXTENSION', 'Invalid Extension', `'${input}' is not a markdown file.`);
       } else {
         (spinner as any).fail(pc.red(`'${input}' is not a markdown file`));
+        process.exit(EXIT.USAGE_ERROR);
+      }
+    }
+
+    try {
+      fs.accessSync(input, fs.constants.R_OK);
+    } catch {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Permission denied: cannot read '${input}'`);
+      } else {
+        (spinner as any).fail(pc.red(`Permission denied: cannot read '${input}'`));
+        console.error(pc.dim(`  Check file permissions: ls -la ${input}`));
         process.exit(EXIT.USAGE_ERROR);
       }
     }
