@@ -44,10 +44,14 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 ```bash
 # Install globally
 npm install -g @amitdevx/md2pdf
+md2pdf init
 
 # Or use locally within a project
 npm install @amitdevx/md2pdf
+npx md2pdf init
 ```
+
+> **Note:** For security and compliance with npm v12 `allowScripts` defaults, we no longer automatically download browser binaries during install. You **must** run `md2pdf init` after installation to fetch the required Chromium dependencies.
 
 ## CLI Usage
 

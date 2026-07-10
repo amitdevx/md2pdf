@@ -10,15 +10,7 @@ export interface Recommendation {
 
 
 function getPlatformRecommendation(contextPlatform?: string): string {
-  const platform = contextPlatform || process.platform;
-  if (platform === 'linux') {
-    return 'sudo npx playwright install-deps';
-  } else if (platform === 'win32') {
-    return 'npx playwright install chromium';
-  } else {
-    // darwin or others
-    return 'npx playwright install chromium';
-  }
+  return 'md2pdf init';
 }
 
 export function getRecommendation(error: Md2PdfError): Recommendation | null {
@@ -27,8 +19,8 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
   switch (error.code) {
     case Md2PdfErrorCode.ERR_BROWSER_MISSING:
       return {
-        summary: 'Playwright needs to download the Chromium binary to generate PDFs.',
-        commands: ['npx playwright install chromium'],
+        summary: 'Playwright needs to download the Chromium binary to generate PDFs. Please run `md2pdf init` to install it.',
+        commands: ['npx md2pdf init'],
         docs: 'https://playwright.dev/docs/browsers'
       };
       
