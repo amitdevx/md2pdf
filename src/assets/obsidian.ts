@@ -63,4 +63,12 @@ export const obsidianCss = `
   font-size: 0.9em;
   margin-bottom: 2em;
 }
+
+/* Embeds */
+.markdown-embed {
+  border-left: 2px solid var(--md2pdf-color-border, #e1e4e8);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: inherit;
+}
 `;

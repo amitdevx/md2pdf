@@ -67,3 +67,24 @@ describe('Markdown Parser', () => {
     expect(html).toContain('<span class="tag">#nested/tag</span>');
   });
 });
+
+import { resolveObsidianEmbeds } from '../../src/plugins/obsidian/embeds.js';
+import path from 'node:path';
+
+describe('Obsidian Embeds Resolver', () => {
+  it('should detect circular dependencies and not crash', async () => {
+    const fixtureDir = path.resolve(process.cwd(), 'tests/fixtures');
+    const markdown = '![[vault/circular-1.md]]';
+    const resolved = await resolveObsidianEmbeds(markdown, fixtureDir, undefined, path.join(fixtureDir, 'test.md'));
+    
+    expect(resolved).toContain('Circular reference to');
+  });
+
+  it('should correctly transclude notes', async () => {
+    const fixtureDir = path.resolve(process.cwd(), 'tests/fixtures');
+    const markdown = '![[vault/embedded-note.md]]';
+    const resolved = await resolveObsidianEmbeds(markdown, fixtureDir, undefined, path.join(fixtureDir, 'test.md'));
+    
+    expect(resolved).toContain('This note is embedded.');
+  });
+});

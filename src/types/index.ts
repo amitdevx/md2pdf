@@ -40,6 +40,11 @@ export interface ConvertOptions {
     resolveLinks?: boolean;
     showTags?: boolean;
     showDate?: boolean;
+    vaultRoot?: string;
+    attachmentFolder?: string;
+    embedNotes?: boolean;
+    maxEmbedDepth?: number;
+    maxAttachmentSizeMb?: number;
   };
 }
 

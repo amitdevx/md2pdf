@@ -4,6 +4,7 @@ import { generatePdf } from '../pdf/index.js';
 import { ConvertOptions, ConvertResult, PdfMetadata } from '../types/index.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { resolveObsidianEmbeds } from '../plugins/obsidian/embeds.js';
 
 import matter from 'gray-matter';
 import { injectMetadata } from '../pdf/metadata.js';
@@ -57,14 +58,41 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   }
 
   const dir = path.dirname(inputPath);
-  let processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)/g, (match, alt, fullSrc) => {
+  let processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)(?:\{width=([^}]+)\}|\s*=([\dx]+))?/g, (match, alt, fullSrc, attrWidth, kramWidth) => {
     const parts = fullSrc.trim().split(/\s+/);
     const src = parts[0];
     const title = parts.slice(1).join(' ');
+    
+    // We can just keep file:// for now, but if embedNotes/attachments are enabled, we should probably base64 it.
+    // Wait, let's keep it as file:// for standard markdown images to not break existing behavior unless it fails.
+    // Actually, we should just let resolveObsidianEmbeds handle `![[...]]`. Standard images stay file:// for Playwright.
     const absPath = path.resolve(dir, decodeURIComponent(src));
     const fileUrl = 'file://' + encodeURI(absPath.replace(/\\/g, '/'));
+    
+    let sizing = '';
+    const widthRaw = attrWidth || kramWidth;
+    if (widthRaw) {
+      if (widthRaw.includes('x')) {
+        const [w, h] = widthRaw.split('x');
+        sizing = ` width="${w}"${h ? ` height="${h}"` : ''}`;
+      } else {
+        sizing = ` width="${widthRaw.replace(/[^0-9%]/g, '')}"`;
+      }
+      return `<img src="${fileUrl}" alt="${alt}"${title ? ` title="${title.replace(/['"]/g, '')}"` : ''}${sizing} />`;
+    }
+    
     return `![${alt}](${fileUrl}${title ? ' ' + title : ''})`;
   });
+
+  // Resolve Obsidian Embeds
+  processedMarkdown = await resolveObsidianEmbeds(
+    processedMarkdown,
+    options.obsidian?.vaultRoot || dir,
+    options.obsidian?.attachmentFolder,
+    inputPath,
+    options.obsidian?.maxEmbedDepth,
+    options.obsidian?.maxAttachmentSizeMb
+  );
 
   // Frontmatter title & date injection
   let prependMarkdown = '';
