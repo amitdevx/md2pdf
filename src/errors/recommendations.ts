@@ -9,12 +9,11 @@ export interface Recommendation {
 
 
 
-function getPlatformRecommendation(contextPlatform?: string): string {
+function getPlatformRecommendation(): string {
   return 'md2pdf init';
 }
 
 export function getRecommendation(error: Md2PdfError): Recommendation | null {
-  const platform = error.context.platform || process.platform;
   
   switch (error.code) {
     case Md2PdfErrorCode.ERR_BROWSER_MISSING:
@@ -29,7 +28,7 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
       const libString = libs && libs.length > 0 ? ` (e.g., ${libs[0]})` : '';
       return {
         summary: `Your system is missing shared libraries${libString} required to run Chromium.`,
-        commands: [getPlatformRecommendation(platform)],
+        commands: [getPlatformRecommendation()],
       };
     }
 

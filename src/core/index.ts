@@ -174,10 +174,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   let browser;
   try {
-    const { chromium } = await import('playwright');
-    browser = await chromium.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--js-flags="--max-old-space-size=256"'],
-    });
+    const { getBrowser } = await import('../pdf/browser.js');
+    browser = await getBrowser();
 
     const { processBeforeRender } = await import('../renderer/pipeline.js');
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, {

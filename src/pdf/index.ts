@@ -1,4 +1,5 @@
-import { chromium, Browser } from 'playwright';
+import { Browser, Route } from 'playwright-core';
+import { getBrowser } from './browser.js';
 
 export interface PdfOptions {
   html: string;
@@ -14,9 +15,7 @@ export interface PdfOptions {
 }
 
 export async function generatePdf(options: PdfOptions): Promise<void> {
-  const browser = options.browser || await chromium.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  const browser = options.browser || await getBrowser();
 
   try {
     const context = await browser.newContext({
@@ -24,7 +23,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     });
     const page = await context.newPage();
 
-    await page.route('**/*', route => {
+    await page.route('**/*', (route: Route) => {
       const url = route.request().url();
       
       if (url.includes('169.254.169.254') || url.includes('127.0.0.1') || url.includes('localhost')) {

@@ -48,26 +48,16 @@ export default new Command('doctor')
       { name: `Playwright (${results.playwright})`, status: true },
     ];
 
-    let browser: import('playwright').Browser | undefined;
-    let page: import('playwright').Page | undefined;
+    let browser: import('playwright-core').Browser | undefined;
+    let page: import('playwright-core').Page | undefined;
     let mdError: Md2PdfError | null = null;
 
     try {
-      const { chromium } = await import('playwright');
-      const executablePath = chromium.executablePath();
-      results.checks.browserInstalled = fs.existsSync(executablePath);
-
-      if (results.checks.browserInstalled) {
-        checks.push({ name: `Chromium exists at ${executablePath}`, status: true });
-      } else {
-        throw new Error('Executable doesn\'t exist');
-      }
-
-      browser = await chromium.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
+      const { getBrowser } = await import('../pdf/browser.js');
+      browser = await getBrowser();
+      results.checks.browserInstalled = true;
+      checks.push({ name: `Compatible browser found and launched`, status: true });
       results.checks.browserLaunch = true;
-      checks.push({ name: 'Browser launch', status: true });
 
       page = await browser.newPage();
       await page.setContent('<h1>Test</h1>');

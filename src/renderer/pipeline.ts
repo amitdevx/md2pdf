@@ -1,4 +1,4 @@
-import { Browser } from 'playwright';
+import { Browser } from 'playwright-core';
 import { MermaidBlock, renderMermaidBlocks, inlineMermaidSvgs } from '../plugins/mermaid/index.js';
 
 import { MermaidTheme } from '../plugins/mermaid/theme-map.js';

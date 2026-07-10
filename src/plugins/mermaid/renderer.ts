@@ -1,4 +1,4 @@
-import { Browser } from 'playwright';
+import { Browser } from 'playwright-core';
 
 import { MermaidBlock } from './detector.js';
 import { createRequire } from 'node:module';
