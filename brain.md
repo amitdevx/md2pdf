@@ -4,7 +4,7 @@
 > Any AI agent reading this file should be able to understand, modify, build, test,
 > and extend the project without reading any other file.
 >
-> **Last updated:** 2026-07-08 (v0.3.0)
+> **Last updated:** 2026-07-10 (v0.4.0)
 
 ---
 

@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-10
+
+### Added
+- Complete Obsidian Markdown interoperability layer (v0.4.0 & v0.4.1 phase plans).
+- Transclusion and embedding of external markdown notes (`![[note.md]]`) and images.
+- Full cycle detection and warning fallback for infinite circular embeds (`circular-1.md` -> `circular-2.md`).
+- Clickable and natively styled internal Wiki links (`[[Link]]` and `[[Link|Alias]]`).
+- 10 variations of Obsidian-styled blockquote callouts (`> [!WARNING]`).
+- Inline and nested tags (`#tag`, `#nested/tag`) with dynamic styling (hiding supported via `--hide-tags`).
+- Template variable injection in headers and footers (e.g. `{frontmatter.author}`).
+- CLI flags for vault awareness: `--vault-root`, `--attachment-folder`, `--max-attachment-size`.
+
+## [0.3.0] - 2026-07-08
+
+### Added
+- Native support for Math blocks (KaTeX) using `remark-math` and `rehype-katex`.
+- Support for mhchem plugin for chemical equations (`\ce{H2O}`).
+- CLI option `--no-math` to disable Math rendering.
+
+## [0.2.0] - 2026-07-03
+
+### Added
+- Mermaid diagram rendering using headless Playwright evaluation.
+- SVG inlining for lossless, selectable Mermaid graphs in the PDF.
+- Theme overrides for Mermaid diagrams via `--mermaid-theme`.
+
 ## [0.1.6] - 2026-06-29
 
 ### Added
