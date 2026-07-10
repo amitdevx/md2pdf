@@ -9,6 +9,13 @@ export const obsidianCss = `
 .wiki-link[data-unresolved="true"] {
   color: #888888;
 }
+/* Highlights */
+mark {
+  background: #fff59d;
+  color: inherit;
+  padding: 0.05em 0.15em;
+  border-radius: 2px;
+}
 
 /* Callouts */
 .callout {

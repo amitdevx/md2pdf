@@ -13,6 +13,7 @@ import rehypePageBreaks from '../plugins/page-breaks.js';
 
 import remarkWikiLinks from '../plugins/obsidian/wiki-links.js';
 import remarkTags from '../plugins/obsidian/tags.js';
+import remarkHighlight from '../plugins/obsidian/highlight.js';
 import rehypeCallouts from '../plugins/obsidian/callouts.js';
 
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
@@ -57,7 +58,8 @@ export async function parseMarkdown(
   let processor: any = unified()
     .use(remarkParse)
     .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
-    .use(remarkTags as any, { showTags: options?.obsidian?.showTags });
+    .use(remarkTags as any, { showTags: options?.obsidian?.showTags })
+    .use(remarkHighlight as any);
 
   if (options?.math?.enabled !== false) {
     processor = processor.use(remarkMath as any);
