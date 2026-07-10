@@ -20,7 +20,8 @@
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.3.0)
+### Available (v0.4.0)
+- **Obsidian Compatibility (New in v0.4.0):** Native parsing and rendering for callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), and YAML frontmatter.
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Math Rendering (New in v0.3.0):** Print-perfect LaTeX inline and display math via KaTeX. Full support for matrices, environments, and macros with zero-dependency embedded fonts.
 - **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
@@ -35,7 +36,6 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
 ### Coming Soon
-- **Obsidian Compatibility:** Support for wiki links, callouts, and embeds.
 - **Configuration and Theming:** Advanced CLI options and custom CSS themes.
 - **Plugin System:** Extensible architecture for custom rendering logic.
 
