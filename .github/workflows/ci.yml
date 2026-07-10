@@ -8,10 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [18.x, 20.x]
         
     steps:
@@ -27,7 +28,12 @@ jobs:
       run: npm ci
       
     - name: Install Playwright browsers
-      run: npx playwright install --with-deps chromium
+      run: |
+        npx playwright-core install chromium
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          npx playwright-core install-deps chromium
+        fi
+      shell: bash
       
     - name: Typecheck
       run: npm run typecheck
