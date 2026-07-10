@@ -15,11 +15,28 @@ export default new Command('init')
     spinner = ora('Checking Playwright installation...').start();
     
     try {
-      const { getBrowser } = await import('../pdf/browser.js');
-      const browser = await getBrowser();
-      await browser.close();
-      spinner.succeed('Playwright browser is ready');
-      
+      const { getBrowser, isMissingExecutableError } = await import('../pdf/browser.js');
+      try {
+        const browser = await getBrowser();
+        await browser.close();
+        spinner.succeed('Playwright browser is ready');
+      } catch (err) {
+        if (!isMissingExecutableError(err)) {
+          spinner.fail('Browser is installed but crashed during launch');
+          const { detectBrowserError } = await import('../errors/detect.js');
+          const { getRecommendation } = await import('../errors/recommendations.js');
+          const mdError = detectBrowserError(err);
+          console.error(pc.red(`\nError: ${mdError.title}`));
+          console.error(mdError.reason);
+          const rec = getRecommendation(mdError);
+          if (rec) {
+            console.error(pc.yellow('\nRecommendation: ' + rec.summary));
+            rec.commands.forEach((c: string) => console.error(pc.cyan(`  ${c}`)));
+          }
+          process.exit(EXIT.ENVIRONMENT_ERROR);
+        }
+        throw new Error('missing');
+      }
     } catch {
       spinner.fail('Chromium browser missing');
       console.log(pc.cyan('\nDownloading Chromium for md2pdf. This may take a minute...'));
