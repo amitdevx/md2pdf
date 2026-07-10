@@ -128,8 +128,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     ...options.metadata,
     title,
     author: options.metadata?.author ?? frontmatter.author,
-    subject: options.metadata?.subject ?? frontmatter.subject,
-    keywords: options.metadata?.keywords ?? (Array.isArray(frontmatter.keywords) ? frontmatter.keywords.join(', ') : frontmatter.keywords),
+    subject: options.metadata?.subject ?? frontmatter.description ?? frontmatter.subject,
+    keywords: options.metadata?.keywords ?? (Array.isArray(frontmatter.tags) ? frontmatter.tags.join(', ') : frontmatter.tags) ?? (Array.isArray(frontmatter.keywords) ? frontmatter.keywords.join(', ') : frontmatter.keywords),
     creationDate: options.metadata?.creationDate ?? (frontmatter.date ? new Date(frontmatter.date) : undefined),
   };
 
@@ -142,6 +142,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     marginTop = '30mm';
     if (typeof options.header === 'object' && options.header.template) {
       headerTemplate = options.header.template;
+      // Replace {frontmatter.X} with actual values
+      headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
     } else {
       headerTemplate = `
       <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; border-bottom: 0.5px solid #ccc; margin-bottom: 5mm; padding-bottom: 2mm;">
@@ -160,6 +162,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     marginBottom = '30mm';
     if (typeof options.footer === 'object' && options.footer.template) {
       footerTemplate = options.footer.template;
+      // Replace {frontmatter.X} with actual values
+      footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
     } else {
       footerTemplate = `
       <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: center; border-top: 0.5px solid #ccc; margin-top: 5mm; padding-top: 2mm;">

@@ -46,8 +46,8 @@ describe('Markdown Parser', () => {
     const markdown = '[[Page Name]] and [[Page Name|Alias]]';
     const { html } = await parseMarkdown(markdown);
     
-    expect(html).toContain('<span class="wiki-link" data-target="Page Name" data-unresolved="true">Page Name</span>');
-    expect(html).toContain('<span class="wiki-link" data-target="Page Name" data-unresolved="true">Alias</span>');
+    expect(html).toContain('<a class="wiki-link" data-target="Page Name" data-unresolved="true">Page Name</a>');
+    expect(html).toContain('<a class="wiki-link" data-target="Page Name" data-unresolved="true">Alias</a>');
   });
 
   it('should parse Obsidian callouts', async () => {

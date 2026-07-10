@@ -9,6 +9,7 @@ coverage/
 .npm/
 playwright-report/
 test-results/
+test-outputs
 artifacts/
 tmp/
 .cache/

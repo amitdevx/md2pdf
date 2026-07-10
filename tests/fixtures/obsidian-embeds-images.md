@@ -1,13 +1,13 @@
 # Obsidian Image Embeds
 
 Basic embed:
-![[sample.svg]]
+![[vault/assets/sample.svg]]
 
 Embed with width:
-![[sample.svg|50]]
+![[vault/assets/sample.svg|50]]
 
 Embed with exact dimensions:
-![[sample.svg|50x50]]
+![[vault/assets/sample.svg|50x50]]
 
 Missing image:
 ![[does-not-exist.png]]

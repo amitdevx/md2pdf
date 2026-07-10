@@ -44,7 +44,16 @@ export default function remarkWikiLinks(options: { resolveLinks?: boolean } = {}
         }
 
         const resolvedStr = options.resolveLinks ? "" : ' data-unresolved="true"';
-        const htmlString = `<span class="wiki-link" data-target="${escapeHtml(target)}"${resolvedStr}>${escapeHtml(display)}</span>`;
+        
+        let htmlString = '';
+        if (options.resolveLinks) {
+          // If resolveLinks is enabled, try to make it a clickable internal link
+          const slug = target.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          htmlString = `<a href="#${slug}" class="wiki-link" data-target="${escapeHtml(target)}"${resolvedStr}>${escapeHtml(display)}</a>`;
+        } else {
+          // Otherwise, it's just a styled span that looks like a link
+          htmlString = `<a class="wiki-link" data-target="${escapeHtml(target)}"${resolvedStr}>${escapeHtml(display)}</a>`;
+        }
 
         newChildren.push({ type: 'html', value: htmlString });
 

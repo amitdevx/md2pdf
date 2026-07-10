@@ -54,6 +54,11 @@ interface CliOptions {
   debug?: boolean;
   verbose?: boolean;
   jsonErrors?: boolean;
+  hideTags?: boolean;
+  resolveLinks?: boolean;
+  vaultRoot?: string;
+  attachmentFolder?: string;
+  maxAttachmentSize?: string;
 }
 
 function renderCliError(err: Md2PdfError, options: CliOptions) {
@@ -177,6 +182,18 @@ program
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--json-errors', 'Output errors in JSON format')
+  .option('--hide-tags', 'Hide inline Obsidian tags in PDF output')
+  .option('--resolve-links', 'Attempt to visually indicate resolvable vs unresolvable wiki links')
+  .option('--vault-root <path>', 'Path to the Obsidian vault root directory')
+  .option('--attachment-folder <path>', 'Default attachment folder for unresolved embeds')
+  .option('--max-attachment-size <mb>', 'Max attachment size in MB (default: 10)', (val) => {
+    const n = parseInt(val);
+    if (isNaN(n) || n <= 0) {
+      console.error(pc.red(`Invalid --max-attachment-size '${val}': must be a positive integer`));
+      process.exit(EXIT.USAGE_ERROR);
+    }
+    return val;
+  })
   .action(async (input: string, options: CliOptions) => {
     const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
       console.log(JSON.stringify({
@@ -328,6 +345,13 @@ program
           hrAsPageBreak: options.hrPageBreak ?? false,
           h1NewPage: options.h1NewPage ?? false,
         },
+        obsidian: {
+          showTags: !options.hideTags,
+          resolveLinks: options.resolveLinks,
+          vaultRoot: options.vaultRoot,
+          attachmentFolder: options.attachmentFolder,
+          maxAttachmentSizeMb: options.maxAttachmentSize ? parseInt(options.maxAttachmentSize as string) : undefined,
+        }
       });
 
       if (!options.jsonErrors) {
