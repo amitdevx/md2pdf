@@ -44,19 +44,19 @@ describe('CLI End-to-End Tests', () => {
   it('should fail on invalid --toc-depth with exit code 1', () => {
     const result = runCli(`README.md --toc-depth abc`);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Invalid --toc-depth');
+    expect(result.stderr).toContain("error: option '--toc-depth <depth>' argument 'abc' is invalid.");
   });
 
   it('should fail on invalid --paper with exit code 1', () => {
     const result = runCli(`README.md --paper garbage`);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Invalid --paper');
+    expect(result.stderr).toContain("error: option '--paper <format>' argument 'garbage' is invalid.");
   });
 
   it('should fail on invalid --margin with exit code 1', () => {
     const result = runCli(`README.md --margin abc`);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Invalid --margin');
+    expect(result.stderr).toContain("error: option '--margin <size>' argument 'abc' is invalid.");
   });
 
   it('should fail on same input and output with exit code 1', () => {
