@@ -8,7 +8,8 @@ export function isMissingExecutableError(err: unknown): boolean {
 
 export async function getBrowser(): Promise<Browser> {
   const inCI = process.env.CI || process.env.DOCKER || !process.env.DISPLAY;
-  const sandboxArgs = inCI ? ['--no-sandbox', '--disable-setuid-sandbox'] : [];
+  const isRoot = process.getuid && process.getuid() === 0;
+  const sandboxArgs = (inCI || isRoot) ? ['--no-sandbox', '--disable-setuid-sandbox'] : [];
   
   const launchOptions = {
     args: [...sandboxArgs, '--disable-gpu', '--js-flags="--max-old-space-size=256"'],
