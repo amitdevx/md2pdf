@@ -41,4 +41,29 @@ describe('Markdown Parser', () => {
     // Manual page break
     expect(html).toContain('<div class="md2pdf-page-break" style="page-break-before: always;"></div>');
   });
+
+  it('should parse Obsidian wiki links', async () => {
+    const markdown = '[[Page Name]] and [[Page Name|Alias]]';
+    const { html } = await parseMarkdown(markdown);
+    
+    expect(html).toContain('<span class="wiki-link" data-target="Page Name" data-unresolved="true">Page Name</span>');
+    expect(html).toContain('<span class="wiki-link" data-target="Page Name" data-unresolved="true">Alias</span>');
+  });
+
+  it('should parse Obsidian callouts', async () => {
+    const markdown = '> [!WARNING] Custom Title\n> Body text';
+    const { html } = await parseMarkdown(markdown);
+    
+    expect(html).toContain('<div class="callout" data-type="warning">');
+    expect(html).toContain('<span class="callout-title-text">Custom Title</span>');
+    expect(html).toContain('Body text');
+  });
+
+  it('should parse Obsidian tags', async () => {
+    const markdown = 'This is a #tag and #nested/tag.';
+    const { html } = await parseMarkdown(markdown);
+    
+    expect(html).toContain('<span class="tag">#tag</span>');
+    expect(html).toContain('<span class="tag">#nested/tag</span>');
+  });
 });

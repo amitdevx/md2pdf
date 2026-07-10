@@ -36,6 +36,11 @@ export interface ConvertOptions {
     macros?: Record<string, string>;
     strict?: boolean;
   };
+  obsidian?: {
+    resolveLinks?: boolean;
+    showTags?: boolean;
+    showDate?: boolean;
+  };
 }
 
 export interface ConvertResult {

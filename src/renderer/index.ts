@@ -1,5 +1,6 @@
 import { baseCss, printCss } from '../assets/css.js';
 import { katexCss } from '../assets/katex.js';
+import { obsidianCss } from '../assets/obsidian.js';
 
 function escapeHtml(str: string): string {
   return str.replace(/[&<>'"]/g, tag => ({
@@ -11,8 +12,9 @@ function escapeHtml(str: string): string {
   }[tag] || tag));
 }
 
-export function renderHtmlTemplate(contentHtml: string, title: string = 'Document'): string {
+export function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string }): string {
   const safeTitle = escapeHtml(title);
+  const bodyClass = options?.cssclass ? ` class="${escapeHtml(options.cssclass)}"` : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,9 +28,10 @@ export function renderHtmlTemplate(contentHtml: string, title: string = 'Documen
     ${baseCss}
     ${printCss}
     ${katexCss}
+    ${obsidianCss}
   </style>
 </head>
-<body>
+<body${bodyClass}>
   <div class="markdown-body">
     ${contentHtml}
   </div>

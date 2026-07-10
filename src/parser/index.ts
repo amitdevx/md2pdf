@@ -11,6 +11,10 @@ import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/toc.js';
 import rehypePageBreaks from '../plugins/page-breaks.js';
 
+import remarkWikiLinks from '../plugins/obsidian/wiki-links.js';
+import remarkTags from '../plugins/obsidian/tags.js';
+import rehypeCallouts from '../plugins/obsidian/callouts.js';
+
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
 import { visit } from 'unist-util-visit';
 
@@ -41,12 +45,19 @@ export async function parseMarkdown(
       macros?: Record<string, string>;
       strict?: boolean;
     };
+    obsidian?: {
+      resolveLinks?: boolean;
+      showTags?: boolean;
+    };
   }
 ): Promise<{ html: string; warnings: string[] }> {
   const warnings: string[] = [];
   const mermaidBlocks = options?.mermaidBlocks || [];
   
-  let processor: any = unified().use(remarkParse);
+  let processor: any = unified()
+    .use(remarkParse)
+    .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
+    .use(remarkTags as any, { showTags: options?.obsidian?.showTags });
 
   if (options?.math?.enabled !== false) {
     processor = processor.use(remarkMath as any);
@@ -69,6 +80,7 @@ export async function parseMarkdown(
 
   const file = await processor
     .use(rehypeSlug)
+    .use(rehypeCallouts as any)
     .use(rehypePageBreaks, options?.pageBreaks)
     .use(rehypeToc, {
       enable: options?.toc,

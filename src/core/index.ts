@@ -57,7 +57,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   }
 
   const dir = path.dirname(inputPath);
-  const processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)/g, (match, alt, fullSrc) => {
+  let processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)/g, (match, alt, fullSrc) => {
     const parts = fullSrc.trim().split(/\s+/);
     const src = parts[0];
     const title = parts.slice(1).join(' ');
@@ -65,6 +65,19 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const fileUrl = 'file://' + encodeURI(absPath.replace(/\\/g, '/'));
     return `![${alt}](${fileUrl}${title ? ' ' + title : ''})`;
   });
+
+  // Frontmatter title & date injection
+  let prependMarkdown = '';
+  if (frontmatter.title && !processedMarkdown.match(/^#\s+/m)) {
+    prependMarkdown += `# ${frontmatter.title}\n\n`;
+  }
+  
+  if (frontmatter.date && options.obsidian?.showDate !== false) {
+    // If showDate is explicitly false, we don't render it. Otherwise we do.
+    prependMarkdown += `<div class="frontmatter-date">${frontmatter.date}</div>\n\n`;
+  }
+
+  processedMarkdown = prependMarkdown + processedMarkdown;
 
   const mermaidBlocks: any[] = []; // Using any to avoid importing MermaidBlock type here for now, or we can just let it be any array
 
@@ -74,10 +87,12 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     tocTitle: options.tocTitle,
     pageBreaks: options.pageBreaks,
     mermaidBlocks,
+    math: options.math,
+    obsidian: options.obsidian,
   });
 
   const title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
-  const html = renderHtmlTemplate(parsed.html, title);
+  const html = renderHtmlTemplate(parsed.html, title, { cssclass: frontmatter.cssclass });
 
   const outputPath = path.resolve(process.cwd(), output);
 
