@@ -1,0 +1,8 @@
+
+Playwright version: 1.61.1
+  Browsers:
+    /home/runner/.cache/ms-playwright/chromium-1228
+    /home/runner/.cache/ms-playwright/chromium_headless_shell-1228
+    /home/runner/.cache/ms-playwright/ffmpeg-1011
+  References:
+    /home/runner/work/md2pdf/md2pdf/node_modules/playwright-core

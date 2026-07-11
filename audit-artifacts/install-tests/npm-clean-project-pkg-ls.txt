@@ -1,0 +1,3 @@
+md2pdf-install-npm-clean-project@1.0.0 /tmp/md2pdf-install-npm-clean-project
+└── @amitdevx/md2pdf@0.4.1
+

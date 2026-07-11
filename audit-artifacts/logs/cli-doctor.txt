@@ -1,0 +1,14 @@
+[1m
+⚕️  md2pdf System Health Check
+[22m
+  [32m✔[39m Node.js (v22.23.1)
+  [32m✔[39m md2pdf (0.2.4)
+  [32m✔[39m Playwright (^1.40.0)
+  [32m✔[39m Chromium exists at /home/runner/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome
+  [32m✔[39m Browser launch
+  [32m✔[39m HTML render
+  [32m✔[39m PDF generate
+  [32m✔[39m Filesystem write
+
+[32mEverything is OK![39m Your system is ready to generate PDFs.
+

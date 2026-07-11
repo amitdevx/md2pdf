@@ -1,0 +1,37 @@
+phase	id	cmd	exit	elapsed_s	maxrss_kb
+input	missing_file	node dist/cli/index.js audit-artifacts/input-tests/missing.md	1	Command exited with non-zero status 1
+0.82	180724
+input	empty	node dist/cli/index.js audit-artifacts/input-tests/empty.md -o audit-artifacts/output-tests/out/empty.pdf	0	6.77	364732
+input	utf8	node dist/cli/index.js audit-artifacts/input-tests/utf8.md -o audit-artifacts/output-tests/out/utf8.pdf	0	7.60	365368
+input	utf16	node dist/cli/index.js audit-artifacts/input-tests/utf16.md -o audit-artifacts/output-tests/out/utf16.pdf	0	6.44	364452
+input	invalid_encoding	node dist/cli/index.js audit-artifacts/input-tests/invalid-encoding.md -o audit-artifacts/output-tests/out/invalid-encoding.pdf	0	6.97	364032
+input	binary	node dist/cli/index.js audit-artifacts/input-tests/binary.md -o audit-artifacts/output-tests/out/binary.pdf	0	7.31	364628
+input	huge	node dist/cli/index.js audit-artifacts/input-tests/huge.md -o audit-artifacts/output-tests/out/huge.pdf	134	Command terminated by signal 6
+63.34	4502468
+input	long_filename	node dist/cli/index.js audit-artifacts/input-tests/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.md -o audit-artifacts/output-tests/out/longname.pdf	0	7.00	365988
+input	symlink	node dist/cli/index.js audit-artifacts/input-tests/symlink.md -o audit-artifacts/output-tests/out/symlink.pdf	0	7.55	363304
+input	directory	node dist/cli/index.js audit-artifacts/input-tests	1	Command exited with non-zero status 1
+0.84	181056
+output	missing_dir	node dist/cli/index.js tests/fixtures/basic.md -o audit-artifacts/output-tests/missing/sub/out.pdf	0	7.39	364140
+output	readonly	node dist/cli/index.js tests/fixtures/basic.md -o audit-artifacts/output-tests/readonly/out.pdf	2	Command exited with non-zero status 2
+6.93	364092
+output	overwrite1	node dist/cli/index.js tests/fixtures/basic.md -o audit-artifacts/output-tests/out/overwrite.pdf	0	7.28	364084
+output	overwrite2	node dist/cli/index.js tests/fixtures/basic.md -o audit-artifacts/output-tests/out/overwrite.pdf	0	7.48	364212
+output	unicode_out	node dist/cli/index.js tests/fixtures/basic.md -o audit-artifacts/output-tests/out/输出.pdf	0	6.85	365472
+output	abs_out	node dist/cli/index.js tests/fixtures/basic.md -o /home/runner/work/md2pdf/md2pdf/audit-artifacts/output-tests/out/absout.pdf	0	7.11	363472
+output	windows_out	node dist/cli/index.js tests/fixtures/basic.md -o C:\tmp\foo.pdf	0	6.71	364580
+render	code	node dist/cli/index.js 'audit-artifacts/render-fixtures/code.md' -o audit-artifacts/render-out/code.pdf	0	6.70	364844
+render	deflists	node dist/cli/index.js 'audit-artifacts/render-fixtures/deflists.md' -o audit-artifacts/render-out/deflists.pdf	0	6.38	363940
+render	footnotes	node dist/cli/index.js 'audit-artifacts/render-fixtures/footnotes.md' -o audit-artifacts/render-out/footnotes.pdf	0	6.60	362536
+render	headers	node dist/cli/index.js 'audit-artifacts/render-fixtures/headers.md' -o audit-artifacts/render-out/headers.pdf	0	6.53	364580
+render	html	node dist/cli/index.js 'audit-artifacts/render-fixtures/html.md' -o audit-artifacts/render-out/html.pdf	0	6.10	364204
+render	images-svg	node dist/cli/index.js 'audit-artifacts/render-fixtures/images-svg.md' -o audit-artifacts/render-out/images-svg.pdf	0	7.81	363724
+render	links	node dist/cli/index.js 'audit-artifacts/render-fixtures/links.md' -o audit-artifacts/render-out/links.pdf	0	6.40	363840
+render	lists	node dist/cli/index.js 'audit-artifacts/render-fixtures/lists.md' -o audit-artifacts/render-out/lists.pdf	0	6.04	365372
+render	malformed	node dist/cli/index.js 'audit-artifacts/render-fixtures/malformed.md' -o audit-artifacts/render-out/malformed.pdf	0	6.19	364092
+render	math	node dist/cli/index.js 'audit-artifacts/render-fixtures/math.md' -o audit-artifacts/render-out/math.pdf	0	6.37	363992
+render	obsidian	node dist/cli/index.js 'audit-artifacts/render-fixtures/obsidian.md' -o audit-artifacts/render-out/obsidian.pdf	0	6.44	365632
+render	quotes-hr	node dist/cli/index.js 'audit-artifacts/render-fixtures/quotes-hr.md' -o audit-artifacts/render-out/quotes-hr.pdf	0	6.51	364608
+render	raw-html	node dist/cli/index.js 'audit-artifacts/render-fixtures/raw-html.md' -o audit-artifacts/render-out/raw-html.pdf	0	6.17	364760
+render	tables	node dist/cli/index.js 'audit-artifacts/render-fixtures/tables.md' -o audit-artifacts/render-out/tables.pdf	0	6.05	365192
+render	tasklists	node dist/cli/index.js 'audit-artifacts/render-fixtures/tasklists.md' -o audit-artifacts/render-out/tasklists.pdf	0	6.14	364520

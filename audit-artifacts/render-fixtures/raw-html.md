@@ -1,0 +1,1 @@
+<script>alert(1)</script><style>body{color:red}</style>

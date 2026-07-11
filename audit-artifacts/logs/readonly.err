@@ -1,0 +1,18 @@
+- Converting markdown to PDF...
+✖ [31mConversion failed[39m
+
+[2m────────────────────────────────────────[22m
+[31m✖ Permission Denied[39m
+The browser executable cannot be accessed due to restrictive filesystem permissions.
+[33m
+Reason[39m
+The browser executable lacks execution permissions, or the user running md2pdf does not have access.
+[32m
+Recommendation[39m
+  chmod -R 755 ~/.cache/ms-playwright/
+[36m
+Error Code: ERR_PERMISSION_DENIED[39m
+[2m
+Run with --verbose or --debug for more information, or try `md2pdf doctor`[22m
+[2m────────────────────────────────────────
+[22m

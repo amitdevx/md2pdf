@@ -1,0 +1,8 @@
+{
+  "success": false,
+  "error": {
+    "code": "ERR_INPUT_NOT_FOUND",
+    "title": "File Not Found",
+    "reason": "Input file 'does-not-exist.md' does not exist."
+  }
+}

@@ -1,0 +1,34 @@
+Usage: md2pdf [options] [command] <input>
+
+Production-quality Markdown to PDF rendering engine
+
+Arguments:
+  input                         Input markdown file
+
+Options:
+  -V, --version                 output the version number
+  -o, --output <output>         Output PDF file
+  --toc                         Generate a Table of Contents
+  --toc-depth <depth>           Maximum heading depth for TOC (1-6)
+  --toc-title <title>           Title for the TOC section
+  --header                      Enable default running header
+  --footer                      Enable default running footer
+  --header-template <template>  Custom HTML template for header
+  --footer-template <template>  Custom HTML template for footer
+  --paper <format>              Page format: A4, Letter, Legal (default: "A4")
+  --margin <size>               Page margin (e.g. 20mm, 1in) (default: "20mm")
+  --hr-page-break               Treat --- as a page break
+  --h1-new-page                 Force a page break before each H1 heading
+  --theme <theme>               Active md2pdf theme (default, github,
+                                obsidian-light, etc.)
+  --mermaid-theme <theme>       Override theme for Mermaid diagrams (default,
+                                dark, base, neutral)
+  --mermaid-timeout <ms>        Timeout for Mermaid rendering in milliseconds
+  --debug                       Enable debug diagnostics
+  --verbose                     Enable verbose output
+  --json-errors                 Output errors in JSON format
+  -h, --help                    display help for command
+
+Commands:
+  doctor [options]              Check system health and prerequisites
+  init                          Interactive guided setup for new environments

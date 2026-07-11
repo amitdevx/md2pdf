@@ -1,0 +1,21 @@
+- Converting markdown to PDF...
+
+<--- Last few GCs --->
+
+[12578:0x29f5f000]    40567 ms: Scavenge (interleaved) 3695.9 (4030.1) -> 3680.3 (4030.1) MB, pooled: 11 MB, 7.11 / 0.00 ms  (average mu = 0.163, current mu = 0.065) allocation failure; 
+[12578:0x29f5f000]    42697 ms: Mark-Compact 3740.5 (4083.5) -> 3551.8 (3899.1) MB, pooled: 14 MB, 2117.59 / 0.00 ms  (average mu = 0.100, current mu = 0.023) allocation failure; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0xe46bbe node::OOMErrorHandler(char const*, v8::OOMDetails const&) [node]
+ 2: 0x1243740 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [node]
+ 3: 0x1243a17 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [node]
+ 4: 0x1472925  [node]
+ 5: 0x1472953  [node]
+ 6: 0x148ba2a  [node]
+ 7: 0x148ebf8  [node]
+ 8: 0x1cf7781  [node]

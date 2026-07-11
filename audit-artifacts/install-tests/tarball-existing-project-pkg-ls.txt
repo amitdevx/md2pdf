@@ -1,0 +1,3 @@
+md2pdf-install-tarball-existing-project@1.0.0 /tmp/md2pdf-install-tarball-existing-project
+└── @amitdevx/md2pdf@0.2.4
+
