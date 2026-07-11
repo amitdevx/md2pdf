@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-07-11
+
+### Added
+- Explicit handlers for unsupported flags (`--browser`, `--stdin`, `--stdout`, `--quiet`, `--input`) to output clear `InvalidArgumentError` messages rather than crashing.
+- New `publish-gpr` GitHub Actions CI job to seamlessly publish the npm package to GitHub Packages in parallel.
+
+### Fixed
+- Rebuilt the `dist/` artifacts so that `md2pdf --version` accurately reports `0.4.2`.
+- Added a 5MB size limit to Markdown inputs before unified/AST parsing to prevent severe V8 OOM aborts on exceptionally large files.
+
+## [0.4.1] - 2026-07-10
+
+### Added
+- Native AST parsing support for Obsidian highlight syntax (`==highlight==`) translated to HTML `<mark>` tags.
+- Root user sandboxing detection to auto-inject `--no-sandbox` if Playwright Chromium runs via `sudo` on Linux.
+
+### Fixed
+- Fixed CLI test assertions failing in GitHub CI because of updated Commander error string outputs.
+
 ## [0.4.0] - 2026-07-10
 
 ### Added
