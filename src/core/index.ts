@@ -16,6 +16,18 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   const inputPath = path.resolve(process.cwd(), input);
   let rawMarkdown;
   try {
+    const stats = await fs.stat(inputPath);
+    // 5MB limit to prevent V8 OOM during unified/AST parsing
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+    if (stats.size > MAX_SIZE_BYTES) {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
+        'File Too Large',
+        `Input markdown exceeds maximum size of 5MB (${(stats.size / 1024 / 1024).toFixed(2)}MB).`,
+        { markdownFile: inputPath }
+      );
+    }
     rawMarkdown = await fs.readFile(inputPath, 'utf-8');
   } catch (error: any) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');

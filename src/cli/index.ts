@@ -143,7 +143,12 @@ program
     }
     return val;
   }, 'A4')
-  .option('--margin <size>', 'Page margin (e.g. 20mm, 1in)', (val) => {
+  .option('--browser <browser>', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --browser option is not currently supported.'); })
+  .option('--stdin', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --stdin option is not currently supported.'); })
+  .option('--stdout', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --stdout option is not currently supported.'); })
+  .option('--quiet', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --quiet option is not currently supported.'); })
+  .option('--input <input>', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --input option is not currently supported. Pass input as an argument.'); })
+  .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in)', (val) => {
     if (!/^\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%)$/.test(val)) {
       throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm`);
     }
