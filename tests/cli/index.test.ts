@@ -56,7 +56,7 @@ describe('CLI End-to-End Tests', () => {
   it('should fail on invalid --margin with exit code 1', () => {
     const result = runCli(`README.md --margin abc`);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("error: option '--margin <size>' argument 'abc' is invalid.");
+    expect(result.stderr).toContain("error: option '--margin <margin>' argument 'abc' is invalid.");
   });
 
   it('should fail on same input and output with exit code 1', () => {
