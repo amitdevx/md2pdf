@@ -1,10 +1,8 @@
 # tests/fixtures/ — Golden Documents
 
-> For the complete golden document strategy, see [`/phase/GOLDEN-DOCUMENTS.md`](../../phase/GOLDEN-DOCUMENTS.md).
-
-These are **permanent, curated Markdown files** used for visual regression testing.
+These are **permanent, curated Markdown files** used for unit testing.
 They are never deleted — only grown. Every feature release renders them and compares
-output against approved snapshots in `tests/snapshots/`.
+output against expected AST representations or HTML output.
 
 ---
 
@@ -48,29 +46,17 @@ tests/fixtures/
         └── logo.webp
 ```
 
----
+## How Testing Works
 
-## How Rendering Works
-
-```sh
-# Render a specific fixture:
-md2pdf tests/fixtures/basic.md \
-  --output tests/output/basic/default.pdf \
-  --theme default --toc --header --footer
-
-# Or render all at once:
-npm run golden:render
-```
-
-Snapshots live in `tests/snapshots/<fixture-name>/<theme>.pdf` and `.png`.
+These fixtures are primarily used by the `vitest` unit and integration test suites. 
+When you run `npm run test`, the tests load these markdown files and verify that the HTML output or AST matches expectations.
 
 ---
 
 ## Adding a New Fixture
 
-1. Create the `.md` file in this directory
-2. Run `npm run golden:render` to produce output
-3. Review the output visually
-4. Run `npm run golden:approve` to promote output → snapshot
-5. Commit both the fixture and the snapshot
-6. Document it in this README's table above
+1. Create the `.md` file in this directory.
+2. If necessary, add any companion resources to the `vault/` directory.
+3. Update your unit tests (e.g. in `tests/parser/` or `tests/pdf/`) to read this fixture.
+4. Run `npm test` to ensure it passes.
+5. Document it in this README's table above.

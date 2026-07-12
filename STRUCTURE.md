@@ -46,8 +46,7 @@ md2pdf/
 ├── tests/             ← Test suite (unit, E2E, golden docs, benchmarks)
 ├── docs/              ← Internal research + user-facing feature documentation
 ├── examples/          ← Demo .md files and their rendered .pdf outputs
-├── scripts/           ← Developer utility scripts (golden doc tools, vault generator)
-├── templates/         ← HTML page templates used by the renderer
+├── scripts/           ← Developer utility scripts (e.g. build-katex-css)
 ├── phase/             ← Internal dev planning (GITIGNORED — not shipped)
 ├── node_modules/      ← Dependencies (gitignored)
 └── dist/              ← Build output (gitignored)
@@ -91,11 +90,7 @@ See [`tests/README.md`](./tests/README.md) for full detail.
 
 ```
 tests/
-├── fixtures/          ← Golden documents (permanent Markdown sources for visual regression)
-│   └── vault/         ← Companion vault files for Obsidian fixture
-├── snapshots/         ← Approved PDF/PNG snapshots (committed to git)
-├── output/            ← Rendered output during test runs (GITIGNORED)
-├── diff/              ← Pixel-diff images from failures (GITIGNORED)
+├── fixtures/          ← Markdown sources for testing
 ├── parser/            ← Vitest unit tests for parser
 ├── renderer/          ← Vitest unit tests for renderer
 ├── pdf/               ← Vitest integration tests for PDF generation
@@ -105,7 +100,6 @@ tests/
 
 **Key distinction:**
 - `tests/fixtures/` = Markdown source files (committed, permanent)
-- `tests/snapshots/` = Approved PDF/PNG renders (committed, updated deliberately)
 - `tests/output/` = Current render output (gitignored, disposable)
 
 ---
@@ -146,28 +140,10 @@ More examples are added each release (mermaid, math, obsidian, academic, etc.).
 
 ## `scripts/` — Developer Utilities
 
-See [`scripts/README.md`](./scripts/README.md).
-
 ```
 scripts/
-├── README.md              ← Script index
-├── golden-render.ts       ← Render all golden fixtures → tests/output/
-├── golden-diff.ts         ← Pixel-diff output vs snapshots
-├── golden-approve.ts      ← Promote output → snapshots (human approval step)
-├── generate-100-pages.ts  ← Generate tests/fixtures/100-pages.md
-└── generate-vault.ts      ← Generate tests/benchmarks/vault/ (200-file mock)
-```
-
----
-
-## `templates/` — HTML Templates
-
-See [`templates/README.md`](./templates/README.md).
-
-```
-templates/
-├── README.md          ← Template index
-└── default.html       ← Base HTML template (extracted from renderer in v0.1.0)
+├── build-katex-css.mjs    ← Generates CSS assets during prebuild
+└── bump-brain.js          ← Utility for version bumping
 ```
 
 ---
@@ -187,12 +163,12 @@ phase/
 ├── v0.1.0-core-rendering.md          ← Done: typography, Shiki, tables, images
 ├── v0.1.1-toc-footnotes.md           ← Done: TOC, footnotes, frontmatter, pdf metadata
 ├── v0.1.3-headers-footers.md         ← Done: Headers, footers, page breaks
-├── v0.2.0-mermaid.md                 ← Planned (flagship feature)
-├── v0.2.1-mermaid-improvements.md    ← Planned
-├── v0.3.0-math.md                    ← Planned
-├── v0.4.0-obsidian-core.md           ← Planned
-├── v0.4.1-obsidian-embeds.md         ← Planned
-├── v0.5.0-config.md                  ← Planned
+├── v0.2.0-mermaid.md                 ← Done
+├── v0.2.1-mermaid-improvements.md    ← Done
+├── v0.3.0-math.md                    ← Done
+├── v0.4.0-obsidian-core.md           ← Done
+├── v0.4.1-obsidian-embeds.md         ← Done
+├── v0.5.0-config.md                  ← Done
 ├── v0.6.0-themes.md                  ← Planned
 ├── v0.7.0-plugins.md                 ← Planned
 ├── v0.8.0-performance.md             ← Planned
@@ -224,10 +200,6 @@ phase/
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run clean` | Delete `dist/` |
-| `npm run golden:render` | Render all golden fixtures |
-| `npm run golden:diff` | Diff output vs snapshots |
-| `npm run golden:approve` | Approve new snapshots |
-| `npm run golden:check` | CI golden doc check (render + diff + fail) |
 
 ---
 
@@ -238,7 +210,7 @@ Only the `files` field in `package.json` is published:
 "files": ["dist", "README.md", "LICENSE", "CHANGELOG.md"]
 ```
 
-**Never published:** `src/`, `tests/`, `docs/`, `examples/`, `scripts/`, `templates/`, `phase/`
+**Never published:** `src/`, `tests/`, `docs/`, `examples/`, `scripts/`, `phase/`
 
 ---
 
@@ -246,7 +218,6 @@ Only the `files` field in `package.json` is published:
 
 1. **CLI is a wrapper** — `convert()` API is first-class; CLI calls `convert()` with no extra logic
 2. **Plugin pipeline from day one** — internal plugin architecture in v0.1.0; public API in v0.7.0
-3. **Golden documents** — permanent fixtures drive visual regression; see `phase/GOLDEN-DOCUMENTS.md`
-4. **Docs as you go** — every feature adds its doc to `docs/` at ship time, never deferred
-5. **Config before themes** — `md2pdf.config.ts` (v0.5.0) makes themes (v0.6.0) feel cohesive
-6. **Mermaid early** — flagship feature at v0.2.0, not buried behind unrelated work
+3. **Docs as you go** — every feature adds its doc to `docs/` at ship time, never deferred
+4. **Config before themes** — `md2pdf.config.ts` (v0.5.0) makes themes (v0.6.0) feel cohesive
+5. **Mermaid early** — flagship feature at v0.2.0, not buried behind unrelated work
