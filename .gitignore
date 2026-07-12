@@ -33,8 +33,10 @@ tests/diff/
 
 # Local IDE and hooks
 .claude/
-.husky/
 
 # Temporary dev scripts
 debug-mermaid.js
 test-parser.js
+
+# OS Files
+.DS_Store

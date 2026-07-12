@@ -117,7 +117,7 @@ console.log(`Render time: ${result.renderTimeMs}ms`);
 git clone https://github.com/amitdevx/md2pdf.git
 cd md2pdf
 npm install
-npx playwright install chromium
+npx md2pdf init
 ```
 
 ## Contributing
