@@ -84,8 +84,9 @@ md2pdf README.md --profile print
 Configuration settings are merged in the following order (from highest priority to lowest):
 
 1. **CLI Flags** (e.g. `--theme github`)
-2. **Profile Configuration** (e.g. `--profile docs`)
-3. **Base Configuration File** (`md2pdf.config.ts`, `.md2pdfrc.json`, etc.)
-4. **Default Built-in Options**
+2. **Markdown Frontmatter** (e.g. `theme: dracula` inside a file's YAML block)
+3. **Profile Configuration** (e.g. `--profile docs`)
+4. **Base Configuration File** (`md2pdf.config.ts`, `.md2pdfrc.json`, etc.)
+5. **Default Built-in Options**
 
-This allows you to define your common defaults in the configuration file and easily override specific options ad-hoc via CLI flags.
+This allows you to define your common defaults in the configuration file, override them per-file using YAML frontmatter, and easily override everything ad-hoc via CLI flags.

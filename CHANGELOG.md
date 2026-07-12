@@ -8,9 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2026-07-12
 
 ### Added
+- **Batch Processing**: Convert multiple Markdown files at once using globs (e.g., `md2pdf "docs/*.md" -o out_dir/`).
+- **Browser Re-use**: Significantly optimized performance during batch processing by intelligently re-using a single headless Chromium instance.
+- **Lazy-Loaded Mermaid Processing**: Completely eliminated Cold Start Lag by lazily instantiating the `sharedMermaidPage` only when Markdown files actually contain diagrams.
 - **Persistent Configuration System**: Discovers and loads configuration automatically (`md2pdf.config.ts`, `.md2pdfrc.json`, `.md2pdfrc.yaml`, or `package.json`).
-- **TypeScript Support**: Exposed `defineConfig` for typed programmatic config authoring with Zod validation backing.
+- **TypeScript Support**: Exposed `defineConfig` for typed programmatic config authoring.
 - **Profiles**: Added `--profile <name>` CLI option to switch between configuration presets dynamically.
+
+### Fixed
+- Fixed an issue where the CLI would hang on `SIGINT` (Ctrl+C), leaving invisible Zombie Chromium processes running in RAM.
+- Fixed a massive memory leak and garbage collection spike during batch processing by ensuring Playwright contexts are gracefully closed inside `finally` blocks.
+- Fixed an issue where CLI options would mistakenly override file-level YAML frontmatter; frontmatter now correctly takes precedence.
+- Fixed a bug causing large Mermaid diagrams to split across pages by ensuring `maxWidth` and `maxHeight` properties correctly propagate through the configuration merger.
+- Fixed metadata injection crashing when `keywords` was provided as an array in a configuration file.
+- Removed strict validation from `--mermaid-theme` CLI flag to properly support custom user CSS themes defined via `md2pdf.config.ts`.
+- Ensured properties like KaTeX `numbering` and Obsidian `embedNotes` correctly map through the configuration merger.
 
 ## [0.4.2] - 2026-07-11
 

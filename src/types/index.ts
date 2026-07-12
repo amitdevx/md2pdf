@@ -13,6 +13,8 @@ export interface ConvertOptions {
   input: string;
   output: string;
   sharedBrowser?: import('playwright-core').Browser;
+  /** Internal shared Mermaid page for batch processing performance */
+  sharedMermaidPage?: any;
   theme?: string;
   paper?: 'A4' | 'Letter' | 'Legal';
   margin?: string; // e.g., '20mm'
@@ -36,6 +38,7 @@ export interface ConvertOptions {
   math?: {
     enabled?: boolean;
     macros?: Record<string, string>;
+    numbering?: 'document' | 'section' | false;
     strict?: boolean;
   };
   obsidian?: {

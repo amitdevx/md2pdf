@@ -111,13 +111,16 @@ export function mergeConfig(
     footer: merged.footer,
     theme: merged.theme || 'default',
     mermaid: {
-      enabled: typeof merged.mermaid === 'object' ? merged.mermaid.enabled : !!merged.mermaid,
+      enabled: typeof merged.mermaid === 'object' ? (merged.mermaid.enabled !== false) : (merged.mermaid !== false),
       theme: typeof merged.mermaid === 'object' ? (merged.mermaid.theme as any || 'auto') : 'auto',
       timeout: typeof merged.mermaid === 'object' ? merged.mermaid.timeout : 10000,
+      maxWidth: typeof merged.mermaid === 'object' ? merged.mermaid.maxWidth : undefined,
+      maxHeight: typeof merged.mermaid === 'object' ? merged.mermaid.maxHeight : undefined,
     },
     math: {
-      enabled: typeof merged.math === 'object' ? merged.math.enabled : !!merged.math,
+      enabled: typeof merged.math === 'object' ? (merged.math.enabled !== false) : (merged.math !== false),
       macros: typeof merged.math === 'object' ? merged.math.macros : undefined,
+      numbering: typeof merged.math === 'object' ? merged.math.numbering : undefined,
       strict: typeof merged.math === 'object' ? merged.math.strict : false,
     },
     pageBreaks: {
@@ -130,6 +133,14 @@ export function mergeConfig(
       vaultRoot: merged.obsidian?.vaultRoot,
       attachmentFolder: merged.obsidian?.attachmentFolder,
       maxAttachmentSizeMb: merged.obsidian?.maxAttachmentSizeMb,
+      embedNotes: merged.obsidian?.embedNotes,
+      maxEmbedDepth: merged.obsidian?.maxEmbedDepth,
     },
+    metadata: {
+      ...merged.metadata,
+      keywords: Array.isArray(merged.metadata?.keywords) 
+        ? merged.metadata.keywords.join(', ') 
+        : merged.metadata?.keywords
+    } as any,
   };
 }

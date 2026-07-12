@@ -162,13 +162,7 @@ program
   .option('--hr-page-break', 'Treat --- as a page break')
   .option('--h1-new-page', 'Force a page break before each H1 heading')
   .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)')
-  .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)', (val) => {
-    const valid = ['default', 'dark', 'base', 'neutral'];
-    if (!valid.includes(val)) {
-      throw new InvalidArgumentError(`must be one of: ${valid.join(', ')}`);
-    }
-    return val;
-  })
+  .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)')
   .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds', (val) => {
     const n = parseInt(val);
     if (isNaN(n) || n <= 0) {
@@ -318,14 +312,51 @@ program
     const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {}, text: '' } : ora('Launching browser...').start();
     const startTime = Date.now();
     let globalBrowser: any;
+    let globalMermaidPage: any;
+
+    // Graceful Shutdown Handler for Ctrl+C
+    process.on('SIGINT', async () => {
+      console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
+      if (globalBrowser) {
+        await globalBrowser.close().catch(() => {});
+      }
+      process.exit(130);
+    });
 
     try {
       const { getBrowser } = await import('../pdf/browser.js');
       globalBrowser = await getBrowser();
+      
       const results = [];
 
       for (let i = 0; i < inputs.length; i++) {
         const input = inputs[i];
+        
+        // Lazy-load Mermaid page ONLY if the file actually contains Mermaid diagrams
+        const content = fs.readFileSync(input, 'utf-8');
+        if (content.includes('```mermaid') && !globalMermaidPage) {
+          const mermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
+          globalMermaidPage = await mermaidContext.newPage();
+          await globalMermaidPage.setContent(`<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body></body>
+</html>`);
+          await globalMermaidPage.evaluate(() => document.fonts.ready);
+          try {
+            const requireModule = (await import('node:module')).createRequire(import.meta.url);
+            const scriptPath = requireModule.resolve('mermaid/dist/mermaid.min.js');
+            await globalMermaidPage.addScriptTag({ path: scriptPath });
+          } catch (e) {
+            // Fallback or warning if Mermaid isn't installed
+          }
+        }
+
         let output = cliFlags.output;
         if (isBatch && output) {
           // output is a directory
@@ -336,6 +367,9 @@ program
 
         const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
         convertOptions.sharedBrowser = globalBrowser;
+        if (globalMermaidPage) {
+          (convertOptions as any).sharedMermaidPage = globalMermaidPage;
+        }
 
         if (!options.jsonErrors) {
           spinner.text = `Converting (${i + 1}/${inputs.length}): ${path.basename(input)}...`;

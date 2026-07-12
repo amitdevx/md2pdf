@@ -16,6 +16,7 @@ export function inlineMermaidSvgs(html: string, rendered: RenderedMermaid[]): st
       regex, 
       `<div class="mermaid-container" style="page-break-inside: avoid; display: flex; justify-content: center; margin: 20px 0;">${item.svgHtml}</div>`
     );
+
   }
   
   return processedHtml;

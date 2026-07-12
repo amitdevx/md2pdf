@@ -1,6 +1,6 @@
 # Mermaid Diagram Support
 
-md2pdf v0.2.1 includes robust, built-in support for rendering [Mermaid](https://mermaid.js.org/) diagrams perfectly inside your PDFs. The rendering is done locally and offline using Playwright, ensuring crisp vector graphics and perfect reproduction of all 12+ diagram types.
+md2pdf includes robust, built-in support for rendering [Mermaid](https://mermaid.js.org/) diagrams perfectly inside your PDFs. The rendering is done locally and offline using Playwright, ensuring crisp vector graphics and perfect reproduction of all 12+ diagram types.
 
 ## Supported Diagrams
 
@@ -70,6 +70,9 @@ mermaid:
 ```bash
 md2pdf input.md --mermaid-theme neutral
 ```
+
+**Custom Themes:**
+You can also specify custom CSS theme strings for Mermaid if you're using advanced configuration files (`md2pdf.config.ts`), and the CLI `--mermaid-theme` flag will correctly accept your custom theme names.
 
 ## Sizing and Layout Constraints
 

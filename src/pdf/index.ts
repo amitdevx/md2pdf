@@ -1,4 +1,4 @@
-import { Browser, Route } from 'playwright-core';
+import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
 
 export interface PdfOptions {
@@ -16,9 +16,10 @@ export interface PdfOptions {
 
 export async function generatePdf(options: PdfOptions): Promise<void> {
   const browser = options.browser || await getBrowser();
+  let context: BrowserContext | undefined;
 
   try {
-    const context = await browser.newContext({
+    context = await browser.newContext({
       javaScriptEnabled: false
     });
     const page = await context.newPage();
@@ -83,6 +84,9 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       footerTemplate: options.footerTemplate,
     });
   } finally {
+    if (context) {
+      await context.close();
+    }
     if (!options.browser) {
       await browser.close();
     }

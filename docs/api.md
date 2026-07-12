@@ -20,6 +20,7 @@ const result: ConvertResult = await convert(options);
 | `output` | `string` | **Required** | The path where the PDF will be saved. |
 | `theme` | `string` | `'default'` | The CSS theme to apply (feature in progress). |
 | `paper` | `'A4' \| 'Letter' \| 'Legal'` | `'A4'` | The paper format for the PDF. |
+| `landscape` | `boolean` | `false` | Page orientation. |
 | `margin` | `string` | `'20mm'` | The margin string applied to all sides. |
 | `toc` | `boolean` | `false` | Enables Table of Contents generation. |
 | `tocDepth` | `number` | `3` | Maximum heading depth to include in the TOC. |
@@ -28,6 +29,10 @@ const result: ConvertResult = await convert(options);
 | `header` | `boolean \| { template?: string }` | `undefined` | Enables running headers on PDF pages. |
 | `footer` | `boolean \| { template?: string }` | `undefined` | Enables running footers on PDF pages. |
 | `pageBreaks` | `{ h1NewPage?: boolean, hrAsPageBreak?: boolean }` | `undefined` | Configuration for automatic page breaks. |
+| `mermaid` | `object` | `{ enabled: true }` | Configuration for Mermaid diagram rendering. |
+| `math` | `object` | `{ enabled: true }` | Configuration for KaTeX math rendering. |
+| `obsidian` | `object` | `undefined` | Compatibility options for Obsidian syntax. |
+| `sharedBrowser` | `Browser` | `undefined` | Inject an existing Playwright `Browser` instance (optimizes batch processing). |
 
 ### `ConvertResult`
 

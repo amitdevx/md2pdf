@@ -14,6 +14,7 @@ export async function processBeforeRender(
     mermaidEnabled?: boolean;
     maxWidth?: string;
     maxHeight?: string;
+    sharedMermaidPage?: any;
   }
 ): Promise<string> {
   if (options?.mermaidEnabled === false) {
@@ -28,7 +29,8 @@ export async function processBeforeRender(
       options?.globalMermaidTheme,
       options?.timeout,
       options?.maxWidth,
-      options?.maxHeight
+      options?.maxHeight,
+      options?.sharedMermaidPage
     );
     return inlineMermaidSvgs(html, renderedSvgs);
   }

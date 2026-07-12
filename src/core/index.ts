@@ -178,12 +178,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
     const { processBeforeRender } = await import('../renderer/pipeline.js');
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, {
-      theme: options.theme || frontmatter.theme,
-      globalMermaidTheme: options.mermaid?.theme || frontmatter.mermaid?.theme,
-      timeout: options.mermaid?.timeout || frontmatter.mermaid?.timeout,
-      mermaidEnabled: options.mermaid?.enabled,
-      maxWidth: options.mermaid?.maxWidth || frontmatter.mermaid?.maxWidth,
-      maxHeight: options.mermaid?.maxHeight || frontmatter.mermaid?.maxHeight
+      theme: frontmatter.theme || options.theme,
+      globalMermaidTheme: frontmatter.mermaid?.theme || options.mermaid?.theme,
+      timeout: frontmatter.mermaid?.timeout || options.mermaid?.timeout,
+      mermaidEnabled: frontmatter.mermaid?.enabled ?? options.mermaid?.enabled,
+      maxWidth: frontmatter.mermaid?.maxWidth || options.mermaid?.maxWidth,
+      maxHeight: frontmatter.mermaid?.maxHeight || options.mermaid?.maxHeight,
+      sharedMermaidPage: (options as any).sharedMermaidPage
     });
     
     let headerTemplate = undefined;
