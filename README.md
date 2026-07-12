@@ -61,6 +61,12 @@ Generate a PDF from a single Markdown file:
 md2pdf README.md
 ```
 
+Process multiple files at once (Batch Mode) using wildcards (new in v0.5.0):
+```bash
+md2pdf "docs/*.md" --output out_dir/
+```
+*(Batch mode intelligently reuses a single Chromium instance for 10x faster processing and sequential memory safety)*
+
 Specify a custom output path and generate a Table of Contents:
 ```bash
 md2pdf input.md --output custom.pdf --toc

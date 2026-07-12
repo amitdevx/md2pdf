@@ -22,6 +22,12 @@ md2pdf document.md
 ```
 This will automatically generate `document.pdf` in the same directory.
 
+### Batch Processing (New in v0.5.0)
+You can process multiple files concurrently while sharing a single Chromium instance, keeping memory footprint low and drastically improving speed:
+```bash
+md2pdf "docs/*.md" --output out_dir/
+```
+
 ### Specify Output Path
 ```bash
 md2pdf document.md --output custom-name.pdf
