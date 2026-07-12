@@ -1,6 +1,10 @@
 import { Md2PdfError, Md2PdfErrorCode, ErrorContext } from './index.js';
 
 export function detectBrowserError(error: unknown, contextBase: Partial<ErrorContext> = {}): Md2PdfError {
+  if (error instanceof Md2PdfError) {
+    return error;
+  }
+
   const errMessage = error instanceof Error ? error.message : String(error);
   const errStack = error instanceof Error ? error.stack || '' : '';
   const errName = error instanceof Error ? error.name : 'Unknown';

@@ -160,13 +160,7 @@ program
   }, '20mm')
   .option('--hr-page-break', 'Treat --- as a page break')
   .option('--h1-new-page', 'Force a page break before each H1 heading')
-  .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)', (val) => {
-    const valid = ['default', 'github', 'obsidian-light', 'obsidian-dark'];
-    if (!valid.includes(val)) {
-      throw new InvalidArgumentError(`must be one of: ${valid.join(', ')}`);
-    }
-    return val;
-  })
+  .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)')
   .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)', (val) => {
     const valid = ['default', 'dark', 'base', 'neutral'];
     if (!valid.includes(val)) {
@@ -328,16 +322,6 @@ program
       }
     }
 
-    // Prevent path traversal to sensitive root directories (Linux/macOS)
-    const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
-    if (sensitiveDirs.some(dir => resolvedOutput.startsWith(dir))) {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_PATH_TRAVERSAL', 'Access Denied', 'Cannot write output to protected system directory.');
-      } else {
-        (spinner as any).fail(pc.red(`Access Denied: Cannot write output to protected system directory.`));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
 
     if (resolvedInput === resolvedOutput) {
       if (options.jsonErrors) {

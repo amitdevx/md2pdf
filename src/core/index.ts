@@ -13,6 +13,29 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   const startTime = Date.now();
   const { input, output, paper, margin } = options;
 
+  if (typeof input !== 'string') {
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_INVALID_INPUT,
+      'Invalid Input',
+      'The input property must be a string path to a markdown file.'
+    );
+  }
+
+  if (typeof output === 'string') {
+    const resolvedOutput = path.resolve(process.cwd(), output);
+    const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
+    const isSensitive = sensitiveDirs.some(dir => resolvedOutput.startsWith(dir)) || /^([a-zA-Z]:)?[\/\\]Windows/i.test(resolvedOutput);
+    if (isSensitive) {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_PATH_TRAVERSAL,
+        'Access Denied',
+        'Cannot write output to protected system directory.'
+      );
+    }
+  }
+
   const inputPath = path.resolve(process.cwd(), input);
   let rawMarkdown;
   try {
@@ -79,7 +102,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     // Wait, let's keep it as file:// for standard markdown images to not break existing behavior unless it fails.
     // Actually, we should just let resolveObsidianEmbeds handle `![[...]]`. Standard images stay file:// for Playwright.
     const absPath = path.resolve(dir, decodeURIComponent(src));
-    const fileUrl = 'file://' + encodeURI(absPath.replace(/\\/g, '/'));
+    const normalizedPath = absPath.replace(/\\/g, '/');
+    const fileUrl = 'file:///' + encodeURI(normalizedPath.replace(/^\/+/, ''));
     
     let sizing = '';
     const widthRaw = attrWidth || kramWidth;
@@ -122,71 +146,27 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   const mermaidBlocks: any[] = []; // Using any to avoid importing MermaidBlock type here for now, or we can just let it be any array
 
-  const parsed = await parseMarkdown(processedMarkdown, {
-    toc: options.toc,
-    tocDepth: options.tocDepth,
-    tocTitle: options.tocTitle,
-    pageBreaks: options.pageBreaks,
-    mermaidBlocks,
-    math: options.math,
-    obsidian: options.obsidian,
-  });
-
-  const title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
-  const html = renderHtmlTemplate(parsed.html, title, { cssclass: frontmatter.cssclass });
-
   const outputPath = path.resolve(process.cwd(), output);
 
-  const metadata: PdfMetadata = {
-    ...options.metadata,
-    title,
-    author: options.metadata?.author ?? frontmatter.author,
-    subject: options.metadata?.subject ?? frontmatter.description ?? frontmatter.subject,
-    keywords: options.metadata?.keywords ?? (Array.isArray(frontmatter.tags) ? frontmatter.tags.join(', ') : frontmatter.tags) ?? (Array.isArray(frontmatter.keywords) ? frontmatter.keywords.join(', ') : frontmatter.keywords),
-    creationDate: options.metadata?.creationDate ?? (frontmatter.date ? new Date(frontmatter.date) : undefined),
-  };
-
-  let headerTemplate = undefined;
-  let marginTop = margin;
-  const headerEnabled = options.header === true || 
-    (typeof options.header === 'object' && options.header.enabled !== false);
-  
-  if (headerEnabled && options.header !== undefined) {
-    marginTop = '30mm';
-    if (typeof options.header === 'object' && options.header.template) {
-      headerTemplate = options.header.template;
-      // Replace {frontmatter.X} with actual values
-      headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
-    } else {
-      headerTemplate = `
-      <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; border-bottom: 0.5px solid #ccc; margin-bottom: 5mm; padding-bottom: 2mm;">
-        <span class="title"></span>
-        <span>${metadata.author ? metadata.author + ' — ' : ''}<span class="date"></span></span>
-      </div>`;
-    }
-  }
-
-  let footerTemplate = undefined;
-  let marginBottom = margin;
-  const footerEnabled = options.footer === true || 
-    (typeof options.footer === 'object' && options.footer.enabled !== false);
-
-  if (footerEnabled && options.footer !== undefined) {
-    marginBottom = '30mm';
-    if (typeof options.footer === 'object' && options.footer.template) {
-      footerTemplate = options.footer.template;
-      // Replace {frontmatter.X} with actual values
-      footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
-    } else {
-      footerTemplate = `
-      <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: center; border-top: 0.5px solid #ccc; margin-top: 5mm; padding-top: 2mm;">
-        <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
-      </div>`;
-    }
-  }
-
+  let parsed: any;
+  let html: string;
   let browser;
+  let title: string = '';
+  
   try {
+    parsed = await parseMarkdown(processedMarkdown, {
+      toc: options.toc,
+      tocDepth: options.tocDepth,
+      tocTitle: options.tocTitle,
+      pageBreaks: options.pageBreaks,
+      mermaidBlocks,
+      math: options.math,
+      obsidian: options.obsidian,
+    });
+
+    title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
+    html = renderHtmlTemplate(parsed.html, title, { cssclass: frontmatter.cssclass });
+
     const { getBrowser } = await import('../pdf/browser.js');
     browser = await getBrowser();
 
@@ -200,6 +180,53 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       maxHeight: options.mermaid?.maxHeight || frontmatter.mermaid?.maxHeight
     });
     
+    let headerTemplate = undefined;
+    let marginTop = margin;
+    const headerEnabled = options.header === true || 
+      (typeof options.header === 'object' && options.header.enabled !== false);
+    
+    const metadata: PdfMetadata = {
+      ...options.metadata,
+      title,
+      author: options.metadata?.author ?? frontmatter.author,
+      subject: options.metadata?.subject ?? frontmatter.description ?? frontmatter.subject,
+      keywords: options.metadata?.keywords ?? (Array.isArray(frontmatter.tags) ? frontmatter.tags.join(', ') : frontmatter.tags) ?? (Array.isArray(frontmatter.keywords) ? frontmatter.keywords.join(', ') : frontmatter.keywords),
+      creationDate: options.metadata?.creationDate ?? (frontmatter.date ? new Date(frontmatter.date) : undefined),
+    };
+
+    if (headerEnabled && options.header !== undefined) {
+      marginTop = '30mm';
+      if (typeof options.header === 'object' && options.header.template) {
+        headerTemplate = options.header.template;
+        // Replace {frontmatter.X} with actual values
+        headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
+      } else {
+        headerTemplate = `
+        <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; border-bottom: 0.5px solid #ccc; margin-bottom: 5mm; padding-bottom: 2mm;">
+          <span class="title"></span>
+          <span>${metadata.author ? metadata.author + ' — ' : ''}<span class="date"></span></span>
+        </div>`;
+      }
+    }
+
+    let footerTemplate = undefined;
+    let marginBottom = margin;
+    const footerEnabled = options.footer === true || 
+      (typeof options.footer === 'object' && options.footer.enabled !== false);
+
+    if (footerEnabled && options.footer !== undefined) {
+      marginBottom = '30mm';
+      if (typeof options.footer === 'object' && options.footer.template) {
+        footerTemplate = options.footer.template;
+        // Replace {frontmatter.X} with actual values
+        footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
+      } else {
+        footerTemplate = `
+        <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: center; border-top: 0.5px solid #ccc; margin-top: 5mm; padding-top: 2mm;">
+          <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+        </div>`;
+      }
+    }
 
     await generatePdf({  
       html: processedHtml, 
@@ -213,20 +240,22 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       footerTemplate,
       browser,
     });
+    
+    const pageCounts = await injectMetadata(outputPath, metadata);
+
+    return {
+      outputPath,
+      pageCounts,
+      renderTimeMs: Date.now() - startTime,
+      warnings: [...warnings, ...(parsed.warnings || [])],
+      metadata
+    };
   } catch (error) {
     const { detectBrowserError } = await import('../errors/detect.js');
     throw detectBrowserError(error, { markdownFile: inputPath, outputPath });
   } finally {
     if (browser) await browser.close();
   }
-
-  const pageCounts = await injectMetadata(outputPath, metadata);
-
-  return {
-    outputPath,
-    pageCounts,
-    renderTimeMs: Date.now() - startTime,
-    warnings: [...warnings, ...parsed.warnings],
-    metadata
-  };
 }
+
+
