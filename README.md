@@ -20,7 +20,8 @@
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.4.2)
+### Available (v0.5.0)
+- **Configuration (New in v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
 - **Obsidian Compatibility (New in v0.4.1/v0.4.2):** Native parsing and rendering for callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), highlight syntax (`==highlight==`), and YAML frontmatter.
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Math Rendering (New in v0.3.0):** Print-perfect LaTeX inline and display math via KaTeX. Full support for matrices, environments, and macros with zero-dependency embedded fonts.
@@ -36,7 +37,7 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
 ### Coming Soon
-- **Configuration and Theming:** Advanced CLI options and custom CSS themes.
+- **Theming:** Custom CSS themes and layout overrides.
 - **Plugin System:** Extensible architecture for custom rendering logic.
 
 ## Installation
