@@ -66,6 +66,7 @@
   "dependencies": {
     "@shikijs/rehype": "^4.3.0",
     "commander": "^11.1.0",
+    "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
     "jiti": "^2.7.0",
     "js-yaml": "^5.2.1",

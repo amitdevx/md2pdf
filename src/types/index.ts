@@ -12,6 +12,7 @@ export * from './config.js';
 export interface ConvertOptions {
   input: string;
   output: string;
+  sharedBrowser?: import('playwright-core').Browser;
   theme?: string;
   paper?: 'A4' | 'Letter' | 'Legal';
   margin?: string; // e.g., '20mm'

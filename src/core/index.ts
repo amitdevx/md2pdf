@@ -151,6 +151,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   let parsed: any;
   let html: string;
   let browser;
+  let internallyLaunchedBrowser = false;
   let title: string = '';
   
   try {
@@ -167,8 +168,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
     html = renderHtmlTemplate(parsed.html, title, { cssclass: frontmatter.cssclass });
 
-    const { getBrowser } = await import('../pdf/browser.js');
-    browser = await getBrowser();
+    if (options.sharedBrowser) {
+      browser = options.sharedBrowser;
+    } else {
+      const { getBrowser } = await import('../pdf/browser.js');
+      browser = await getBrowser();
+      internallyLaunchedBrowser = true;
+    }
 
     const { processBeforeRender } = await import('../renderer/pipeline.js');
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, {
@@ -254,7 +260,9 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const { detectBrowserError } = await import('../errors/detect.js');
     throw detectBrowserError(error, { markdownFile: inputPath, outputPath });
   } finally {
-    if (browser) await browser.close();
+    if (browser && internallyLaunchedBrowser) {
+      await browser.close();
+    }
   }
 }
 

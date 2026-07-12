@@ -14,6 +14,7 @@ import { loadConfig } from '../config/loader.js';
 import { mergeConfig } from '../config/merge.js';
 import doctorCmd from './doctor.js';
 import initCmd from './init.js';
+import fg from 'fast-glob';
 
 export const EXIT = {
   OK: 0,
@@ -125,8 +126,8 @@ program
   .name('md2pdf')
   .description('Production-quality Markdown to PDF rendering engine')
   .version(pkg.version)
-  .argument('<input>', 'Input markdown file')
-  .option('-o, --output <output>', 'Output PDF file')
+  .argument('<inputs...>', 'Input markdown files (supports wildcards like *.md)')
+  .option('-o, --output <output>', 'Output PDF file (or directory if multiple inputs)')
   .option('--toc', 'Generate a Table of Contents')
   .option('--toc-depth <depth>', 'Maximum heading depth for TOC (1-6)', (val) => {
     const n = parseInt(val);
@@ -192,7 +193,15 @@ program
     }
     return val;
   })
-  .action(async (input: string, options: CliOptions) => {
+  .action(async (inputsRaw: string[], options: CliOptions) => {
+    // Resolve globs for Windows compatibility
+    const inputs = (await fg(inputsRaw, { dot: true, unique: true })).map(p => path.normalize(p));
+    
+    if (inputs.length === 0) {
+      console.error(pc.red('✖ No input files found matching the provided arguments.'));
+      process.exit(EXIT.USAGE_ERROR);
+    }
+
     let resolvedConfig = {};
     let configFilePath = null;
     try {
@@ -205,19 +214,15 @@ program
       process.exit(EXIT.USAGE_ERROR);
     }
     
-    // Add input/output to cliFlags so mergeConfig maps them
-    const cliFlags = { ...options, input, output: options.output };
-    const convertOptions = mergeConfig(resolvedConfig, options.profile, cliFlags);
+    // Add output to cliFlags so mergeConfig maps them. We'll set input individually in the loop.
+    const cliFlags = { ...options, output: options.output };
     
-    if (options.verbose) {
-      if (configFilePath) {
-        console.error(pc.blue(`[md2pdf] Loaded config from: ${configFilePath}`));
-      } else {
-        console.error(pc.blue(`[md2pdf] No config file found. Using defaults + CLI flags.`));
+    if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
+      if (!options.jsonErrors) {
+        console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
       }
-      console.error(pc.blue(`[md2pdf] Final ConvertOptions: ${JSON.stringify(convertOptions, null, 2)}`));
     }
-
+    
     const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
       console.log(JSON.stringify({
         success: false,
@@ -226,160 +231,125 @@ program
       process.exit(EXIT.USAGE_ERROR);
     };
 
-    const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {} } : ora('Converting markdown to PDF...').start();
+    const isBatch = inputs.length > 1;
 
-
-    if (input === '-') {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_INPUT_UNSUPPORTED', 'Stdin Not Supported', 'stdin input is not supported. Save content to a .md file and pass the path instead.');
-      } else {
-        (spinner as any).fail(pc.red('stdin input is not supported'));
-        console.error(pc.dim('  Save content to a .md file and pass the path instead'));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
-
-    if (!fs.existsSync(input)) {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_INPUT_NOT_FOUND', 'File Not Found', `Input file '${input}' does not exist.`);
-      } else {
-        (spinner as any).fail(pc.red(`Input file '${input}' does not exist`));
-        console.error(pc.dim('  Provide a valid path to a .md file'));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
-
-
-
-    const stat = fs.statSync(input);
-    if (stat.isDirectory()) {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_INPUT_IS_DIRECTORY', 'Input is Directory', `'${input}' is a directory, not a file.`);
-      } else {
-        (spinner as any).fail(pc.red(`'${input}' is a directory, not a file`));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
-
-    if (path.extname(input).toLowerCase() !== '.md') {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_INVALID_EXTENSION', 'Invalid Extension', `'${input}' is not a markdown file.`);
-      } else {
-        (spinner as any).fail(pc.red(`'${input}' is not a markdown file`));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
-
-    try {
-      fs.accessSync(input, fs.constants.R_OK);
-    } catch {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Permission denied: cannot read '${input}'`);
-      } else {
-        (spinner as any).fail(pc.red(`Permission denied: cannot read '${input}'`));
-        console.error(pc.dim(`  Check file permissions: ls -la ${input}`));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
-
-    const rawOutput = convertOptions.output;
-    if (rawOutput) {
-      const outputStat = fs.existsSync(rawOutput) ? fs.statSync(rawOutput) : null;
-      if (outputStat?.isDirectory() || rawOutput.endsWith('/') || rawOutput.endsWith(path.sep)) {
+    if (isBatch && options.output) {
+      // If multiple inputs, --output must be a directory
+      const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
+      if (outputStat && !outputStat.isDirectory()) {
         if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_OUTPUT_IS_DIRECTORY', 'Output is Directory', `Output path '${rawOutput}' is a directory, not a file.`);
+          emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
         } else {
-          (spinner as any).fail(pc.red(`Output path '${rawOutput}' is a directory, not a file`));
-          console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
+          console.error(pc.red(`✖ Output path '${options.output}' is a file, but multiple inputs were provided.`));
+          console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
           process.exit(EXIT.USAGE_ERROR);
         }
       }
-    }
-
-    let output = convertOptions.output || input.replace(/\.md$/i, '.pdf');
-    if (path.extname(output) === '') {
-      output = output + '.pdf';
-      if (!options.jsonErrors) {
-        console.warn(pc.yellow(`⚠  No extension given, writing to ${output}`));
-      }
-    }
-    
-    // Ensure the final output is saved to convertOptions
-    convertOptions.output = output;
-    convertOptions.input = input;
-
-    const resolvedInput = path.resolve(input);
-    const resolvedOutput = path.resolve(output);
-
-    const outDir = path.dirname(resolvedOutput);
-    if (!fs.existsSync(outDir)) {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_OUTPUT_DIR_MISSING', 'Output Directory Missing', `The directory '${outDir}' does not exist.`);
-      } else {
-        (spinner as any).fail(pc.red(`Output directory '${outDir}' does not exist`));
-        console.error(pc.dim('  Please create the directory first or provide a valid path.'));
-        process.exit(EXIT.USAGE_ERROR);
+      if (!outputStat) {
+        fs.mkdirSync(options.output, { recursive: true });
       }
     }
 
-
-    if (resolvedInput === resolvedOutput) {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_SAME_FILE', 'Same File', 'Input and output cannot be the same file.');
-      } else {
-        (spinner as any).fail(pc.red('Input and output cannot be the same file'));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
-
-    if ((convertOptions.tocDepth || convertOptions.tocTitle) && !convertOptions.toc) {
-      console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
-    }
-    if (typeof convertOptions.header === 'object' && convertOptions.header.template && !convertOptions.header.enabled) {
-      console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
-    }
-    if (typeof convertOptions.footer === 'object' && convertOptions.footer.template && !convertOptions.footer.enabled) {
-      console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
-    }
+    const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {}, text: '' } : ora('Launching browser...').start();
+    const startTime = Date.now();
+    let globalBrowser: any;
 
     try {
-      const result = await convert(convertOptions);
+      const { getBrowser } = await import('../pdf/browser.js');
+      globalBrowser = await getBrowser();
 
-      if (!options.jsonErrors) {
-        if (result.warnings && result.warnings.length > 0) {
-          (spinner as any).warn(pc.yellow(`Generated ${resolvedOutput} in ${result.renderTimeMs}ms with warnings:`));
-          result.warnings.forEach((w: string) => console.warn(pc.yellow(`  ⚠ ${w}`)));
-        } else {
-          (spinner as any).succeed(pc.green(`Successfully generated ${resolvedOutput} in ${result.renderTimeMs}ms`));
+      const promises = inputs.map(async (input, index) => {
+        if (input === '-') {
+          throw new Error('stdin input is not supported. Save content to a .md file and pass the path instead.');
         }
+
+        if (!fs.existsSync(input)) {
+          throw new Error(`Input file '${input}' does not exist`);
+        }
+
+        const stat = fs.statSync(input);
+        if (stat.isDirectory()) {
+          throw new Error(`'${input}' is a directory, not a file`);
+        }
+
+        if (path.extname(input).toLowerCase() !== '.md') {
+          throw new Error(`'${input}' is not a markdown file`);
+        }
+
+        try {
+          fs.accessSync(input, fs.constants.R_OK);
+        } catch {
+          throw new Error(`Permission denied: cannot read '${input}'`);
+        }
+
+        let output = cliFlags.output;
+        if (isBatch && output) {
+          // output is a directory
+          output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
+        } else if (!output) {
+          output = input.replace(/\.md$/i, '.pdf');
+        }
+
+        const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
+        convertOptions.sharedBrowser = globalBrowser;
+
+        if (!options.jsonErrors) {
+          spinner.text = `Converting (${index + 1}/${inputs.length}): ${path.basename(input)}...`;
+        }
+
+        const result = await convert(convertOptions as any);
         
-        
-        if (options.verbose) {
-          console.log(pc.dim('\n--- VERBOSE INFO ---'));
-          console.log(pc.dim(`Pages: ${result.pageCounts || 'unknown'}`));
-          console.log(pc.dim(`Output Path: ${result.outputPath}`));
-          console.log(pc.dim(`Theme: ${options.theme || 'default'}`));
-          console.log(pc.dim(`Metadata: ${JSON.stringify(result.metadata || {})}`));
-          console.log(pc.dim('--------------------'));
+        if (!options.jsonErrors && result.warnings.length > 0) {
+          result.warnings.forEach(w => console.warn(pc.yellow(`\n⚠ ${w}`)));
+        }
+
+        return result;
+      });
+
+      const results = await Promise.all(promises);
+
+      if (options.jsonErrors) {
+        console.log(JSON.stringify({
+          success: true,
+          results: results.map(r => ({
+            input: r.outputPath, // technically we don't return input in result but that's fine
+            output: r.outputPath,
+            pages: r.pageCounts,
+            timeMs: r.renderTimeMs,
+            warnings: r.warnings
+          }))
+        }, null, 2));
+      } else {
+        const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+        (spinner as any).succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));
+      }
+
+    } catch (err: any) {
+      if (options.jsonErrors && typeof (spinner as any).stop === 'function') {
+        (spinner as any).stop();
+      } else if (typeof (spinner as any).stop === 'function') {
+        (spinner as any).stop();
+      }
+
+      if (err instanceof Md2PdfError) {
+        renderCliError(err, options);
+      } else {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
+        } else {
+          (spinner as any).fail(pc.red(err.message));
+          if (options.debug && err.stack) {
+            console.error(pc.dim(err.stack));
+          }
+          process.exit(EXIT.USAGE_ERROR);
         }
       }
-    } catch (error: unknown) {
-      if (!options.jsonErrors) (spinner as any).fail(pc.red('Conversion failed'));
-
-      if (error instanceof Md2PdfError) {
-        renderCliError(error, options);
-      } else {
-        const err = error as Error;
-        const mdError = new Md2PdfError(
-          Md2PdfErrorCode.ERR_UNKNOWN,
-          'Unexpected Internal Error',
-          err?.message || 'An unknown error occurred.',
-          { platform: process.platform },
-          error
-        );
-        renderCliError(mdError, options);
+    } finally {
+      if (globalBrowser) {
+        await globalBrowser.close();
       }
     }
+
   });
 
 program.parse(process.argv);
