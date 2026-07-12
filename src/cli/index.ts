@@ -191,8 +191,14 @@ program
     // Resolve globs for Windows compatibility
     let inputs: string[] = [];
     for (const raw of inputsRaw) {
-      if (fg.isDynamicPattern(raw)) {
-        const matches = await fg(raw, { dot: true, unique: true, onlyFiles: false });
+      if (fs.existsSync(raw)) {
+        inputs.push(path.normalize(raw));
+        continue;
+      }
+      
+      const normalizedPattern = raw.replace(/\\/g, '/');
+      if (fg.isDynamicPattern(normalizedPattern)) {
+        const matches = await fg(normalizedPattern, { dot: true, unique: true, onlyFiles: false });
         inputs.push(...matches.map(p => path.normalize(p)));
       } else {
         inputs.push(path.normalize(raw));
