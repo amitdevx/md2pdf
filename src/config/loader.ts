@@ -1,14 +1,14 @@
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
+
+
 import * as yaml from 'js-yaml';
 import { validateConfig } from './validate.js';
 import type { Md2PdfConfig } from '../types/config.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 
-const require = createRequire(import.meta.url);
+
 
 const CONFIG_FILES = [
   'md2pdf.config.ts',

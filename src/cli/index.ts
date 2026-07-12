@@ -6,7 +6,7 @@ import pc from 'picocolors';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import type { ConvertOptions } from '../types/index.js';
+
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import { getRecommendation } from '../errors/recommendations.js';
 
@@ -206,11 +206,11 @@ program
     }
 
     let resolvedConfig = {};
-    let configFilePath = null;
+
     try {
       const result = await loadConfig(process.cwd(), options.config);
       resolvedConfig = result.config;
-      configFilePath = result.filepath;
+
     } catch (err: any) {
       console.error(pc.red(`\n✖ ${err.title || 'Config Error'}`));
       console.error(err.reason || err.message);
@@ -352,7 +352,7 @@ program
             const requireModule = (await import('node:module')).createRequire(import.meta.url);
             const scriptPath = requireModule.resolve('mermaid/dist/mermaid.min.js');
             await globalMermaidPage.addScriptTag({ path: scriptPath });
-          } catch (e) {
+          } catch {
             // Fallback or warning if Mermaid isn't installed
           }
         }
