@@ -195,7 +195,16 @@ program
   })
   .action(async (inputsRaw: string[], options: CliOptions) => {
     // Resolve globs for Windows compatibility
-    const inputs = (await fg(inputsRaw, { dot: true, unique: true })).map(p => path.normalize(p));
+    let inputs: string[] = [];
+    for (const raw of inputsRaw) {
+      if (fg.isDynamicPattern(raw)) {
+        const matches = await fg(raw, { dot: true, unique: true, onlyFiles: false });
+        inputs.push(...matches.map(p => path.normalize(p)));
+      } else {
+        inputs.push(path.normalize(raw));
+      }
+    }
+    inputs = Array.from(new Set(inputs));
     
     if (inputs.length === 0) {
       console.error(pc.red('✖ No input files found matching the provided arguments.'));
@@ -248,6 +257,62 @@ program
       if (!outputStat) {
         fs.mkdirSync(options.output, { recursive: true });
       }
+    } else if (!isBatch && options.output) {
+      // Single file mode: --output must not be a directory unless the user provides a filename.
+      // If it exists and is a directory, fail gracefully rather than throwing EISDIR later.
+      const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
+      if (outputStat?.isDirectory() || options.output.endsWith('/') || options.output.endsWith(path.sep)) {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_OUTPUT_IS_DIRECTORY', 'Output is Directory', `Output path '${options.output}' is a directory, not a file.`);
+        } else {
+          console.error(pc.red(`✖ Output path '${options.output}' is a directory, not a file.`));
+          console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
+          process.exit(EXIT.USAGE_ERROR);
+        }
+      }
+    }
+
+    // Synchronous Validation Loop
+    for (const input of inputs) {
+      if (input === '-') {
+        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INPUT_UNSUPPORTED', 'Stdin Not Supported', 'stdin input is not supported.');
+        else { console.error(pc.red('✖ stdin input is not supported.')); process.exit(EXIT.USAGE_ERROR); }
+      }
+
+      if (!fs.existsSync(input)) {
+        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INPUT_NOT_FOUND', 'File Not Found', `Input file '${input}' does not exist.`);
+        else { console.error(pc.red(`✖ Input file '${input}' does not exist`)); process.exit(EXIT.USAGE_ERROR); }
+      }
+
+      const stat = fs.statSync(input);
+      if (stat.isDirectory()) {
+        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INPUT_IS_DIRECTORY', 'Input is Directory', `'${input}' is a directory, not a file.`);
+        else { console.error(pc.red(`✖ '${input}' is a directory, not a file`)); process.exit(EXIT.USAGE_ERROR); }
+      }
+
+      if (path.extname(input).toLowerCase() !== '.md') {
+        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INVALID_EXTENSION', 'Invalid Extension', `'${input}' is not a markdown file.`);
+        else { console.error(pc.red(`✖ '${input}' is not a markdown file`)); process.exit(EXIT.USAGE_ERROR); }
+      }
+
+      try {
+        fs.accessSync(input, fs.constants.R_OK);
+      } catch {
+        if (options.jsonErrors) emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Permission denied: cannot read '${input}'`);
+        else { console.error(pc.red(`✖ Permission denied: cannot read '${input}'`)); process.exit(EXIT.USAGE_ERROR); }
+      }
+
+      let predictedOutput = options.output;
+      if (isBatch && predictedOutput) {
+        predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
+      } else if (!predictedOutput) {
+        predictedOutput = input.replace(/\.md$/i, '.pdf');
+      }
+
+      if (path.resolve(input) === path.resolve(predictedOutput)) {
+        if (options.jsonErrors) emitJsonErrorAndExit('ERR_SAME_INPUT_OUTPUT', 'Same IO', 'Input and output cannot be the same file');
+        else { console.error(pc.red('✖ Input and output cannot be the same file')); process.exit(EXIT.USAGE_ERROR); }
+      }
     }
 
     const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {}, text: '' } : ora('Launching browser...').start();
@@ -257,31 +322,10 @@ program
     try {
       const { getBrowser } = await import('../pdf/browser.js');
       globalBrowser = await getBrowser();
+      const results = [];
 
-      const promises = inputs.map(async (input, index) => {
-        if (input === '-') {
-          throw new Error('stdin input is not supported. Save content to a .md file and pass the path instead.');
-        }
-
-        if (!fs.existsSync(input)) {
-          throw new Error(`Input file '${input}' does not exist`);
-        }
-
-        const stat = fs.statSync(input);
-        if (stat.isDirectory()) {
-          throw new Error(`'${input}' is a directory, not a file`);
-        }
-
-        if (path.extname(input).toLowerCase() !== '.md') {
-          throw new Error(`'${input}' is not a markdown file`);
-        }
-
-        try {
-          fs.accessSync(input, fs.constants.R_OK);
-        } catch {
-          throw new Error(`Permission denied: cannot read '${input}'`);
-        }
-
+      for (let i = 0; i < inputs.length; i++) {
+        const input = inputs[i];
         let output = cliFlags.output;
         if (isBatch && output) {
           // output is a directory
@@ -294,7 +338,7 @@ program
         convertOptions.sharedBrowser = globalBrowser;
 
         if (!options.jsonErrors) {
-          spinner.text = `Converting (${index + 1}/${inputs.length}): ${path.basename(input)}...`;
+          spinner.text = `Converting (${i + 1}/${inputs.length}): ${path.basename(input)}...`;
         }
 
         const result = await convert(convertOptions as any);
@@ -302,17 +346,15 @@ program
         if (!options.jsonErrors && result.warnings.length > 0) {
           result.warnings.forEach(w => console.warn(pc.yellow(`\n⚠ ${w}`)));
         }
-
-        return result;
-      });
-
-      const results = await Promise.all(promises);
+        
+        results.push(result);
+      }
 
       if (options.jsonErrors) {
         console.log(JSON.stringify({
           success: true,
           results: results.map(r => ({
-            input: r.outputPath, // technically we don't return input in result but that's fine
+            input: r.outputPath,
             output: r.outputPath,
             pages: r.pageCounts,
             timeMs: r.renderTimeMs,
