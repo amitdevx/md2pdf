@@ -10,6 +10,8 @@ import type { ConvertOptions } from '../types/index.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import { getRecommendation } from '../errors/recommendations.js';
 
+import { loadConfig } from '../config/loader.js';
+import { mergeConfig } from '../config/merge.js';
 import doctorCmd from './doctor.js';
 import initCmd from './init.js';
 
@@ -59,6 +61,8 @@ interface CliOptions {
   vaultRoot?: string;
   attachmentFolder?: string;
   maxAttachmentSize?: string;
+  config?: string;
+  profile?: string;
 }
 
 function renderCliError(err: Md2PdfError, options: CliOptions) {
@@ -183,6 +187,8 @@ program
   .option('--json-errors', 'Output errors in JSON format')
   .option('--hide-tags', 'Hide inline Obsidian tags in PDF output')
   .option('--resolve-links', 'Attempt to visually indicate resolvable vs unresolvable wiki links')
+  .option('--config <path>', 'Path to configuration file')
+  .option('--profile <name>', 'Configuration profile to use')
   .option('--vault-root <path>', 'Path to the Obsidian vault root directory')
   .option('--attachment-folder <path>', 'Default attachment folder for unresolved embeds')
   .option('--max-attachment-size <mb>', 'Max attachment size in MB (default: 10)', (val) => {
@@ -193,6 +199,31 @@ program
     return val;
   })
   .action(async (input: string, options: CliOptions) => {
+    let resolvedConfig = {};
+    let configFilePath = null;
+    try {
+      const result = await loadConfig(process.cwd(), options.config);
+      resolvedConfig = result.config;
+      configFilePath = result.filepath;
+    } catch (err: any) {
+      console.error(pc.red(`\n✖ ${err.title || 'Config Error'}`));
+      console.error(err.reason || err.message);
+      process.exit(EXIT.USAGE_ERROR);
+    }
+    
+    // Add input/output to cliFlags so mergeConfig maps them
+    const cliFlags = { ...options, input, output: options.output };
+    const convertOptions = mergeConfig(resolvedConfig, options.profile, cliFlags);
+    
+    if (options.verbose) {
+      if (configFilePath) {
+        console.error(pc.blue(`[md2pdf] Loaded config from: ${configFilePath}`));
+      } else {
+        console.error(pc.blue(`[md2pdf] No config file found. Using defaults + CLI flags.`));
+      }
+      console.error(pc.blue(`[md2pdf] Final ConvertOptions: ${JSON.stringify(convertOptions, null, 2)}`));
+    }
+
     const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
       console.log(JSON.stringify({
         success: false,
@@ -202,6 +233,7 @@ program
     };
 
     const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {} } : ora('Converting markdown to PDF...').start();
+
 
     if (input === '-') {
       if (options.jsonErrors) {
@@ -256,7 +288,7 @@ program
       }
     }
 
-    const rawOutput = options.output;
+    const rawOutput = convertOptions.output;
     if (rawOutput) {
       const outputStat = fs.existsSync(rawOutput) ? fs.statSync(rawOutput) : null;
       if (outputStat?.isDirectory() || rawOutput.endsWith('/') || rawOutput.endsWith(path.sep)) {
@@ -270,13 +302,17 @@ program
       }
     }
 
-    let output = options.output || input.replace(/\.md$/i, '.pdf');
+    let output = convertOptions.output || input.replace(/\.md$/i, '.pdf');
     if (path.extname(output) === '') {
       output = output + '.pdf';
       if (!options.jsonErrors) {
         console.warn(pc.yellow(`⚠  No extension given, writing to ${output}`));
       }
     }
+    
+    // Ensure the final output is saved to convertOptions
+    convertOptions.output = output;
+    convertOptions.input = input;
 
     const resolvedInput = path.resolve(input);
     const resolvedOutput = path.resolve(output);
@@ -312,47 +348,18 @@ program
       }
     }
 
-    if ((options.tocDepth || options.tocTitle) && !options.toc) {
+    if ((convertOptions.tocDepth || convertOptions.tocTitle) && !convertOptions.toc) {
       console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
     }
-    if (options.headerTemplate && !options.header) {
+    if (typeof convertOptions.header === 'object' && convertOptions.header.template && !convertOptions.header.enabled) {
       console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
     }
-    if (options.footerTemplate && !options.footer) {
+    if (typeof convertOptions.footer === 'object' && convertOptions.footer.template && !convertOptions.footer.enabled) {
       console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
     }
 
     try {
-      const result = await convert({
-        input,
-        output,
-        toc: options.toc,
-        tocDepth: options.tocDepth,
-        tocTitle: options.tocTitle,
-        header: options.headerTemplate ? { template: options.headerTemplate } : options.header,
-        footer: options.footerTemplate ? { template: options.footerTemplate } : options.footer,
-        paper: options.paper as ConvertOptions['paper'],
-        margin: options.margin,
-        theme: options.theme,
-        mermaid: {
-          theme: options.mermaidTheme as any,
-          timeout: options.mermaidTimeout ? parseInt(options.mermaidTimeout as string) : undefined
-        },
-        math: {
-          enabled: options.math ?? true
-        },
-        pageBreaks: {
-          hrAsPageBreak: options.hrPageBreak ?? false,
-          h1NewPage: options.h1NewPage ?? false,
-        },
-        obsidian: {
-          showTags: !options.hideTags,
-          resolveLinks: options.resolveLinks,
-          vaultRoot: options.vaultRoot,
-          attachmentFolder: options.attachmentFolder,
-          maxAttachmentSizeMb: options.maxAttachmentSize ? parseInt(options.maxAttachmentSize as string) : undefined,
-        }
-      });
+      const result = await convert(convertOptions);
 
       if (!options.jsonErrors) {
         if (result.warnings && result.warnings.length > 0) {

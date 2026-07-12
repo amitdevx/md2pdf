@@ -8,6 +8,7 @@ export interface PdfMetadata {
   creationDate?: Date;
 }
 
+export * from './config.js';
 export interface ConvertOptions {
   input: string;
   output: string;

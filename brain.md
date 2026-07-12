@@ -4,7 +4,7 @@
 > Any AI agent reading this file should be able to understand, modify, build, test,
 > and extend the project without reading any other file.
 >
-> **Last updated:** 2026-07-11 (v0.4.1)
+> **Last updated:** 2026-07-11 (v0.5.0)
 
 ---
 
@@ -50,7 +50,7 @@
 
 ## 2. Architecture & Pipeline
 
-### Core Pipeline (v0.4.1)
+### Core Pipeline (v0.5.0)
 
 ```
 Input .md file
@@ -4094,7 +4094,7 @@ export default tseslint.config(
 ---
 ## 7. Dependency Graph
 
-### Runtime Dependencies (v0.4.1)
+### Runtime Dependencies (v0.5.0)
 
 ```
 @amitdevx/md2pdf
@@ -4132,7 +4132,7 @@ export default tseslint.config(
 └── @types/hast@^3.0.4         ← TypeScript types for hast AST
 ```
 
-### Data Flow (v0.4.1)
+### Data Flow (v0.5.0)
 
 ```
 User input (.md)
@@ -4189,7 +4189,7 @@ npm run build
 # tsup && tsc -p tsconfig.build.json --emitDeclarationOnly
 ```
 
-### Output Structure (v0.4.1)
+### Output Structure (v0.5.0)
 
 ```
 dist/
@@ -4303,7 +4303,7 @@ dist/
 
 ## 11. Public API Surface
 
-### Current (v0.4.1)
+### Current (v0.5.0)
 
 ```ts
 // src/index.ts
@@ -4386,7 +4386,7 @@ mermaid:
 
 ## 12. Type System
 
-### All Current Types (v0.4.1)
+### All Current Types (v0.5.0)
 
 ```ts
 // src/types/index.ts
@@ -4473,7 +4473,7 @@ export class Md2PdfError extends Error {
 
 ## 13. Current CSS / Theme System
 
-### State (v0.4.1)
+### State (v0.5.0)
 
 CSS is **extracted** from `src/renderer/index.ts` into `src/assets/css.ts` as two exported string constants:
 - `baseCss` — typography, layout, tables, code, images, TOC, footnotes, task lists, details
@@ -4498,7 +4498,7 @@ All variables use `--md2pdf-*` prefix. Old `--text-main`, `--bg-main` etc. are g
 --md2pdf-code-border-radius
 ```
 
-### CSS Coverage (v0.4.1)
+### CSS Coverage (v0.5.0)
 
 | Element | Styled? | Notes |
 |---------|---------|-------|
@@ -4520,8 +4520,8 @@ All variables use `--md2pdf-*` prefix. Old `--text-main`, `--bg-main` etc. are g
 | Details/summary | ✅ | Bordered box, forced `open` attribute for PDF |
 | Print CSS | ✅ | color-adjust, no box-shadow, code wrap, page-break classes |
 | Mermaid containers | ✅ | Centered flex, margin 20px, page-break-inside: avoid |
-| Obsidian callouts | ❌ | Not yet supported (v0.4.1) |
-| Math/KaTeX | ❌ | Not yet supported (v0.4.1) |
+| Obsidian callouts | ❌ | Not yet supported (v0.5.0) |
+| Math/KaTeX | ❌ | Not yet supported (v0.5.0) |
 
 ---
 
@@ -4600,7 +4600,7 @@ v0.2.1  📋 Mermaid improvements — edge cases, caching, background color fix
 v0.3.0  📋 KaTeX — inline/display math, numbering, macros, chemistry
 
 v0.4.0  📋 Obsidian Core — wiki links, callouts, YAML frontmatter extras, tags
-v0.4.1  📋 Obsidian Embeds — ![[embeds]], transclusion, attachments
+v0.5.0  📋 Obsidian Embeds — ![[embeds]], transclusion, attachments
 
 v0.5.0  📋 Configuration — md2pdf.config.ts, defineConfig, profiles, Zod validation
 v0.6.0  📋 Themes — 7 built-in themes, custom CSS, CSS custom properties
@@ -4831,7 +4831,7 @@ Or via GitHub Release → `release.yml` runs automatically.
 
 ---
 
-## 23. Known Limitations (v0.4.1)
+## 23. Known Limitations (v0.5.0)
 
 | Issue | Impact | Fixed In |
 |-------|--------|----------|
@@ -4977,7 +4977,7 @@ User: md2pdf README.md --toc --mermaid-theme dark -o out.pdf
 > **End of brain.md**
 >
 > This file is the single source of truth for any AI agent working on `@amitdevx/md2pdf`.
-> It reflects the exact state of the codebase at v0.4.1, with all known audit bugs fully resolved.
+> It reflects the exact state of the codebase at v0.5.0, with all known audit bugs fully resolved.
 > No re-analysis of other files is needed.
 
 ---
