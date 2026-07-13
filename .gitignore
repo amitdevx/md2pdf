@@ -40,3 +40,4 @@ test-parser.js
 
 # OS Files
 .DS_Store
+docs/audit*
