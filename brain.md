@@ -4,7 +4,7 @@
 > Any AI agent reading this file should be able to understand, modify, build, test,
 > and extend the project without reading any other file.
 >
-> **Last updated:** 2026-07-11 (v0.5.0)
+> **Last updated:** 2026-07-13 (v0.5.1)
 
 ---
 
@@ -24,7 +24,7 @@
 | Field | Value |
 |-------|-------|
 | **Package name** | `@amitdevx/md2pdf` |
-| **Version** | `0.4.1` |
+| **Version** | `0.5.1` |
 | **Description** | Production-quality Markdown to PDF rendering engine. |
 | **Author** | Amit Divekar |
 | **License** | MIT |

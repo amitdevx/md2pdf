@@ -117,11 +117,30 @@ export async function resolveObsidianEmbeds(
                 }
               } else {
                 // Heading section
-                const escapedSection = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const headingRegex = new RegExp(`^(#{1,6})\\s+${escapedSection}\\s*$([\\s\\S]*?)(?=^\\1\\s|$)`, 'im');
-                const hMatch = noteContent.match(headingRegex);
-                if (hMatch) {
-                  noteContent = hMatch[2].trim();
+                const lines = noteContent.split('\n');
+                const escapedName = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const headingPattern = new RegExp(`^(#{1,6})\\s+${escapedName}\\s*$`, 'i');
+
+                let sectionLevel = -1;
+                let inSection = false;
+                const sectionLines: string[] = [];
+
+                for (const line of lines) {
+                  if (!inSection) {
+                    const m = headingPattern.exec(line);
+                    if (m) {
+                      sectionLevel = m[1].length;
+                      inSection = true;
+                    }
+                  } else {
+                    const nextHeading = /^(#{1,6})\s/.exec(line);
+                    if (nextHeading && nextHeading[1].length <= sectionLevel) break;
+                    sectionLines.push(line);
+                  }
+                }
+
+                if (inSection) {
+                  noteContent = sectionLines.join('\n').trim();
                 } else {
                   noteContent = `> [!WARNING] Missing Section\n> Section \`#${section}\` not found in \`${target}\`.`;
                 }

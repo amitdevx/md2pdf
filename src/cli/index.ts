@@ -66,9 +66,18 @@ interface CliOptions {
   profile?: string;
 }
 
+function jsonOut(data: object) {
+  const str = JSON.stringify(data, null, 2);
+  if ((data as any).success === false && !(data as any).results) {
+    process.stderr.write(str + '\n');
+  } else {
+    process.stdout.write(str + '\n');
+  }
+}
+
 function renderCliError(err: Md2PdfError, options: CliOptions) {
   if (options.jsonErrors) {
-    console.log(JSON.stringify({
+    jsonOut({
       success: false,
       error: {
         code: err.code,
@@ -76,7 +85,7 @@ function renderCliError(err: Md2PdfError, options: CliOptions) {
         reason: err.reason,
         context: err.context
       }
-    }, null, 2));
+    });
     process.exit(EXIT.ENVIRONMENT_ERROR);
   }
 
@@ -185,7 +194,7 @@ program
     if (isNaN(n) || n <= 0) {
       throw new InvalidArgumentError(`must be a positive integer`);
     }
-    return val;
+    return n;
   })
   .action(async (inputsRaw: string[], options: CliOptions) => {
     // Resolve globs for Windows compatibility
@@ -240,10 +249,10 @@ program
     }
     
     const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
-      console.log(JSON.stringify({
+      jsonOut({
         success: false,
         error: { code, title, reason }
-      }, null, 2));
+      });
       process.exit(EXIT.USAGE_ERROR);
     };
 
@@ -335,12 +344,28 @@ program
     inputs = validInputs;
     if (inputs.length === 0) {
       if (options.jsonErrors) {
-        console.log(JSON.stringify({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } }));
+        jsonOut({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } });
       }
       process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
     }
 
-    const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {}, text: '' } : ora('Launching browser...').start();
+    interface SpinnerLike {
+      start(): void;
+      stop(): void;
+      succeed(text?: string): void;
+      warn(text?: string): void;
+      fail(text?: string): void;
+      text: string;
+    }
+
+    const noopSpinner: SpinnerLike = {
+      start: () => {}, stop: () => {}, succeed: () => {},
+      warn: () => {}, fail: () => {}, text: ''
+    };
+
+    const spinner: SpinnerLike = options.jsonErrors
+      ? noopSpinner
+      : ora('Launching browser...').start() as unknown as SpinnerLike;
     const startTime = Date.now();
     let globalBrowser: any;
     let globalMermaidContext: any;
@@ -463,7 +488,7 @@ program
       }
 
       if (options.jsonErrors) {
-        console.log(JSON.stringify({
+        jsonOut({
           success: !hasErrors,
           results: results.map((r: any, index: number) => ({
             input: inputs[index],
@@ -473,7 +498,7 @@ program
             warnings: r.warnings,
             ...(r.isError ? { error: r.error } : {})
           }))
-        }, null, 2));
+        });
       } else {
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
         if (isBatch) {
@@ -483,9 +508,9 @@ program
           if (hasErrors) {
             const res = results[0] as any;
             const errStr = res?.isError ? `${path.basename(inputs[0])} — ${res.error}` : `Failed in ${totalTime}s`;
-            (spinner as any).fail(pc.red(errStr));
+            spinner.fail(pc.red(errStr));
           } else {
-            (spinner as any).succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));
+            spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));
           }
         }
       }
@@ -495,11 +520,7 @@ program
       }
 
     } catch (err: any) {
-      if (options.jsonErrors && typeof (spinner as any).stop === 'function') {
-        (spinner as any).stop();
-      } else if (typeof (spinner as any).stop === 'function') {
-        (spinner as any).stop();
-      }
+      spinner.stop();
 
       if (err instanceof Md2PdfError) {
         renderCliError(err, options);
@@ -507,7 +528,7 @@ program
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
         } else {
-          (spinner as any).fail(pc.red(err.message));
+          spinner.fail(pc.red(err.message));
           if (options.debug && err.stack) {
             console.error(pc.dim(err.stack));
           }

@@ -4,6 +4,7 @@ import { generatePdf } from '../pdf/index.js';
 import { ConvertOptions, ConvertResult, PdfMetadata } from '../types/index.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { resolveObsidianEmbeds } from '../plugins/obsidian/embeds.js';
 
 import matter from 'gray-matter';
@@ -113,8 +114,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     // Wait, let's keep it as file:// for standard markdown images to not break existing behavior unless it fails.
     // Actually, we should just let resolveObsidianEmbeds handle `![[...]]`. Standard images stay file:// for Playwright.
     const absPath = path.resolve(dir, decodeURIComponent(src));
-    const normalizedPath = absPath.replace(/\\/g, '/');
-    const fileUrl = 'file:///' + encodeURI(normalizedPath.replace(/^\/+/, ''));
+    const fileUrl = pathToFileURL(absPath).href;
     
     let sizing = '';
     const widthRaw = attrWidth || kramWidth;
@@ -203,12 +203,21 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const headerEnabled = options.header === true || 
       (typeof options.header === 'object' && options.header.enabled !== false);
     
+    const configKeywords = options.metadata?.keywords;
+    const fmTags = Array.isArray(frontmatter.tags)
+      ? frontmatter.tags.join(', ')
+      : (frontmatter.tags || '');
+    const fmKeywords = Array.isArray(frontmatter.keywords)
+      ? frontmatter.keywords.join(', ')
+      : (frontmatter.keywords || '');
+    const allKeywords = [configKeywords, fmTags, fmKeywords].filter(Boolean).join(', ');
+
     const metadata: PdfMetadata = {
       ...options.metadata,
       title,
       author: options.metadata?.author ?? frontmatter.author,
       subject: options.metadata?.subject ?? frontmatter.description ?? frontmatter.subject,
-      keywords: options.metadata?.keywords ?? (Array.isArray(frontmatter.tags) ? frontmatter.tags.join(', ') : frontmatter.tags) ?? (Array.isArray(frontmatter.keywords) ? frontmatter.keywords.join(', ') : frontmatter.keywords),
+      keywords: allKeywords || undefined,
       creationDate: options.metadata?.creationDate ?? (frontmatter.date ? new Date(frontmatter.date) : undefined),
     };
 

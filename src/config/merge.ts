@@ -5,19 +5,22 @@ function isObject(item: any) {
   return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function deepMerge(target: any, source: any): any {
   if (!source) return target;
-  const output = { ...target };
+  const output = Object.assign(Object.create(null), target);
   if (isObject(target) && isObject(source)) {
     Object.keys(source).forEach(key => {
+      if (FORBIDDEN_KEYS.has(key)) return;
       if (isObject(source[key])) {
         if (!(key in target)) {
-          Object.assign(output, { [key]: source[key] });
+          output[key] = source[key];
         } else {
           output[key] = deepMerge(target[key], source[key]);
         }
       } else {
-        Object.assign(output, { [key]: source[key] });
+        output[key] = source[key];
       }
     });
   }

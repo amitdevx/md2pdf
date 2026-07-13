@@ -74,9 +74,11 @@ const baseConfigSchema = z.object({
   }).optional(),
 });
 
-export const configSchema = baseConfigSchema.extend({
-  profiles: z.record(z.string(), baseConfigSchema).optional(),
-});
+const strippedBaseConfigSchema = baseConfigSchema.strip();
+
+export const configSchema = strippedBaseConfigSchema.extend({
+  profiles: z.record(z.string(), strippedBaseConfigSchema).optional(),
+}).strip();
 
 export function validateConfig(config: unknown) {
   return configSchema.parse(config);
