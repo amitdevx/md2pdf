@@ -420,7 +420,9 @@ program
           }
           
           if (!options.jsonErrors && isBatch) {
+            (spinner as any).stop();
             console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${result.renderTimeMs}ms)`));
+            (spinner as any).start();
           }
           
           successfulCount++;
@@ -428,8 +430,12 @@ program
         } catch (err: any) {
           hasErrors = true;
           failedCount++;
-          if (!options.jsonErrors) {
-            console.log(pc.red(`✖ ${path.basename(input)} — ${err.reason || err.message}`));
+          const msg = `${path.basename(input)} — ${err.reason || err.message}`;
+          
+          if (!options.jsonErrors && isBatch) {
+            (spinner as any).stop();
+            console.error(pc.red(`✖ ${msg}`));
+            (spinner as any).start();
           }
           results.push({ isError: true, error: err.reason || err.message, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
         }
@@ -454,7 +460,9 @@ program
           console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
         } else {
           if (hasErrors) {
-            (spinner as any).fail(pc.red(`Failed in ${totalTime}s`));
+            const res = results[0] as any;
+            const errStr = res?.isError ? `${path.basename(inputs[0])} — ${res.error}` : `Failed in ${totalTime}s`;
+            (spinner as any).fail(pc.red(errStr));
           } else {
             (spinner as any).succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));
           }
