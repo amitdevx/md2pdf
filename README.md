@@ -23,6 +23,7 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 ### Available (v0.5.1)
 - **Configuration (New in v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
 - **Batch Processing & Error Resilience (New in v0.5.1):** Process multiple files at once (`md2pdf *.md`). Intelligently continues on conversion errors, emits rich JSON failure mappings, and fully resolves Windows pathing.
+- **Enterprise Robustness (v0.5.1):** Resolved critical architectural constraints including Mermaid CSS leakage, PDF metadata processing performance, Obsidian circular embed protection, AST regex greedy matching, and native Node 18 runtime validation.
 - **Obsidian Compatibility (New in v0.4.1/v0.4.2):** Native parsing and rendering for callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), highlight syntax (`==highlight==`), and YAML frontmatter.
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Math Rendering (New in v0.3.0):** Print-perfect LaTeX inline and display math via KaTeX. Full support for matrices, environments, and macros with zero-dependency embedded fonts.
