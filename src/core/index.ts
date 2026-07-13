@@ -9,6 +9,17 @@ import { resolveObsidianEmbeds } from '../plugins/obsidian/embeds.js';
 import matter from 'gray-matter';
 import { injectMetadata } from '../pdf/metadata.js';
 
+function sanitizeFrontmatterValue(val: unknown): string {
+  if (val === null || val === undefined) return '';
+  const str = Array.isArray(val) ? val.join(', ') : String(val);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   const startTime = Date.now();
   const { input, output, paper, margin } = options;
@@ -85,7 +96,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   if (frontmatter.publish === false) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
     throw new Md2PdfError(
-      Md2PdfErrorCode.ERR_CONFIG_ERROR,
+      Md2PdfErrorCode.ERR_PUBLISH_SKIPPED,
       'Skipped Conversion',
       'The file has `publish: false` in its frontmatter.',
       { markdownFile: inputPath }
@@ -206,7 +217,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       if (typeof options.header === 'object' && options.header.template) {
         headerTemplate = options.header.template;
         // Replace {frontmatter.X} with actual values
-        headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
+        headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
       } else {
         headerTemplate = `
         <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; border-bottom: 0.5px solid #ccc; margin-bottom: 5mm; padding-bottom: 2mm;">
@@ -226,7 +237,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       if (typeof options.footer === 'object' && options.footer.template) {
         footerTemplate = options.footer.template;
         // Replace {frontmatter.X} with actual values
-        footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => frontmatter[key] || '');
+        footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
       } else {
         footerTemplate = `
         <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: center; border-top: 0.5px solid #ccc; margin-top: 5mm; padding-top: 2mm;">

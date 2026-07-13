@@ -343,14 +343,22 @@ program
     const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {}, text: '' } : ora('Launching browser...').start();
     const startTime = Date.now();
     let globalBrowser: any;
+    let globalMermaidContext: any;
     let globalMermaidPage: any;
+
+    const cleanup = async () => {
+      if (globalMermaidContext) {
+        await globalMermaidContext.close().catch(() => {});
+      }
+      if (globalBrowser) {
+        await globalBrowser.close().catch(() => {});
+      }
+    };
 
     // Graceful Shutdown Handler for Ctrl+C
     process.on('SIGINT', async () => {
       console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
-      if (globalBrowser) {
-        await globalBrowser.close().catch(() => {});
-      }
+      await cleanup();
       process.exit(130);
     });
 
@@ -366,10 +374,16 @@ program
         const input = inputs[i];
         
         // Lazy-load Mermaid page ONLY if the file actually contains Mermaid diagrams
-        const content = fs.readFileSync(input, 'utf-8');
-        if (isBatch && content.includes('```mermaid') && !globalMermaidPage) {
-          const mermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
-          globalMermaidPage = await mermaidContext.newPage();
+        const hasMermaid = await new Promise<boolean>((resolve) => {
+          const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
+          stream.once('data', (chunk) => { stream.destroy(); resolve((chunk as string).includes('```mermaid')); });
+          stream.once('error', () => resolve(false));
+          stream.once('end', () => resolve(false));
+        });
+        
+        if (isBatch && hasMermaid && !globalMermaidPage) {
+          globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
+          globalMermaidPage = await globalMermaidContext.newPage();
           await globalMermaidPage.setContent(`<!DOCTYPE html>
 <html>
 <head>
@@ -428,6 +442,13 @@ program
           successfulCount++;
           results.push(result);
         } catch (err: any) {
+          if (err?.code === 'ERR_PUBLISH_SKIPPED') {
+            results.push({ isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'] });
+            if (!options.jsonErrors) {
+              console.log(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
+            }
+            continue;
+          }
           hasErrors = true;
           failedCount++;
           const msg = `${path.basename(input)} — ${err.reason || err.message}`;
@@ -494,9 +515,7 @@ program
         }
       }
     } finally {
-      if (globalBrowser) {
-        await globalBrowser.close();
-      }
+      await cleanup();
     }
 
   });

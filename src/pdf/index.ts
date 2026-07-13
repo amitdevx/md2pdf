@@ -1,5 +1,6 @@
 import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
+import path from 'node:path';
 
 export interface PdfOptions {
   html: string;
@@ -47,8 +48,17 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       }
       
       if (url.startsWith('file://')) {
-        const allowedDir = 'file://' + process.cwd().replace(/\\/g, '/');
-        if (!url.startsWith(allowedDir)) {
+        try {
+          const rawPath = decodeURIComponent(new URL(url).pathname);
+          const resolvedPath = path.resolve(rawPath);
+          const allowedDir = path.resolve(process.cwd());
+
+          const isAllowed =
+            resolvedPath.startsWith(allowedDir + path.sep) ||
+            resolvedPath === allowedDir;
+
+          if (!isAllowed) return route.abort('accessdenied');
+        } catch {
           return route.abort('accessdenied');
         }
       }
