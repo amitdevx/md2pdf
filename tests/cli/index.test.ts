@@ -71,20 +71,20 @@ describe('CLI End-to-End Tests', () => {
     expect(result.stderr).toContain('is a directory, not a file');
   });
 
-  it('should exit with 2 on publish: false file', () => {
+  it('should exit with 1 on publish: false file', () => {
     const skipMd = path.resolve(__dirname, 'skip.md');
     fs.writeFileSync(skipMd, '---\npublish: false\n---\n# Title');
     const result = runCli(skipMd);
-    expect(result.status).toBe(2);
+    expect(result.status).toBe(1);
     expect(result.stderr).toContain('publish: false');
     fs.unlinkSync(skipMd);
   });
 
-  it('should exit with 2 on bad YAML frontmatter', () => {
+  it('should exit with 1 on bad YAML frontmatter', () => {
     const badYaml = path.resolve(__dirname, 'bad-yaml.md');
     fs.writeFileSync(badYaml, '---\ntitle: [\n---\n# Title');
     const result = runCli(badYaml);
-    expect(result.status).toBe(2);
+    expect(result.status).toBe(1);
     expect(result.stderr).toContain('Invalid Frontmatter');
     fs.unlinkSync(badYaml);
   });

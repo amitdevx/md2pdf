@@ -226,6 +226,13 @@ program
     // Add output to cliFlags so mergeConfig maps them. We'll set input individually in the loop.
     const cliFlags = { ...options, output: options.output };
     
+    if (cliFlags.vaultRoot && !fs.existsSync(cliFlags.vaultRoot)) {
+      if (!options.jsonErrors) {
+        console.warn(pc.yellow(`⚠ --vault-root '${cliFlags.vaultRoot}' does not exist, ignoring.`));
+      }
+      delete cliFlags.vaultRoot;
+    }
+    
     if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
       if (!options.jsonErrors) {
         console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
@@ -273,33 +280,42 @@ program
     }
 
     // Synchronous Validation Loop
+    let hasErrors = false;
+    let successfulCount = 0;
+    let failedCount = 0;
+    const validInputs: string[] = [];
+
+    const reportError = (input: string, reason: string) => {
+      hasErrors = true;
+      failedCount++;
+      if (!options.jsonErrors) {
+        console.error(pc.red(`✖ ${input} — ${reason}`));
+      }
+    };
+
     for (const input of inputs) {
       if (input === '-') {
-        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INPUT_UNSUPPORTED', 'Stdin Not Supported', 'stdin input is not supported.');
-        else { console.error(pc.red('✖ stdin input is not supported.')); process.exit(EXIT.USAGE_ERROR); }
+        reportError(input, 'stdin input is not supported');
+        continue;
       }
-
       if (!fs.existsSync(input)) {
-        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INPUT_NOT_FOUND', 'File Not Found', `Input file '${input}' does not exist.`);
-        else { console.error(pc.red(`✖ Input file '${input}' does not exist`)); process.exit(EXIT.USAGE_ERROR); }
+        reportError(input, 'file not found');
+        continue;
       }
-
       const stat = fs.statSync(input);
       if (stat.isDirectory()) {
-        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INPUT_IS_DIRECTORY', 'Input is Directory', `'${input}' is a directory, not a file.`);
-        else { console.error(pc.red(`✖ '${input}' is a directory, not a file`)); process.exit(EXIT.USAGE_ERROR); }
+        reportError(input, 'is a directory, not a file');
+        continue;
       }
-
       if (path.extname(input).toLowerCase() !== '.md') {
-        if (options.jsonErrors) emitJsonErrorAndExit('ERR_INVALID_EXTENSION', 'Invalid Extension', `'${input}' is not a markdown file.`);
-        else { console.error(pc.red(`✖ '${input}' is not a markdown file`)); process.exit(EXIT.USAGE_ERROR); }
+        reportError(input, 'is not a markdown file');
+        continue;
       }
-
       try {
         fs.accessSync(input, fs.constants.R_OK);
       } catch {
-        if (options.jsonErrors) emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Permission denied: cannot read '${input}'`);
-        else { console.error(pc.red(`✖ Permission denied: cannot read '${input}'`)); process.exit(EXIT.USAGE_ERROR); }
+        reportError(input, 'permission denied');
+        continue;
       }
 
       let predictedOutput = options.output;
@@ -310,9 +326,18 @@ program
       }
 
       if (path.resolve(input) === path.resolve(predictedOutput)) {
-        if (options.jsonErrors) emitJsonErrorAndExit('ERR_SAME_INPUT_OUTPUT', 'Same IO', 'Input and output cannot be the same file');
-        else { console.error(pc.red('✖ Input and output cannot be the same file')); process.exit(EXIT.USAGE_ERROR); }
+        reportError(input, 'input and output cannot be the same file');
+        continue;
       }
+      validInputs.push(input);
+    }
+    
+    inputs = validInputs;
+    if (inputs.length === 0) {
+      if (options.jsonErrors) {
+        console.log(JSON.stringify({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } }));
+      }
+      process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
     }
 
     const spinner = options.jsonErrors ? { start: () => ({}), succeed: () => {}, warn: () => {}, fail: () => {}, text: '' } : ora('Launching browser...').start();
@@ -331,7 +356,9 @@ program
 
     try {
       const { getBrowser } = await import('../pdf/browser.js');
-      globalBrowser = await getBrowser();
+      if (isBatch) {
+        globalBrowser = await getBrowser();
+      }
       
       const results = [];
 
@@ -340,7 +367,7 @@ program
         
         // Lazy-load Mermaid page ONLY if the file actually contains Mermaid diagrams
         const content = fs.readFileSync(input, 'utf-8');
-        if (content.includes('```mermaid') && !globalMermaidPage) {
+        if (isBatch && content.includes('```mermaid') && !globalMermaidPage) {
           const mermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
           globalMermaidPage = await mermaidContext.newPage();
           await globalMermaidPage.setContent(`<!DOCTYPE html>
@@ -372,38 +399,70 @@ program
         }
 
         const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
-        convertOptions.sharedBrowser = globalBrowser;
-        if (globalMermaidPage) {
-          (convertOptions as any).sharedMermaidPage = globalMermaidPage;
+        if (isBatch) {
+          convertOptions.sharedBrowser = globalBrowser;
+          if (globalMermaidPage) {
+            (convertOptions as any).sharedMermaidPage = globalMermaidPage;
+          }
         }
 
-        if (!options.jsonErrors) {
+        if (!options.jsonErrors && isBatch) {
           spinner.text = `Converting (${i + 1}/${inputs.length}): ${path.basename(input)}...`;
+        } else if (!options.jsonErrors && !isBatch) {
+          spinner.text = 'Converting...';
         }
 
-        const result = await convert(convertOptions as any);
-        
-        if (!options.jsonErrors && result.warnings.length > 0) {
-          result.warnings.forEach(w => console.warn(pc.yellow(`\n⚠ ${w}`)));
+        try {
+          const result = await convert(convertOptions as any);
+          
+          if (!options.jsonErrors && result.warnings.length > 0) {
+            result.warnings.forEach(w => console.warn(pc.yellow(`\n⚠ ${w}`)));
+          }
+          
+          if (!options.jsonErrors && isBatch) {
+            console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${result.renderTimeMs}ms)`));
+          }
+          
+          successfulCount++;
+          results.push(result);
+        } catch (err: any) {
+          hasErrors = true;
+          failedCount++;
+          if (!options.jsonErrors) {
+            console.log(pc.red(`✖ ${path.basename(input)} — ${err.reason || err.message}`));
+          }
+          results.push({ isError: true, error: err.reason || err.message, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
         }
-        
-        results.push(result);
       }
 
       if (options.jsonErrors) {
         console.log(JSON.stringify({
-          success: true,
-          results: results.map(r => ({
-            input: r.outputPath,
+          success: !hasErrors,
+          results: results.map((r: any, index: number) => ({
+            input: inputs[index],
             output: r.outputPath,
             pages: r.pageCounts,
             timeMs: r.renderTimeMs,
-            warnings: r.warnings
+            warnings: r.warnings,
+            ...(r.isError ? { error: r.error } : {})
           }))
         }, null, 2));
       } else {
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        (spinner as any).succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));
+        if (isBatch) {
+          (spinner as any).stop();
+          console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
+        } else {
+          if (hasErrors) {
+            (spinner as any).fail(pc.red(`Failed in ${totalTime}s`));
+          } else {
+            (spinner as any).succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));
+          }
+        }
+      }
+      
+      if (hasErrors) {
+        process.exitCode = EXIT.USAGE_ERROR;
       }
 
     } catch (err: any) {
