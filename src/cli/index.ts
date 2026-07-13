@@ -1,4 +1,15 @@
 #!/usr/bin/env node
+
+const [major] = process.versions.node.split('.').map(Number);
+if (major < 18) {
+  process.stderr.write(
+    `\nError: md2pdf requires Node.js 18 or higher.\n` +
+    `You are running Node.js ${process.version}.\n` +
+    `Please upgrade: https://nodejs.org\n\n`
+  );
+  process.exit(1);
+}
+
 import { Command, InvalidArgumentError } from 'commander';
 import { convert } from '../core/index.js';
 import ora from 'ora';

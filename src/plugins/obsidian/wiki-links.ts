@@ -1,4 +1,5 @@
 import { visit } from 'unist-util-visit';
+import Slugger from 'github-slugger';
 
 const escapeMap: Record<string, string> = {
   '&': '&amp;',
@@ -14,6 +15,7 @@ function escapeHtml(str: string): string {
 
 export default function remarkWikiLinks(options: { resolveLinks?: boolean } = {}) {
   return (tree: any) => {
+    const slugger = new Slugger();
     visit(tree, 'text', (node, index, parent) => {
       if (!parent || typeof index !== 'number') return;
       const text = node.value;
@@ -42,7 +44,7 @@ export default function remarkWikiLinks(options: { resolveLinks?: boolean } = {}
         let htmlString = '';
         if (options.resolveLinks) {
           // If resolveLinks is enabled, try to make it a clickable internal link
-          const slug = target.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          const slug = slugger.slug(target);
           htmlString = `<a href="#${slug}" class="wiki-link" data-target="${escapeHtml(target)}"${resolvedStr}>${escapeHtml(display)}</a>`;
         } else {
           // Otherwise, it's just a styled span that looks like a link

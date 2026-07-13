@@ -9,11 +9,14 @@ export function inlineMermaidSvgs(html: string, rendered: RenderedMermaid[]): st
     // We'll replace the entire div, or just inject into it.
     // It's easier to use a regex to replace the exact div if it has no children, but rehypeStringify might format it slightly.
     // Since we know the id exactly, we can match:
-    const regex = new RegExp(`<div\\s+id="${item.id}"[^>]*></div>`, 'g');
+    function escapeRegExp(str: string): string {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    const regex = new RegExp(`<div[^>]*\\bid="${escapeRegExp(item.id)}"[^>]*></div>`, 'g');
     
     // Replace with a div that contains the SVG
     processedHtml = processedHtml.replace(
-      regex, 
+      regex,
       `<div class="mermaid-container" style="page-break-inside: avoid; display: flex; justify-content: center; margin: 20px 0;">${item.svgHtml}</div>`
     );
 

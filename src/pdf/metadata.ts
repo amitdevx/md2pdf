@@ -14,6 +14,15 @@ const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
 const version = pkg.version as string;
 
 export async function injectMetadata(pdfPath: string, metadata: PdfMetadata): Promise<number> {
+  const hasMetadata = metadata.title || metadata.author || metadata.subject
+    || metadata.keywords || metadata.creator || metadata.producer || metadata.creationDate;
+
+  if (!hasMetadata) {
+    const pdfBytes = await fs.readFile(pdfPath);
+    const pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
+    return pdfDoc.getPageCount();
+  }
+
   const pdfBytes = await fs.readFile(pdfPath);
   const pdfDoc = await PDFDocument.load(pdfBytes);
 

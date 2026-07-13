@@ -10,17 +10,21 @@ export async function resolveObsidianEmbeds(
   maxEmbedDepth: number = 5,
   maxAttachmentSizeMb: number = 10,
   warnings: string[] = [],
-  seen: Set<string> = new Set()
+  seen: Set<string> = new Set(),
+  depth: number = 0
 ): Promise<string> {
   // If we've hit the recursion limit, stop
-  if (seen.size >= maxEmbedDepth) {
-    warnings.push(`Max embed depth reached (${maxEmbedDepth}). Stopping recursion.`);
+  if (depth >= maxEmbedDepth) {
+    warnings.push(`Max embed depth reached (${maxEmbedDepth}). Stopping recursion at: ${currentFilePath}`);
     return markdown;
   }
 
   // Regex to find ![[target]] or ![[target|alias]]
   const regex = /!\[\[(.*?)\]\]/g;
-  const matches = [...markdown.matchAll(regex)];
+  
+  // Mask code blocks so we don't match embeds inside them
+  const maskedMarkdown = markdown.replace(/(`{3,}[\s\S]*?`{3,}|`[^`\n]+`)/g, (match) => ' '.repeat(match.length));
+  const matches = [...maskedMarkdown.matchAll(regex)];
 
   if (matches.length === 0) return markdown;
 
@@ -180,7 +184,8 @@ export async function resolveObsidianEmbeds(
               maxEmbedDepth,
               maxAttachmentSizeMb,
               warnings,
-              newSeen
+              newSeen,
+              depth + 1
             );
 
           } catch {

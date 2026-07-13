@@ -71,33 +71,47 @@ export async function renderMermaidBlocks(
 
     let evaluatedResults: Array<{ id: string, svg: string | null, error: string | null }> = [];
     try {
-      evaluatedResults = await page.evaluate(async ({ blocks, timeout }) => {
-        const results = [];
+      evaluatedResults = await Promise.race([
+        page.evaluate(async ({ blocks, timeout }) => {
+          const results = [];
+        
+        // Group blocks by theme to minimize initialize() calls and prevent CSS style accumulation
+        const blocksByTheme = new Map<string, typeof blocks>();
         for (const block of blocks) {
-          try {
-            // @ts-expect-error window.mermaid is injected at runtime
-            window.mermaid.initialize({ startOnLoad: false, theme: block.theme, fontFamily: 'Inter, sans-serif', flowchart: { htmlLabels: false } });
-            
-            const renderPromise = (async () => {
-              // @ts-expect-error window.mermaid is injected at runtime
-              const { svg } = await window.mermaid.render(block.id + '-svg', block.source);
-              return { id: block.id, svg, error: null };
-            })();
+          const theme = block.theme || 'default';
+          if (!blocksByTheme.has(theme)) blocksByTheme.set(theme, []);
+          blocksByTheme.get(theme)!.push(block);
+        }
 
-            let timerId: ReturnType<typeof setTimeout>;
-            const timeoutPromise = new Promise<any>((_, reject) => {
-              timerId = setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
-            });
+        for (const [theme, themeBlocks] of blocksByTheme.entries()) {
+          // @ts-expect-error window.mermaid is injected at runtime
+          window.mermaid.initialize({ startOnLoad: false, theme, fontFamily: 'Inter, sans-serif', flowchart: { htmlLabels: false } });
+          
+          for (const block of themeBlocks) {
+            try {
+              const renderPromise = (async () => {
+                // @ts-expect-error window.mermaid is injected at runtime
+                const { svg } = await window.mermaid.render(block.id + '-svg', block.source);
+                return { id: block.id, svg, error: null };
+              })();
 
-            const res = await Promise.race([renderPromise, timeoutPromise]);
-            clearTimeout(timerId!);
-            results.push(res);
-          } catch (err: any) {
-            results.push({ id: block.id, svg: null, error: err.message || String(err) });
+              let timerId: ReturnType<typeof setTimeout>;
+              const timeoutPromise = new Promise<any>((_, reject) => {
+                timerId = setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
+              });
+
+              const res = await Promise.race([renderPromise, timeoutPromise]);
+              clearTimeout(timerId!);
+              results.push(res);
+            } catch (err: any) {
+              results.push({ id: block.id, svg: null, error: err.message || String(err) });
+            }
           }
         }
         return results;
-      }, { blocks: payloads, timeout: timeoutMs });
+      }, { blocks: payloads, timeout: timeoutMs }),
+      new Promise<any>((_, reject) => setTimeout(() => reject(new Error(`page.evaluate hung for ${timeoutMs + 2000}ms`)), timeoutMs + 2000))
+    ]);
     } catch (e: any) {
       // If the entire evaluate fails
       console.warn(`\x1b[33m⚠ Mermaid Batch Render Error: ${e.message}\x1b[0m`);
@@ -136,19 +150,23 @@ export async function renderMermaidBlocks(
       let processedSvg = res.svg || '';
       
       if (processedSvg) {
-        // Extract the exact width from the SVG's viewBox (0 0 width height)
-        const viewBoxMatch = processedSvg.match(/viewBox="[^"]*?([0-9.]+)\s+([0-9.]+)"/);
-        if (viewBoxMatch) {
-          const width = viewBoxMatch[1];
-          // Strip any hardcoded width or style attributes outputted by Mermaid
-          processedSvg = processedSvg.replace(/\s+width="[^"]+"/, '');
-          processedSvg = processedSvg.replace(/\s+style="[^"]+"/, '');
-          
-          const finalMaxWidth = maxWidth || '100%';
-          const finalMaxHeight = maxHeight || 'none';
+        const m = processedSvg.match(/\bviewBox="([^"]+)"/);
+        if (m) {
+          const parts = m[1].trim().split(/[\s,]+/);
+          if (parts.length >= 4) {
+            const w = parseFloat(parts[2]);
+            const h = parseFloat(parts[3]);
+            if (isFinite(w) && isFinite(h) && w > 0 && h > 0) {
+              // Strip only hardcoded width/height attributes
+              processedSvg = processedSvg.replace(/(<svg[^>]*)\s+width="[^"]*"/, '$1');
+              processedSvg = processedSvg.replace(/(<svg[^>]*)\s+height="[^"]*"/, '$1');
+              
+              const finalMaxWidth = maxWidth || '100%';
+              const finalMaxHeight = maxHeight || 'none';
 
-          // Apply responsive width based precisely on the diagram's intrinsic dimension
-          processedSvg = processedSvg.replace('<svg ', `<svg style="width: ${width}px; max-width: ${finalMaxWidth}; max-height: ${finalMaxHeight}; height: auto; font-family: Inter, sans-serif;" `);
+              processedSvg = processedSvg.replace('<svg ', `<svg style="width: ${w}px; max-width: ${finalMaxWidth}; max-height: ${finalMaxHeight}; height: auto; font-family: Inter, sans-serif;" `);
+            }
+          }
         }
         
         // Wrap in a div to prevent the PDF engine from breaking the SVG across multiple pages

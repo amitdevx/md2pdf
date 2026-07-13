@@ -89,7 +89,7 @@ export default function remarkHighlight() {
                 }
                 
                 children.splice(i, 1, ...newChildren);
-                i += newChildren.length - (afterEnd.length > 0 ? 2 : 1);
+                i += newChildren.length - (afterEnd.length > 0 ? 1 : 0);
               } else {
                 const firstInner = child.value.slice(startMatchIndex + 2);
                 if (firstInner.length > 0) {
@@ -114,7 +114,7 @@ export default function remarkHighlight() {
                 
                 const nodesToRemove = endChildIndex - i + 1;
                 children.splice(i, nodesToRemove, ...newChildren);
-                i += newChildren.length - (afterEnd.length > 0 ? 2 : 1);
+                i += newChildren.length - (afterEnd.length > 0 ? 1 : 0);
               }
               break; // Break the inner string search, we modified the AST array
             } else {

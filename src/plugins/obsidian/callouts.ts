@@ -60,7 +60,7 @@ export default function rehypeCallouts() {
       firstTextNode.value = firstTextNode.value.substring(match[0].length);
       
       // If the first text node is now empty, remove it
-      if (firstTextNode.value.trim() === '' && firstTextNode.value.length === 0) {
+      if (firstTextNode.value.trim() === '') {
         firstParagraph.children.shift();
       }
 

@@ -19,6 +19,17 @@ import rehypeCallouts from '../plugins/obsidian/callouts.js';
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
 import { visit } from 'unist-util-visit';
 
+function resolveShikiTheme(md2pdfTheme?: string): string {
+  const map: Record<string, string> = {
+    'default': 'github-light',
+    'github': 'github-light',
+    'obsidian-dark': 'github-dark',
+    'dracula': 'dracula',
+    'nord': 'nord',
+  };
+  return map[md2pdfTheme || 'default'] || 'github-light';
+}
+
 function rehypeExpandDetails() {
   return (tree: any) => {
     visit(tree, 'element', (node) => {
@@ -33,6 +44,7 @@ function rehypeExpandDetails() {
 export async function parseMarkdown(
   markdown: string,
   options?: { 
+    theme?: string;
     toc?: boolean; 
     tocDepth?: number; 
     tocTitle?: string;
@@ -92,7 +104,7 @@ export async function parseMarkdown(
     .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
     .use(rehypeExpandDetails)
     .use(rehypeShiki, {
-      theme: 'github-light',
+      theme: resolveShikiTheme(options?.theme),
       fallbackLanguage: 'txt',
       onError: (err: unknown) => {
         if (err instanceof Error) {
