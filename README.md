@@ -20,8 +20,9 @@
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.5.0)
+### Available (v0.5.1)
 - **Configuration (New in v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
+- **Batch Processing & Error Resilience (New in v0.5.1):** Process multiple files at once (`md2pdf *.md`). Intelligently continues on conversion errors, emits rich JSON failure mappings, and fully resolves Windows pathing.
 - **Obsidian Compatibility (New in v0.4.1/v0.4.2):** Native parsing and rendering for callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), highlight syntax (`==highlight==`), and YAML frontmatter.
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Math Rendering (New in v0.3.0):** Print-perfect LaTeX inline and display math via KaTeX. Full support for matrices, environments, and macros with zero-dependency embedded fonts.
@@ -61,7 +62,7 @@ Generate a PDF from a single Markdown file:
 md2pdf README.md
 ```
 
-Process multiple files at once (Batch Mode) using wildcards (new in v0.5.0):
+Process multiple files at once (Batch Mode) using wildcards (new in v0.5.1):
 ```bash
 md2pdf "docs/*.md" --output out_dir/
 ```
