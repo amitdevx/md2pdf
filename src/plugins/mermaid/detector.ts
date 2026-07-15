@@ -36,6 +36,12 @@ export const rehypeMermaidDetector: Plugin<[MermaidDetectorOptions], Root> = (op
           source = source.trim();
           if (!source) return; // Skip empty blocks
 
+          // --- Obsidian Compatibility Preprocessing ---
+          // 1. Fix escaped quotes in graphs (e.g. \" -> &quot;)
+          source = source.replace(/\\"/g, '&quot;');
+          // 2. Fix empty parentheses which crash mindmaps (e.g. this() -> this&#40;&#41;)
+          source = source.replace(/\(\)/g, '&#40;&#41;');
+
           // Extract meta theme if available e.g., {theme=dark}
           let theme: string | undefined;
           if (codeNode.data && typeof codeNode.data.meta === 'string') {

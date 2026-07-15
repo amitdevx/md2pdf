@@ -4,7 +4,9 @@
 > Any AI agent reading this file should be able to understand, modify, build, test,
 > and extend the project without reading any other file.
 >
-> **Last updated:** 2026-07-13 (v0.5.1)
+> # md2pdf Brain
+Version: v0.5.2
+Last Updated: 2026-07-15
 
 ---
 
