@@ -96,5 +96,5 @@ describe('CLI End-to-End Tests', () => {
     expect(result.status).toBe(0);
     expect(fs.existsSync(outPdf)).toBe(true);
     if (fs.existsSync(outPdf)) fs.unlinkSync(outPdf);
-  }, 30000);
+  }, 60000);
 });

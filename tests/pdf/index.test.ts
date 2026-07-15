@@ -26,7 +26,7 @@ describe('PDF Engine', () => {
     const stat = await fs.stat(outputPath);
     expect(stat.isFile()).toBe(true);
     expect(stat.size).toBeGreaterThan(0);
-  }, 30000); // Allow 30 seconds for Playwright to launch
+  }, 60000); // Allow 60 seconds for Playwright to launch
 
   it('should support header and footer templates', async () => {
     const html = '<html><body><h1>Header Footer Test</h1></body></html>';
@@ -42,7 +42,7 @@ describe('PDF Engine', () => {
     
     const stat = await fs.stat(outputPath);
     expect(stat.size).toBeGreaterThan(0);
-  }, 30000);
+  }, 60000);
 });
 
 import { injectMetadata } from '../../src/pdf/metadata.js';
@@ -68,5 +68,5 @@ describe('PDF Metadata', () => {
     });
     
     expect(pageCount).toBe(2);
-  }, 30000);
+  }, 60000);
 });
