@@ -22,6 +22,7 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 
 ### Available (v0.5.3)
 - **Mermaid Syntax Tolerance (New in v0.5.3):** Flawless native Mermaid compatibility by securely downgrading the embedded engine to `v10.9.1` (Obsidian parity). Intelligently bridges the syntax gap using proper AST regex preprocessing (e.g. converting `\"` to `#quot;` and `()` to `&#40;&#41;`) so your complex Obsidian diagrams and mindmaps compile without crashing the headless Chromium renderer.
+- **Robust CLI Processing (New in v0.5.3):** Added step-by-step per-file overwrite warnings, color-coded red terminal errors for deep plugin failures, and graceful batch interruptions using `Ctrl+C`.
 - **Configuration (New in v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
 - **Batch Processing & Error Resilience (New in v0.5.1):** Process multiple files at once (`md2pdf *.md`). Intelligently continues on conversion errors, emits rich JSON failure mappings, and fully resolves Windows pathing.
 - **Enterprise Robustness (v0.5.1):** Resolved critical architectural constraints including Mermaid CSS leakage, PDF metadata processing performance, Obsidian circular embed protection, AST regex greedy matching, and native Node 18 runtime validation.
