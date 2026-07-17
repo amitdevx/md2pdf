@@ -5,7 +5,7 @@
 > and extend the project without reading any other file.
 >
 > # md2pdf Brain
-Version: v0.5.2
+Version: v0.5.3
 Last Updated: 2026-07-15
 
 ---

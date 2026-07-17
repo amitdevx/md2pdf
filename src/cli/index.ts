@@ -349,6 +349,13 @@ program
         reportError(input, 'input and output cannot be the same file');
         continue;
       }
+      
+      if (fs.existsSync(predictedOutput)) {
+        if (!options.jsonErrors) {
+          console.warn(pc.yellow(`⚠ Warning: Output file '${predictedOutput}' already exists and will be overwritten.`));
+        }
+      }
+      
       validInputs.push(input);
     }
     

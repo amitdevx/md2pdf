@@ -37,8 +37,8 @@ export const rehypeMermaidDetector: Plugin<[MermaidDetectorOptions], Root> = (op
           if (!source) return; // Skip empty blocks
 
           // --- Obsidian Compatibility Preprocessing ---
-          // 1. Fix escaped quotes in graphs (e.g. \" -> &quot;)
-          source = source.replace(/\\"/g, '&quot;');
+          // 1. Fix escaped quotes in graphs (e.g. \" -> #quot;)
+          source = source.replace(/\\"/g, '#quot;');
           // 2. Fix empty parentheses which crash mindmaps (e.g. this() -> this&#40;&#41;)
           source = source.replace(/\(\)/g, '&#40;&#41;');
 
