@@ -1,7 +1,6 @@
 <div align="center">
 
-# md2pdf
-
+<img src="./assets/logo.png" alt="md2pdf logo" width="350">
 <p align="center">
   <a href="https://www.npmjs.com/package/@amitdevx/md2pdf"><img src="https://img.shields.io/npm/v/@amitdevx/md2pdf.svg?style=flat-square" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@amitdevx/md2pdf"><img src="https://img.shields.io/npm/dt/@amitdevx/md2pdf.svg?style=flat-square" alt="npm downloads"></a>
