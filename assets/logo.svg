@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512"
+     width="512"
+     height="512">
+
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+
+    <linearGradient id="paper" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#252A38"/>
+      <stop offset="100%" stop-color="#181C28"/>
+    </linearGradient>
+
+    <linearGradient id="pdf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B6B"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14"
+        flood-color="#000" flood-opacity=".25"/>
+    </filter>
+
+    <!-- Reusable Base Document Shape to ensure perfectly parallel layers -->
+    <path id="doc-shape" d="
+      M110 52 
+      H330 
+      L402 124 
+      V366 
+      C402 389 385 406 362 406 
+      H110 
+      C87 406 70 389 70 366 
+      V92 
+      C70 69 87 52 110 52 
+      Z"/>
+  </defs>
+
+  <!-- 1. Purple Layer (Matches doc shape perfectly, shifted left and down) -->
+  <use href="#doc-shape" x="-18" y="18" fill="url(#bg)"/>
+
+  <!-- 2. Document Group -->
+  <g filter="url(#shadow)">
+    
+    <!-- Dark Paper -->
+    <use href="#doc-shape" fill="url(#paper)"/>
+
+    <!-- 3. Document Fold (White Flap) -->
+    <!-- Matches the cut angle perfectly and creates a flush fold -->
+    <path
+      fill="#ffffff"
+      d="
+      M 330 52 
+      L 402 124 
+      H 342 
+      A 12 12 0 0 1 330 112 
+      Z"/>
+
+  </g>
+
+  <!-- Markdown Box -->
+  <rect
+      x="110"
+      y="96"
+      width="92"
+      height="92"
+      rx="18"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="6"/>
+
+  <text
+      x="156"
+      y="156"
+      font-family="Arial, sans-serif"
+      font-size="56"
+      font-weight="700"
+      fill="#ffffff"
+      text-anchor="middle">
+      M
+  </text>
+
+  <!-- Top Lines -->
+  <rect x="228" y="102" width="90" height="10" rx="5" fill="#E5E7EB"/>
+  <rect x="228" y="134" width="132" height="10" rx="5" fill="#E5E7EB"/>
+
+  <!-- Content -->
+  <rect x="110" y="222" width="110" height="10" rx="5" fill="#9F7AEA"/>
+  <rect x="110" y="252" width="112" height="10" rx="5" fill="#9F7AEA"/>
+  <rect x="110" y="286" width="114" height="10" rx="5" fill="#D1D5DB"/>
+  <rect x="110" y="320" width="116" height="10" rx="5" fill="#D1D5DB"/>
+
+  <rect x="250" y="212" width="102" height="10" rx="5" fill="#D1D5DB"/>
+
+  <!-- PDF Badge -->
+  <g filter="url(#shadow)">
+
+    <rect
+      x="236"
+      y="236"
+      width="188"
+      height="104"
+      rx="18"
+      fill="#ffffff"/>
+
+    <text
+      x="330"
+      y="309"
+      text-anchor="middle"
+      font-family="Arial, sans-serif"
+      font-size="54"
+      font-weight="800"
+      fill="url(#pdf)">
+      PDF
+    </text>
+
+  </g>
+
+  <!-- Wordmark -->
+  <text
+      x="230"
+      y="480"
+      text-anchor="middle"
+      font-family="Arial, sans-serif"
+      font-size="64"
+      font-weight="700">
+      <tspan fill="#F3F4F6">md</tspan><tspan fill="#8B5CF6">2</tspan><tspan fill="#EF4444">pdf</tspan>
+  </text>
+
+</svg>
