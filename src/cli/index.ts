@@ -349,12 +349,7 @@ program
         reportError(input, 'input and output cannot be the same file');
         continue;
       }
-      
-      if (fs.existsSync(predictedOutput)) {
-        if (!options.jsonErrors) {
-          console.warn(pc.yellow(`⚠ Warning: Output file '${predictedOutput}' already exists and will be overwritten.`));
-        }
-      }
+
       
       validInputs.push(input);
     }
@@ -398,8 +393,10 @@ program
       }
     };
 
+    let isShuttingDown = false;
     // Graceful Shutdown Handler for Ctrl+C
     process.on('SIGINT', async () => {
+      isShuttingDown = true;
       console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
       await cleanup();
       process.exit(130);
@@ -414,6 +411,7 @@ program
       const results = [];
 
       for (let i = 0; i < inputs.length; i++) {
+        if (isShuttingDown) break;
         const input = inputs[i];
         
         // Lazy-load Mermaid page ONLY if the file actually contains Mermaid diagrams
@@ -463,28 +461,42 @@ program
           }
         }
 
+        if (fs.existsSync(output as string)) {
+          if (!options.jsonErrors && isBatch) {
+            (spinner as any).stop();
+            console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
+          } else if (!options.jsonErrors && !isBatch) {
+            console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
+          }
+        }
+
         if (!options.jsonErrors && isBatch) {
           spinner.text = `Converting (${i + 1}/${inputs.length}): ${path.basename(input)}...`;
+          (spinner as any).start(); // restart spinner in case it was stopped by the warning
         } else if (!options.jsonErrors && !isBatch) {
           spinner.text = 'Converting...';
+          (spinner as any).start();
         }
 
         try {
           const result = await convert(convertOptions as any);
           
           if (!options.jsonErrors && result.warnings.length > 0) {
-            result.warnings.forEach(w => console.warn(pc.yellow(`\n⚠ ${w}`)));
+            (spinner as any).stop();
+            result.warnings.forEach(w => console.warn(pc.red(`⚠ ${w}`)));
+            if (!isBatch) (spinner as any).start();
           }
           
           if (!options.jsonErrors && isBatch) {
             (spinner as any).stop();
             console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${result.renderTimeMs}ms)`));
-            (spinner as any).start();
           }
           
           successfulCount++;
           results.push(result);
         } catch (err: any) {
+          if (isShuttingDown) break;
+          
           if (err?.code === 'ERR_PUBLISH_SKIPPED') {
             results.push({ isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'] });
             if (!options.jsonErrors) {
@@ -499,7 +511,6 @@ program
           if (!options.jsonErrors && isBatch) {
             (spinner as any).stop();
             console.error(pc.red(`✖ ${msg}`));
-            (spinner as any).start();
           }
           results.push({ isError: true, error: err.reason || err.message, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
         }

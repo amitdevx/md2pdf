@@ -36,11 +36,11 @@ export async function resolveAttachmentPath(
   return null;
 }
 
-export async function getBase64DataUri(filePath: string, maxMb: number = 10): Promise<string | null> {
+export async function getBase64DataUri(filePath: string, warnings: string[], maxMb: number = 10): Promise<string | null> {
   try {
     const stats = await fs.stat(filePath);
     if (stats.size > maxMb * 1024 * 1024) {
-      console.warn(`[md2pdf] Warning: Attachment ${filePath} is larger than ${maxMb}MB and will be skipped.`);
+      warnings.push(`Attachment ${filePath} is larger than ${maxMb}MB and will be skipped.`);
       return null;
     }
     const data = await fs.readFile(filePath);

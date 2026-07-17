@@ -188,7 +188,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     }
 
     const { processBeforeRender } = await import('../renderer/pipeline.js');
-    const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, {
+    const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, warnings, {
       theme: frontmatter.theme || options.theme,
       globalMermaidTheme: frontmatter.mermaid?.theme || options.mermaid?.theme,
       timeout: frontmatter.mermaid?.timeout || options.mermaid?.timeout,

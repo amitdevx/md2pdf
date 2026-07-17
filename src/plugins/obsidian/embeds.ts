@@ -65,7 +65,7 @@ export async function resolveObsidianEmbeds(
 
       if (imageExts.includes(ext)) {
         // It's an image
-        const dataUri = await getBase64DataUri(resolvedPath, maxAttachmentSizeMb);
+        const dataUri = await getBase64DataUri(resolvedPath, warnings, maxAttachmentSizeMb);
         if (dataUri) {
           // Handle sizing from alias: `300`, `300x200`
           let width = '';
@@ -98,7 +98,7 @@ export async function resolveObsidianEmbeds(
         }
 
         if (seen.has(notePath)) {
-          console.warn(`[md2pdf] Warning: Circular embed detected for ${notePath}.`);
+          warnings.push(`Circular embed detected for ${notePath}.`);
           replacement = `> [!WARNING] Circular Embed\n> Circular reference to \`${target}\` detected.`;
         } else if (notePath === currentFilePath) {
           replacement = `> [!WARNING] Self Embed\n> Cannot embed a note into itself (\`${target}\`).`;

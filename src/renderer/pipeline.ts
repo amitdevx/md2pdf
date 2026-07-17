@@ -7,6 +7,7 @@ export async function processBeforeRender(
   html: string,
   browser: Browser,
   mermaidBlocks: MermaidBlock[],
+  warnings: string[],
   options?: {
     theme?: string;
     globalMermaidTheme?: MermaidTheme;
@@ -25,6 +26,7 @@ export async function processBeforeRender(
     const renderedSvgs = await renderMermaidBlocks(
       browser, 
       mermaidBlocks, 
+      warnings,
       options?.theme, 
       options?.globalMermaidTheme,
       options?.timeout,

@@ -16,6 +16,7 @@ let cachedMermaidScriptPath: string | null = null;
 export async function renderMermaidBlocks(
   browser: Browser,
   blocks: MermaidBlock[],
+  warnings: string[],
   md2pdfTheme: string = 'default',
   globalMermaidTheme?: MermaidTheme,
   timeoutMs: number = 10000,
@@ -114,7 +115,7 @@ export async function renderMermaidBlocks(
     ]);
     } catch (e: any) {
       // If the entire evaluate fails
-      console.warn(`\x1b[33m⚠ Mermaid Batch Render Error: ${e.message}\x1b[0m`);
+      warnings.push(`Mermaid Batch Render Error: ${e.message}`);
       evaluatedResults = payloads.map(b => ({
         id: b.id,
         svg: null,
@@ -130,7 +131,7 @@ export async function renderMermaidBlocks(
 
       if (res.error) {
         const lineInfo = block.line ? ` at line ${block.line}` : '';
-        console.warn(`\x1b[33m⚠ Mermaid Error${lineInfo}: ${res.error}\x1b[0m`);
+        warnings.push(`Mermaid Error${lineInfo}: ${res.error}`);
         results.push({
           id: block.id,
           svgHtml: `
