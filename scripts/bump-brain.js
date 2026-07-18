@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-const BRAIN_PATH = 'brain.md';
+const BRAIN_PATH = 'docs/brain.md';
 let content = fs.readFileSync(BRAIN_PATH, 'utf-8');
 
 // Replace headings that have 0.4.2

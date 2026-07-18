@@ -17,7 +17,7 @@ tmp/
 
 # Internal dev planning (not shipped)
 /phase/
-/brain.md
+docs/brain.md
 
 # Golden document render output (not committed — only snapshots/ is committed)
 tests/output/

@@ -192,7 +192,6 @@ md2pdf init     → guided Chromium install wizard
 Every file in the repo (excluding `node_modules/`, `.git/`, `dist/`, and caches):
 
 ```
-brain.md
 CHANGELOG.md
 ci_audit.txt
 .claude/settings.local.json
@@ -204,6 +203,7 @@ docs/02-architecture.md
 docs/03-strategy.md
 docs/api.md
 docs/audit-v0.1.3.md
+docs/brain.md
 docs/contributing.md
 docs/getting-started.md
 docs/math.md
