@@ -7,6 +7,11 @@
   <a href="https://github.com/amitdevx/md2pdf/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@amitdevx/md2pdf.svg?style=flat-square" alt="License: MIT"></a>
 </p>
 
+<p align="center">
+  <b><a href="https://amitdevx.tech/projects/md2pdf">📖 Project Page</a></b> · 
+  <b><a href="https://www.npmjs.com/package/@amitdevx/md2pdf">npm</a></b> · 
+  <b><a href="https://github.com/amitdevx/md2pdf">GitHub</a></b>
+</p>
 </div>
 
 # @amitdevx/md2pdf
@@ -145,4 +150,6 @@ MIT License. See `LICENSE` for details.
 
 ## Author
 
-[Amit Divekar](https://amitdevx.tech)
+**Amit Divekar** — [amitdevx.tech](https://amitdevx.tech) · 
+[Project Page](https://amitdevx.tech/projects/md2pdf) · 
+[@amitdevx_](https://x.com/amitdevx_)
