@@ -162,7 +162,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   let parsed: any;
   let html: string;
   let browser;
-  let internallyLaunchedBrowser = false;
+  const internallyLaunchedBrowser = false;
   let title: string = '';
   
   try {

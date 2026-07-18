@@ -39,7 +39,7 @@ This is a very long paragraph that should wrap multiple times. Lorem ipsum dolor
 ## Links & Images
 [Click here for Google](https://google.com)
 
-![Placeholder Image](https://via.placeholder.com/150)
+![Placeholder Image](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==)
 
 ## Horizontal Rule
 ---

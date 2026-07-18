@@ -31,7 +31,7 @@ import { Md2PdfError } from '../errors/index.js';
     
     if (inputs.length === 0) {
       console.error(pc.red('✖ No input files found matching the provided arguments.'));
-      process.exit(EXIT.USAGE_ERROR);
+      process.exitCode = EXIT.USAGE_ERROR; return;
     }
 
     let resolvedConfig = {};
@@ -43,7 +43,7 @@ import { Md2PdfError } from '../errors/index.js';
     } catch (err: any) {
       console.error(pc.red(`\n✖ ${err.title || 'Config Error'}`));
       console.error(err.reason || err.message);
-      process.exit(EXIT.USAGE_ERROR);
+      process.exitCode = EXIT.USAGE_ERROR; return;
     }
     
     // Add output to cliFlags so mergeConfig maps them. We'll set input individually in the loop.
@@ -67,7 +67,7 @@ import { Md2PdfError } from '../errors/index.js';
         success: false,
         error: { code, title, reason }
       });
-      process.exit(EXIT.USAGE_ERROR);
+      process.exitCode = EXIT.USAGE_ERROR; return;
     };
 
     const isBatch = inputs.length > 1;
@@ -81,7 +81,7 @@ import { Md2PdfError } from '../errors/index.js';
         } else {
           console.error(pc.red(`✖ Output path '${options.output}' is a file, but multiple inputs were provided.`));
           console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
-          process.exit(EXIT.USAGE_ERROR);
+          process.exitCode = EXIT.USAGE_ERROR; return;
         }
       }
       if (!outputStat) {
@@ -97,7 +97,7 @@ import { Md2PdfError } from '../errors/index.js';
         } else {
           console.error(pc.red(`✖ Output path '${options.output}' is a directory, not a file.`));
           console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
-          process.exit(EXIT.USAGE_ERROR);
+          process.exitCode = EXIT.USAGE_ERROR; return;
         }
       }
     }
@@ -162,7 +162,7 @@ import { Md2PdfError } from '../errors/index.js';
       if (options.jsonErrors) {
         jsonOut({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } });
       }
-      process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
+      process.exitCode = hasErrors ? EXIT.USAGE_ERROR : EXIT.OK; return;
     }
 
     interface SpinnerLike {
@@ -194,6 +194,12 @@ import { Md2PdfError } from '../errors/index.js';
       if (globalBrowser) {
         await globalBrowser.close().catch(() => {});
       }
+      try {
+        const { forceClose } = await import('../pdf/daemon.js');
+        await forceClose();
+      } catch {
+        // Ignore failure to close the daemon
+      }
     };
 
     let isShuttingDown = false;
@@ -202,7 +208,7 @@ import { Md2PdfError } from '../errors/index.js';
       isShuttingDown = true;
       console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
       await cleanup();
-      process.exit(130);
+      process.exitCode = 130; return;
     });
 
     try {
@@ -364,7 +370,7 @@ import { Md2PdfError } from '../errors/index.js';
           if (options.debug && err.stack) {
             console.error(pc.dim(err.stack));
           }
-          process.exit(EXIT.USAGE_ERROR);
+          process.exitCode = EXIT.USAGE_ERROR; return;
         }
       }
     } finally {

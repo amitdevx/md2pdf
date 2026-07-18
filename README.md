@@ -36,9 +36,9 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Codebase Restructuring:** CLI monolith split into focused command handlers, unused directories removed, and plugin layout rationalized.
 - **Enhanced Reliability:** Security updates (Vitest ^3.2.0), deep configuration merge testing, and 60+ new core test paths.
 
-### Available (v0.5.3)
-- **Mermaid Syntax Tolerance (New in v0.5.3):** Flawless native Mermaid compatibility by securely downgrading the embedded engine to `v10.9.1` (Obsidian parity). Intelligently bridges the syntax gap using proper AST regex preprocessing (e.g. converting `\"` to `#quot;` and `()` to `&#40;&#41;`) so your complex Obsidian diagrams and mindmaps compile without crashing the headless Chromium renderer.
-- **Robust CLI Processing (New in v0.5.3):** Added step-by-step per-file overwrite warnings, color-coded red terminal errors for deep plugin failures, and graceful batch interruptions using `Ctrl+C`.
+### Available (v0.5.4)
+- **Mermaid Syntax Tolerance (New in v0.5.4):** Flawless native Mermaid compatibility by securely downgrading the embedded engine to `v10.9.1` (Obsidian parity). Intelligently bridges the syntax gap using proper AST regex preprocessing (e.g. converting `\"` to `#quot;` and `()` to `&#40;&#41;`) so your complex Obsidian diagrams and mindmaps compile without crashing the headless Chromium renderer.
+- **Robust CLI Processing (New in v0.5.4):** Added step-by-step per-file overwrite warnings, color-coded red terminal errors for deep plugin failures, and graceful batch interruptions using `Ctrl+C`.
 
 ### Previous Versions
 - **Configuration (New in v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).

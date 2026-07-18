@@ -11,16 +11,13 @@ if (major < 18) {
 }
 
 import { Command, InvalidArgumentError } from 'commander';
-import pc from 'picocolors';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import doctorCmd from './doctor.js';
 import initCmd from './init.js';
 import { runConvert } from '../commands/convert.js';
-import type { CliOptions } from './options.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8'));
 

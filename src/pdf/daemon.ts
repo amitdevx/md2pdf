@@ -29,6 +29,7 @@ export function scheduleClose(): void {
       warmBrowser = null;
     }
   }, IDLE_TIMEOUT_MS);
+  idleTimer.unref();
 }
 
 export async function forceClose(): Promise<void> {

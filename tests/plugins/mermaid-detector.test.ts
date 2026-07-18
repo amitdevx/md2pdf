@@ -14,7 +14,7 @@ describe('rehypeMermaidDetector', () => {
       .use(rehypeMermaidDetector, { blocks })
       .use(rehypeStringify);
       
-    await processor.process('\`\`\`mermaid\ngraph TD;\nA-->B;\n\`\`\`');
+    await processor.process('```mermaid\ngraph TD;\nA-->B;\n```');
     expect(blocks.length).toBe(1);
   });
 });

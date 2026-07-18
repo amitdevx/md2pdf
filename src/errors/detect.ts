@@ -112,7 +112,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
   return new Md2PdfError(
     Md2PdfErrorCode.ERR_UNKNOWN,
     'Unknown Error',
-    'An unexpected error occurred during PDF rendering.',
+    `An unexpected error occurred during PDF rendering. Details: ${error instanceof Error ? (error.stack || error.message) : String(error)}`,
     context,
     error
   );

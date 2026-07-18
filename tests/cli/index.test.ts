@@ -8,7 +8,7 @@ const fixturesDir = path.resolve(__dirname, '../fixtures');
 
 function runCli(args: string): { status: number; stdout: string; stderr: string } {
   try {
-    const output = execSync(`node ${cliPath} ${args}`, { encoding: 'utf-8', stdio: 'pipe' });
+    const output = execSync(`"${process.execPath}" "${cliPath}" ${args}`, { encoding: 'utf-8', stdio: 'pipe' });
     return { status: 0, stdout: output, stderr: '' };
   } catch (error: any) {
     return {
@@ -92,8 +92,8 @@ describe('CLI End-to-End Tests', () => {
   it('should successfully convert markdown to PDF with exit code 0', () => {
     const validMd = path.resolve(fixturesDir, 'basic.md');
     const outPdf = path.resolve(__dirname, 'out.pdf');
-    const result = runCli(`${validMd} -o ${outPdf}`);
-    expect(result.status).toBe(0);
+    const result = runCli(`"${validMd}" -o "${outPdf}"`);
+    expect(result.status, `CLI failed with stdout: ${result.stdout}\nstderr: ${result.stderr}`).toBe(0);
     expect(fs.existsSync(outPdf)).toBe(true);
     if (fs.existsSync(outPdf)) fs.unlinkSync(outPdf);
   }, 60000);
