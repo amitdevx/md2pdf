@@ -2,12 +2,12 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts', 'src/cli/index.ts'],
-  format: ['cjs', 'esm'],
+  format: ['esm'],
   dts: false,
-  sourcemap: true,
+  sourcemap: false,
   clean: true,
   treeshake: true,
+  minify: true,
   splitting: false,
-  noExternal: [/^katex/],
   outDir: 'dist',
 });
