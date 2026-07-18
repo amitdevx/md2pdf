@@ -8,7 +8,8 @@ describe('convert()', () => {
   });
 
   it('should reject output to sensitive directories', async () => {
-    await expect(convert({ input: 'test.md', output: '/etc/passwd' } as any))
+    const sensitivePath = process.platform === 'win32' ? 'C:\\Windows\\System32\\config' : '/etc/passwd';
+    await expect(convert({ input: 'test.md', output: sensitivePath } as any))
       .rejects.toThrow('protected system directory');
   });
 });
