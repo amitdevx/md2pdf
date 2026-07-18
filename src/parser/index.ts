@@ -5,7 +5,7 @@ import remarkRehype from 'remark-rehype';
 import rehypeSlug from 'rehype-slug';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import 'katex/contrib/mhchem/mhchem.js';
+
 import rehypeShiki from '@shikijs/rehype';
 import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/layout/toc.js';
@@ -74,6 +74,7 @@ export async function parseMarkdown(
     .use(remarkHighlight as any);
 
   if (options?.math?.enabled !== false) {
+    await import('katex/contrib/mhchem/mhchem.js');
     processor = processor.use(remarkMath as any);
   }
 

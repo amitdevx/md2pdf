@@ -21,7 +21,7 @@ function escapeHtml(str: string): string {
   }[tag] || tag));
 }
 
-export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean }): Promise<string> {
+export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean }): Promise<string> {
   const mathCss = options?.mathEnabled !== false ? await getKatexCss() : '';
   const safeTitle = escapeHtml(title);
   const bodyClass = options?.cssclass ? ` class="${escapeHtml(options.cssclass)}"` : '';
@@ -36,7 +36,7 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
     ${baseCss}
     ${printCss}
     ${mathCss}
-    ${obsidianCss}
+    ${options?.obsidianEnabled !== false ? obsidianCss : ''}
   </style>
 </head>
 <body${bodyClass}>
