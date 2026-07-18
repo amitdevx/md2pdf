@@ -5025,4 +5025,16 @@ During the release of v0.3.0, the tests passed perfectly locally on Node 24 but 
 1. **Always Check the CI in GitHub Workflows**: Local execution is not enough, especially across Node versions. Always wait for the GitHub CI matrix to complete and review the actual remote logs if testing behavior across platforms.
 2. **Bundle External CJS Dependencies in ESM Packages**: When creating ESM tools (using `type: module`), configure `tsup` to bundle tricky external dependencies (`noExternal: [/^katex/]`). This avoids runtime syntax resolution errors by letting the bundler transpile `import` statements safely ahead of time.
 
+### The v0.5.4 Cross-Platform CI Stabilization
+
+**What happened:**
+During the release of v0.5.4, the GitHub Actions CI matrix experienced cascading timeouts, hangs, and assertion failures strictly on the `windows-latest` runners, while `ubuntu-latest` and `macos-latest` passed. Additionally, a single failure on one OS immediately cancelled all other OS tests in progress.
+
+**Root Causes & Solutions:**
+1. **Matrix Cancellation**: By default, GitHub Actions cancels all pending or running jobs in a matrix if one job fails. Adding `fail-fast: false` to the `strategy` block ensures that independent matrix jobs run to completion regardless of siblings' exit statuses.
+2. **Playwright CI Installation**: Using `npx playwright-core install` caused missing system dependencies on Linux. The correct standard approach is `npx playwright install --with-deps chromium`, which guarantees system-level dependencies are resolved.
+3. **Event Loop Hangs in Vitest**: A shared Playwright browser daemon and a background `setTimeout` kept the Node.js event loop alive in Windows CI runners, causing Vitest to hang until it hit the 30-second global timeout. **Fix**: Explicitly call `.close()` on shared browsers and `.unref()` on idle timers during test teardown.
+4. **External Network Timeouts**: A markdown test fixture included an external image (`https://via.placeholder.com/...`). The Windows runner encountered SSL handshake delays connecting to this domain, hanging the playwright render process. **Fix**: Never rely on external network requests in test fixtures; always use local files or `base64` inline data URIs.
+5. **Cross-Platform Path Traversal Testing**: A test verifying that the CLI rejects sensitive output paths used `/etc/passwd`. On Windows, `path.resolve` mapped this to `D:\etc\passwd`, which bypassed the `startsWith('/etc')` validation and instead failed with a literal `ENOENT` (file not found), causing an assertion mismatch. **Fix**: Test suites must dynamically provide OS-appropriate sensitive paths (e.g., `process.platform === 'win32' ? 'C:\\Windows\\System32\\config' : '/etc/passwd'`) to accurately test traversal prevention logic across platforms.
+
 
