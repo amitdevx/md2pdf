@@ -1,4 +1,5 @@
 import { baseCss, printCss } from '../assets/css.js';
+import { fontCss } from '../assets/fonts.js';
 // Lazy-load: only imported when math is actually used
 let _katexCss: string | null = null;
 async function getKatexCss(): Promise<string> {
@@ -29,11 +30,9 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
 <head>
   <meta charset="UTF-8">
   <title>${safeTitle}</title>
-  <!-- TODO(v0.6.0): Bundle fonts locally instead of CDN to support offline/air-gapped environments -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Bundled local fonts (Inter, JetBrains Mono) -->
   <style>
+    ${fontCss}
     ${baseCss}
     ${printCss}
     ${mathCss}
