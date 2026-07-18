@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import ora from 'ora';
 import pc from 'picocolors';
 import { execSync } from 'node:child_process';
-import { EXIT } from './index.js';
+import { EXIT } from './formatter.js';
 
 export default new Command('init')
   .description('Interactive guided setup for new environments')

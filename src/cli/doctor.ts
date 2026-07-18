@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXIT } from './index.js';
+import { EXIT } from './formatter.js';
 import { Md2PdfError } from '../errors/index.js';
 import { detectBrowserError } from '../errors/detect.js';
 import { getRecommendation } from '../errors/recommendations.js';

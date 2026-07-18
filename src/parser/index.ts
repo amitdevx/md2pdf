@@ -8,8 +8,8 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/contrib/mhchem/mhchem.js';
 import rehypeShiki from '@shikijs/rehype';
 import rehypeStringify from 'rehype-stringify';
-import rehypeToc from '../plugins/toc.js';
-import rehypePageBreaks from '../plugins/page-breaks.js';
+import rehypeToc from '../plugins/layout/toc.js';
+import rehypePageBreaks from '../plugins/layout/page-breaks.js';
 
 import remarkWikiLinks from '../plugins/obsidian/wiki-links.js';
 import remarkTags from '../plugins/obsidian/tags.js';
