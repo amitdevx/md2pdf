@@ -7,9 +7,15 @@
   <a href="https://github.com/amitdevx/md2pdf/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@amitdevx/md2pdf.svg?style=flat-square" alt="License: MIT"></a>
 </p>
 
-<h3>Production-quality Markdown to PDF rendering engine for Node.js.</h3>
-
 </div>
+
+# @amitdevx/md2pdf
+
+**Convert Markdown to high-fidelity PDF** — CLI tool and Node.js API powered by headless Chromium.  
+Supports Mermaid diagrams, KaTeX math (LaTeX equations), Obsidian callouts and wiki-links, GFM tables,  
+syntax highlighting via Shiki, batch conversion, custom themes, TOC generation, and PDF metadata.
+
+> Zero vulnerabilities · Node.js >=18 · TypeScript · MIT License
 
 ## Overview
 
