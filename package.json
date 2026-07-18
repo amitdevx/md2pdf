@@ -99,7 +99,7 @@
     "node pdf",
     "document converter"
   ],
-  "author": "Amit Divekar",
+
   "license": "MIT",
   "dependencies": {
     "@shikijs/rehype": "^4.3.0",

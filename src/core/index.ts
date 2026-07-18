@@ -180,7 +180,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     html = await renderHtmlTemplate(parsed.html, title, { 
       cssclass: frontmatter.cssclass,
       mathEnabled: options.math?.enabled,
-      obsidianEnabled: options.obsidian !== false,
+      obsidianEnabled: !!options.obsidian,
     });
 
     if (options.sharedBrowser) {

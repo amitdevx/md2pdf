@@ -74,6 +74,7 @@ export async function parseMarkdown(
     .use(remarkHighlight as any);
 
   if (options?.math?.enabled !== false) {
+    // @ts-ignore - no types available for mhchem
     await import('katex/contrib/mhchem/mhchem.js');
     processor = processor.use(remarkMath as any);
   }

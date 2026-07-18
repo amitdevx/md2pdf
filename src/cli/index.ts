@@ -101,3 +101,5 @@ program
     return n;
   })
   .action(runConvert);
+
+program.parse(process.argv);
