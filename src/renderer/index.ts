@@ -1,5 +1,13 @@
 import { baseCss, printCss } from '../assets/css.js';
-import { katexCss } from '../assets/katex.js';
+// Lazy-load: only imported when math is actually used
+let _katexCss: string | null = null;
+async function getKatexCss(): Promise<string> {
+  if (_katexCss === null) {
+    const { katexCss } = await import('../assets/katex.js');
+    _katexCss = katexCss;
+  }
+  return _katexCss;
+}
 import { obsidianCss } from '../assets/obsidian.js';
 
 function escapeHtml(str: string): string {
@@ -12,7 +20,8 @@ function escapeHtml(str: string): string {
   }[tag] || tag));
 }
 
-export function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string }): string {
+export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean }): Promise<string> {
+  const mathCss = options?.mathEnabled !== false ? await getKatexCss() : '';
   const safeTitle = escapeHtml(title);
   const bodyClass = options?.cssclass ? ` class="${escapeHtml(options.cssclass)}"` : '';
   return `<!DOCTYPE html>
@@ -27,7 +36,7 @@ export function renderHtmlTemplate(contentHtml: string, title: string = 'Documen
   <style>
     ${baseCss}
     ${printCss}
-    ${katexCss}
+    ${mathCss}
     ${obsidianCss}
   </style>
 </head>

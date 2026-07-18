@@ -177,7 +177,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     });
 
     title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
-    html = renderHtmlTemplate(parsed.html, title, { cssclass: frontmatter.cssclass });
+    html = await renderHtmlTemplate(parsed.html, title, { 
+      cssclass: frontmatter.cssclass,
+      mathEnabled: options.math?.enabled,
+    });
 
     if (options.sharedBrowser) {
       browser = options.sharedBrowser;
