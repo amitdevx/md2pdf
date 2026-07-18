@@ -185,9 +185,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     if (options.sharedBrowser) {
       browser = options.sharedBrowser;
     } else {
-      const { getBrowser } = await import('../pdf/browser.js');
-      browser = await getBrowser();
-      internallyLaunchedBrowser = true;
+      const { getWarmBrowser, scheduleClose } = await import('../pdf/daemon.js');
+      browser = await getWarmBrowser();
+      // Don't set internallyLaunchedBrowser — daemon manages lifecycle
+      // Schedule close after idle period
+      scheduleClose();
     }
 
     const { processBeforeRender } = await import('../renderer/pipeline.js');

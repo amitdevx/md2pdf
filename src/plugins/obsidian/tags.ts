@@ -20,7 +20,7 @@ export default function remarkTags(options: { showTags?: boolean } = {}) {
       if (!parent || typeof index !== 'number') return;
       const text = node.value;
       // Regex for tags: preceded by space or start of line, starts with #, contains word characters, hyphen, or slash
-      const regex = /(^|\s)#([a-zA-Z0-9_/-]+)(?=\s|$|[.,!?)])/g;
+      const regex = /(?<=\s|^)#([a-zA-Z][a-zA-Z0-9/_-]{0,100})(?=[\s.,;:!?\])]|$)/g;
       
       let match;
       let lastIndex = 0;
@@ -29,16 +29,12 @@ export default function remarkTags(options: { showTags?: boolean } = {}) {
 
       while ((match = regex.exec(text)) !== null) {
         found = true;
-        // match[0] is the full match including the leading space
-        // match[1] is the leading space
-        // match[2] is the tag itself without #
-        
-        const matchStart = match.index + match[1].length;
+        const matchStart = match.index;
         if (matchStart > lastIndex) {
           newChildren.push({ type: 'text', value: text.slice(lastIndex, matchStart) });
         }
 
-        const tagText = '#' + match[2];
+        const tagText = '#' + match[1];
         
         if (showTags) {
           const htmlString = `<span class="tag">${escapeHtml(tagText)}</span>`;
