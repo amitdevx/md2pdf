@@ -34,10 +34,13 @@ tests/diff/
 # Local IDE and hooks
 .claude/
 
-# Temporary dev scripts
+# Temporary dev scripts and scratch playground
 debug-mermaid.js
 test-parser.js
-
+scratch/
+test-*.mjs
+ast-*.mjs
+test-out.svg
 # OS Files
 .DS_Store
 docs/audit*
