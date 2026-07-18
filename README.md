@@ -1,30 +1,21 @@
 <div align="center">
-
 <img src="./assets/logo.svg" alt="md2pdf logo" width="350">
 <p align="center">
   <a href="https://www.npmjs.com/package/@amitdevx/md2pdf"><img src="https://img.shields.io/npm/v/@amitdevx/md2pdf.svg?style=flat-square" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@amitdevx/md2pdf"><img src="https://img.shields.io/npm/dt/@amitdevx/md2pdf.svg?style=flat-square" alt="npm downloads"></a>
   <a href="https://github.com/amitdevx/md2pdf/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@amitdevx/md2pdf.svg?style=flat-square" alt="License: MIT"></a>
 </p>
-
 <p align="center">
-  <b><a href="https://amitdevx.tech/projects/md2pdf">📖 Project Page</a></b> · 
-  <b><a href="https://www.npmjs.com/package/@amitdevx/md2pdf">npm</a></b> · 
+  <b><a href="https://amitdevx.tech/projects/md2pdf">Project Page</a></b> &nbsp;·&nbsp;
+  <b><a href="https://www.npmjs.com/package/@amitdevx/md2pdf">npm</a></b> &nbsp;·&nbsp;
   <b><a href="https://github.com/amitdevx/md2pdf">GitHub</a></b>
 </p>
 </div>
-
-# @amitdevx/md2pdf
-
-**Convert Markdown to high-fidelity PDF** — CLI tool and Node.js API powered by headless Chromium.  
-Supports Mermaid diagrams, KaTeX math (LaTeX equations), Obsidian callouts and wiki-links, GFM tables,  
-syntax highlighting via Shiki, batch conversion, custom themes, TOC generation, and PDF metadata.
-
-> Zero vulnerabilities · Node.js >=18 · TypeScript · MIT License
+Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headless Chromium. Supports Mermaid diagrams, KaTeX math, Obsidian callouts and wiki-links, GFM tables, syntax highlighting via Shiki, batch conversion, custom themes, TOC generation, and PDF metadata injection.
 
 ## Overview
 
-`md2pdf` is a high-fidelity Markdown-to-PDF rendering engine. It leverages the Unified ecosystem (Remark/Rehype) for robust AST manipulation and utilizes Playwright to drive headless Chromium. This ensures that the generated PDF perfectly reflects modern web standards, complete with professional typography, precise margins, and correct pagination.
+`md2pdf` is a production-grade Markdown-to-PDF rendering engine built on the Unified ecosystem (Remark/Rehype) for robust AST processing and Playwright for headless Chromium rendering. The result is a PDF that faithfully reflects modern web standards — professional typography, precise margins, and correct pagination — without any browser installation friction for end users.
 
 ## Features
 
@@ -158,6 +149,4 @@ MIT License. See `LICENSE` for details.
 
 ## Author
 
-**Amit Divekar** — [amitdevx.tech](https://amitdevx.tech) · 
-[Project Page](https://amitdevx.tech/projects/md2pdf) · 
-[@amitdevx_](https://x.com/amitdevx_)
+**Amit Divekar** — [amitdevx.tech](https://amitdevx.tech) · [Project Page](https://amitdevx.tech/projects/md2pdf) · [GitHub](https://github.com/amitdevx)
