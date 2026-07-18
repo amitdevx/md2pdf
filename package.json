@@ -43,6 +43,15 @@
     "prepare": "husky install || true",
     "prepublishOnly": "npm run clean && npm run build"
   },
+  "author": {
+    "name": "Amit Divekar",
+    "url": "https://amitdevx.tech"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/amitdevx"
+  },
+  "contributors": [],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/amitdevx/md2pdf.git"
@@ -54,6 +63,13 @@
   "keywords": [
     "markdown-to-pdf",
     "md-to-pdf",
+    "html-to-pdf",
+    "markdown-to-pdf-converter",
+    "obsidian-to-pdf",
+    "markdown-renderer",
+    "document-generation",
+    "code-highlighting",
+    "cli-tool",
     "markdown pdf",
     "pdf generator",
     "mermaid pdf",
@@ -124,7 +140,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.3.2",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^0.34.6"
+    "vitest": "^3.2.0"
   },
   "lint-staged": {
     "*.ts": [
