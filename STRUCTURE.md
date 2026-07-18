@@ -47,6 +47,7 @@ md2pdf/
 ├── docs/              ← Internal research + user-facing feature documentation
 ├── examples/          ← Demo .md files and their rendered .pdf outputs
 ├── scripts/           ← Developer utility scripts (e.g. build-katex-css)
+├── scratch/           ← Temporary test scripts and playground (gitignored)
 ├── phase/             ← Internal dev planning (GITIGNORED — not shipped)
 ├── node_modules/      ← Dependencies (gitignored)
 └── dist/              ← Build output (gitignored)

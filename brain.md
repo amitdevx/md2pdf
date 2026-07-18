@@ -26,8 +26,8 @@ Last Updated: 2026-07-15
 | Field | Value |
 |-------|-------|
 | **Package name** | `@amitdevx/md2pdf` |
-| **Version** | `0.5.1` |
-| **Description** | Production-quality Markdown to PDF rendering engine. |
+| **Version** | `0.5.3` |
+| **Description** | Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API. |
 | **Author** | Amit Divekar |
 | **License** | MIT |
 | **Repository** | `https://github.com/amitdevx/md2pdf` (shorthand in package.json) |
@@ -243,6 +243,16 @@ phase/v0.9.x-bugfixes.md
 phase/v1.0.0-stable.md
 prettier.config.js
 README.md
+scratch/scratch.js
+scratch/test-ast.mjs
+scratch/test-extract.mjs
+scratch/test-extract2.mjs
+scratch/test-mermaid.mjs
+scratch/test-mermaid-e2e.mjs
+scratch/test-mermaid2.mjs
+scratch/test-raw.mjs
+scratch/test-regex.mjs
+scratch/test-svg.mjs
 scripts/build-katex-css.mjs
 scripts/README.md
 SECURITY.md

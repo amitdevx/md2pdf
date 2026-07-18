@@ -11,7 +11,6 @@ tests/
 ├── README.md                ← You are here
 │
 ├── fixtures/                ← Golden documents (permanent, curated Markdown sources)
-│   └── README.md            ← Fixture inventory and golden document strategy summary
 │
 ├── snapshots/               ← Approved PDF + PNG snapshots (committed to git)
 │   └── README.md            ← How snapshots work, how to approve
@@ -65,7 +64,7 @@ npm run bench             # run all benchmarks (added v0.8.0)
 
 ## What Is a Golden Document?
 
-> See [`fixtures/README.md`](./fixtures/README.md) and [`/phase/GOLDEN-DOCUMENTS.md`](../phase/GOLDEN-DOCUMENTS.md) for the full strategy.
+> See [`/phase/GOLDEN-DOCUMENTS.md`](../phase/GOLDEN-DOCUMENTS.md) for the full strategy.
 
 Golden documents are permanent, curated Markdown files that cover every rendering concern.
 After every feature change: **Render → Compare → Approve or Fix**.
