@@ -31,3 +31,15 @@ body {
   background-color: var(--md2pdf-color-bg);
   color: var(--md2pdf-color-text);
 }
+
+/* Minimalist Tables for Obsidian */
+table th, table td {
+  border-left: none;
+  border-right: none;
+}
+table th {
+  background-color: transparent;
+}
+table tr:nth-child(even) {
+  background-color: transparent;
+}

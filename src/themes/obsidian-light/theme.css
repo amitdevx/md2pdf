@@ -26,3 +26,15 @@ a[href^="#"] {
 a[href^="#"]:hover {
   text-decoration: underline;
 }
+
+/* Minimalist Tables for Obsidian */
+table th, table td {
+  border-left: none;
+  border-right: none;
+}
+table th {
+  background-color: transparent;
+}
+table tr:nth-child(even) {
+  background-color: transparent;
+}
