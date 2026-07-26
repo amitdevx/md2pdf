@@ -318,8 +318,8 @@ details[open] > summary {
 export const printCss = `
 @media print {
   body {
-    background-color: #fff !important;
-    color: #000 !important;
+    background-color: var(--md2pdf-color-bg) !important;
+    color: var(--md2pdf-color-text) !important;
   }
   
   .markdown-body {

@@ -30,7 +30,12 @@
 
 body {
   text-align: justify;
-  background-color: var(--md2pdf-color-bg);
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
+}
+
+table td {
+  color: var(--md2pdf-color-text) !important;
 }
 
 /* Academic style table borders with visible row distinction */

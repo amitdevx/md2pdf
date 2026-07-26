@@ -21,8 +21,12 @@
 }
 
 body {
-  background-color: var(--md2pdf-color-bg);
-  color: var(--md2pdf-color-text);
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
+}
+
+table td {
+  color: var(--md2pdf-color-text) !important;
 }
 
 /* Heading hierarchy using Dracula's color palette */

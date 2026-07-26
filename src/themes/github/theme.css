@@ -20,8 +20,17 @@
   --md2pdf-table-stripe-bg: #f6f8fa;
 }
 
+body {
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
+}
+
 table th, table td {
   border: 1px solid var(--md2pdf-color-border);
+}
+
+table td {
+  color: var(--md2pdf-color-text) !important;
 }
 
 table tr {

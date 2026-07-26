@@ -21,8 +21,12 @@
 
 /* Fix: body background must be explicitly declared for PDF rendering reliability */
 body {
-  background-color: var(--md2pdf-color-bg);
-  color: var(--md2pdf-color-text);
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
+}
+
+table td {
+  color: var(--md2pdf-color-text) !important;
 }
 
 /* Fix: H1-H4 were all identical #2e3338 (same as body text) — add purple accent hierarchy */
