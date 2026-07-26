@@ -189,7 +189,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
     
     let finalHtml = parsed.html;
-    if (options.title !== false) {
+    if (options.title !== false && !/<h1\b[^>]*>/i.test(finalHtml)) {
       finalHtml = `<h1 class="document-title" style="margin-top: 0; padding-top: 0;">${title}</h1>\n` + finalHtml;
     }
 
