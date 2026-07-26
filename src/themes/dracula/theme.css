@@ -12,6 +12,7 @@
   --md2pdf-color-hr: #6272a4;
   --md2pdf-color-text-muted: #6272a4;
   --md2pdf-accent-color: #bd93f9;
+  --md2pdf-accent-text: #282a36;
 }
 
 
@@ -38,6 +39,4 @@ blockquote {
 /* Table styling for dark mode */
 table th {
   color: var(--md2pdf-color-heading) !important;
-}
-table tr:nth-child(even) {
 }
