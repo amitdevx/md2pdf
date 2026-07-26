@@ -11,6 +11,7 @@ import { bundledLanguages } from 'shiki';
 import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/layout/toc.js';
 import rehypePageBreaks from '../plugins/layout/page-breaks.js';
+import remarkBlockRefs from '../plugins/obsidian/block-refs.js';
 
 import remarkWikiLinks from '../plugins/obsidian/wiki-links.js';
 import remarkTags from '../plugins/obsidian/tags.js';
@@ -71,6 +72,7 @@ export async function parseMarkdown(
 
   let processor: any = unified()
     .use(remarkParse)
+    .use(remarkBlockRefs)
     .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
     .use(remarkTags as any, { showTags: options?.obsidian?.showTags })
     .use(remarkHighlight as any);
