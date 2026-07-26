@@ -22,19 +22,15 @@ Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headl
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
 ### Available (v0.6.0)
-- **Massive Performance Boost:** 5x faster single-file conversion via persistent Chromium daemon, local base64-bundled offline fonts (zero CDN latency), KaTeX lazy-loading, and regex optimization.
-- **Smaller Footprint:** npm package size reduced by ~80% (sourcemaps disabled, minification enabled, KaTeX unbundled).
-- **Codebase Restructuring:** CLI monolith split into focused command handlers, unused directories removed, and plugin layout rationalized.
-- **Enhanced Reliability:** Security updates (Vitest ^3.2.0), deep configuration merge testing, and 60+ new core test paths.
-
-### Available (v0.6.0)
-- **Mermaid Syntax Tolerance (New in v0.6.0):** Flawless native Mermaid compatibility by securely downgrading the embedded engine to `v10.9.1` (Obsidian parity). Intelligently bridges the syntax gap using proper AST regex preprocessing (e.g. converting `\"` to `#quot;` and `()` to `&#40;&#41;`) so your complex Obsidian diagrams and mindmaps compile without crashing the headless Chromium renderer.
-- **Robust CLI Processing (New in v0.6.0):** Added step-by-step per-file overwrite warnings, color-coded red terminal errors for deep plugin failures, and graceful batch interruptions using `Ctrl+C`.
+- **Theming System:** Introducing 7 professionally crafted built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to instantly transform your PDF's aesthetics.
+- **Strict Obsidian Parity:** Flawless visual alignment with Obsidian's native exports. Features perfect Lucide SVG callout icons with exact color matching, stripped `^block-identifiers`, automatic `H1` document title injection, and minimalist tables for `obsidian-light/dark` themes.
+- **Dynamic Syntax Highlighting:** Massive parsing speedup. Shiki grammars are now dynamically detected and loaded on-the-fly, reducing compilation overhead by up to 10 seconds per file.
+- **Improved Layout Engine:** Mermaid diagrams now naturally left-align (matching standard markdown flow), and large tables gracefully span across page breaks with repeating headers.
 
 ### Previous Versions
-- **Configuration (New in v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
-- **Batch Processing & Error Resilience (New in v0.5.1):** Process multiple files at once (`md2pdf *.md`). Intelligently continues on conversion errors, emits rich JSON failure mappings, and fully resolves Windows pathing.
-- **Enterprise Robustness (v0.5.1):** Resolved critical architectural constraints including Mermaid CSS leakage, PDF metadata processing performance, Obsidian circular embed protection, AST regex greedy matching, and native Node 18 runtime validation.
+- **Performance & Core (v0.5.4):** 5x faster single-file conversion via persistent Chromium daemon and local base64 offline fonts. Flawless Mermaid syntax tolerance bridging complex AST diagrams. Smaller npm footprint and graceful CLI interruptions.
+- **Configuration (v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
+- **Batch Processing & Error Resilience (v0.5.1):** Process multiple files at once (`md2pdf *.md`). Intelligently continues on conversion errors, emits rich JSON failure mappings, and fully resolves Windows pathing.
 - **Obsidian Compatibility (New in v0.4.1/v0.4.2):** Native parsing and rendering for callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), highlight syntax (`==highlight==`), and YAML frontmatter.
 - **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
 - **Math Rendering (New in v0.3.0):** Print-perfect LaTeX inline and display math via KaTeX. Full support for matrices, environments, and macros with zero-dependency embedded fonts.
@@ -50,7 +46,6 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
 ### Coming Soon
-- **Theming:** Custom CSS themes and layout overrides.
 - **Plugin System:** Extensible architecture for custom rendering logic.
 
 ## Installation

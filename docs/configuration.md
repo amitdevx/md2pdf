@@ -15,6 +15,7 @@ export default defineConfig({
   margin: '20mm',
   toc: true,
   tocDepth: 3,
+  title: true, // injects H1 at the top
 
   header: {
     enabled: true,
