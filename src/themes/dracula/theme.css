@@ -2,8 +2,6 @@
   /* Fix: font was never explicitly declared for Dracula — use a modern monospace-friendly stack */
   --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
-  --md2pdf-color-bg: #282a36;
-  --md2pdf-color-text: #f8f8f2;
   --md2pdf-color-heading: #ff79c6;
   --md2pdf-color-link: #8be9fd;
   --md2pdf-color-link-visited: #8be9fd;
@@ -16,13 +14,7 @@
   --md2pdf-accent-color: #bd93f9;
 }
 
-body {
-  color: var(--md2pdf-color-text) !important;
-}
 
-table td {
-  color: var(--md2pdf-color-text) !important;
-}
 
 /* Heading hierarchy using Dracula's color palette */
 h1 { color: #ff79c6; }

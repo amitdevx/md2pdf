@@ -2,8 +2,6 @@
   --md2pdf-font-family-body: 'Inter', sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', monospace;
   /* Fix: correct Obsidian dark background — #1e1e2e is the real Obsidian dark palette (Catppuccin Mocha base) */
-  --md2pdf-color-bg: #1e1e2e;
-  --md2pdf-color-text: #cdd6f4;
   /* Fix: headings must be visually distinct from body text — use Obsidian's purple/lavender */
   --md2pdf-color-heading: #cba6f7;
   --md2pdf-color-link: #89b4fa;
@@ -27,13 +25,7 @@ a[href^="#"]:hover {
   text-decoration: underline;
 }
 
-body {
-  color: var(--md2pdf-color-text) !important;
-}
 
-table td {
-  color: var(--md2pdf-color-text) !important;
-}
 
 /* Heading hierarchy — distinct from body text */
 h1 { color: #cba6f7; }

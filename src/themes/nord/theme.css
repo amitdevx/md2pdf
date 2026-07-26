@@ -1,8 +1,6 @@
 :root {
   --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', 'Cascadia Code', monospace;
-  --md2pdf-color-bg: #eceff4;
-  --md2pdf-color-text: #2e3440;
   --md2pdf-color-heading: #2e3440;
   --md2pdf-color-link: #5e81ac;
   --md2pdf-color-link-visited: #5e81ac;
@@ -16,14 +14,7 @@
   --md2pdf-accent-text: #eceff4;
 }
 
-/* Fix: body background must be explicitly declared for Chromium PDF rendering */
-body {
-  color: var(--md2pdf-color-text) !important;
-}
 
-table td {
-  color: var(--md2pdf-color-text) !important;
-}
 
 table th {
   color: var(--md2pdf-color-text) !important;
