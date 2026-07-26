@@ -21,7 +21,7 @@ export default function rehypeCallouts() {
 
       // Match [!TYPE] or [!TYPE]+ or [!TYPE]- and optional Title
       // e.g. "[!WARNING]- Custom Title\nRest of text"
-      const match = /^\[!([a-zA-Z]+)\]([+-]?)(?:\s+([^\n]+))?(?:\n|$)/.exec(firstTextNode.value);
+      const match = /^\[!([a-zA-Z]+)\]([+-]?)(?:\s+(.*?))?(?:\n|$)/.exec(firstTextNode.value);
       
       if (!match) return;
 
