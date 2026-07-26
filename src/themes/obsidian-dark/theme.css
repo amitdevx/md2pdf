@@ -32,7 +32,6 @@ a[href^="#"]:hover {
 }
 
 body {
-  background-color: var(--md2pdf-color-bg) !important;
   color: var(--md2pdf-color-text) !important;
 }
 

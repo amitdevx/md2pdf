@@ -22,7 +22,6 @@
 
 /* Fix: body background must be explicitly declared for Chromium PDF rendering */
 body {
-  background-color: var(--md2pdf-color-bg) !important;
   color: var(--md2pdf-color-text) !important;
 }
 
