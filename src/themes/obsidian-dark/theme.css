@@ -16,10 +16,6 @@
   --md2pdf-color-hr: #45475a;
   --md2pdf-color-text-muted: #a6adc8;
   --md2pdf-accent-color: #cba6f7;
-  --md2pdf-accent-text: #1e1e2e;
-  --md2pdf-table-header-bg: #313244;
-  /* Fix stripe: was #252535 — 1.15:1 contrast vs #1e1e2e. Use surface1 for clear separation. */
-  --md2pdf-table-stripe-bg: #2a2a3d;
 }
 
 /* Internal links in Obsidian style */
@@ -52,12 +48,10 @@ table th, table td {
   border-bottom: 1px solid var(--md2pdf-color-border);
 }
 table th {
-  background-color: var(--md2pdf-table-header-bg);
   color: var(--md2pdf-color-heading) !important;
   border-bottom: 2px solid var(--md2pdf-color-border);
 }
 table tr:nth-child(even) {
-  background-color: var(--md2pdf-table-stripe-bg);
 }
 
 /* Tag variables for dark mode */
