@@ -1,32 +1,6 @@
 import { visit } from 'unist-util-visit';
 
-const CALLOUT_ICONS: Record<string, string> = {
-  note: '📝',
-  info: 'ℹ️',
-  tip: '💡',
-  hint: '💡',
-  important: '💡',
-  success: '✅',
-  check: '✅',
-  done: '✅',
-  question: '❓',
-  help: '❓',
-  faq: '❓',
-  warning: '⚠️',
-  caution: '⚠️',
-  failure: '❌',
-  fail: '❌',
-  missing: '❌',
-  danger: '🚨',
-  error: '🚨',
-  bug: '🚨',
-  example: '📋',
-  quote: '❞',
-  cite: '❞',
-  abstract: '❞',
-  summary: '❞',
-  tldr: '❞',
-};
+import { ICONS as CALLOUT_ICONS } from './lucide-icons.js';
 
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
@@ -54,7 +28,7 @@ export default function rehypeCallouts() {
       const rawType = match[1].toLowerCase();
       const type = CALLOUT_ICONS[rawType] ? rawType : 'note'; // fallback to note if unknown type
       const title = match[3] ? match[3].trim() : capitalize(rawType);
-      const icon = CALLOUT_ICONS[rawType] || '📝';
+      const icon = CALLOUT_ICONS[rawType] || CALLOUT_ICONS['note'];
 
       // Remove the matched part from the text node
       firstTextNode.value = firstTextNode.value.substring(match[0].length);
@@ -81,7 +55,7 @@ export default function rehypeCallouts() {
             type: 'element',
             tagName: 'span',
             properties: { className: ['callout-icon'] },
-            children: [{ type: 'text', value: icon }]
+            children: [{ type: 'raw', value: icon }]
           },
           {
             type: 'element',
