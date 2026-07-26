@@ -7,6 +7,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
 import rehypeShiki from '@shikijs/rehype';
+import { bundledLanguages } from 'shiki';
 import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/layout/toc.js';
 import rehypePageBreaks from '../plugins/layout/page-breaks.js';
@@ -59,6 +60,15 @@ export async function parseMarkdown(
   const warnings: string[] = [];
   const mermaidBlocks = options?.mermaidBlocks || [];
   
+  // Dynamically detect languages used in the markdown to prevent Shiki from loading all 200+ grammars (saves ~10 seconds)
+  const codeBlockRegex = /(?:```|~~~)([a-zA-Z0-9_\-+]+)/g;
+  const matches = [...markdown.matchAll(codeBlockRegex)];
+  const detectedLangs = Array.from(new Set(matches.map(m => m[1].toLowerCase())));
+  const validLangs = detectedLangs.filter(lang => lang in bundledLanguages);
+  
+  // We need at least one valid language or fallback language if array is empty, otherwise Shiki might default to all
+  const shikiLangs = validLangs.length > 0 ? validLangs : ['txt'];
+
   let processor: any = unified()
     .use(remarkParse)
     .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
@@ -99,6 +109,7 @@ export async function parseMarkdown(
     .use(rehypeExpandDetails)
     .use(rehypeShiki, {
       theme: options?.shikiTheme || 'github-light',
+      langs: shikiLangs,
       fallbackLanguage: 'txt',
       onError: (err: unknown) => {
         if (err instanceof Error) {
