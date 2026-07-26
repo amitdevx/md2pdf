@@ -30,6 +30,11 @@ table td {
   color: var(--md2pdf-color-text) !important;
 }
 
+table th {
+  background-color: var(--md2pdf-table-header-bg);
+  color: var(--md2pdf-color-text) !important;
+}
+
 /* Heading hierarchy — progressively lighter shades of Nord polar night */
 h1 { color: #2e3440; }
 h2 { color: #3b4252; }

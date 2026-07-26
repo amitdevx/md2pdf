@@ -51,7 +51,7 @@ blockquote {
 /* Table styling for dark mode */
 table th {
   background-color: var(--md2pdf-table-header-bg);
-  color: #ff79c6;
+  color: var(--md2pdf-color-heading) !important;
 }
 table tr:nth-child(even) {
   background-color: var(--md2pdf-table-stripe-bg);

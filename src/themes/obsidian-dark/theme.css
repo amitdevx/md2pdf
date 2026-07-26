@@ -54,7 +54,7 @@ table th, table td {
 }
 table th {
   background-color: var(--md2pdf-table-header-bg);
-  color: #cba6f7;
+  color: var(--md2pdf-color-heading) !important;
   border-bottom: 2px solid var(--md2pdf-color-border);
 }
 table tr:nth-child(even) {
