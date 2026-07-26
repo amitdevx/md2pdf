@@ -20,6 +20,7 @@ export async function renderMermaidBlocks(
   warnings: string[],
   md2pdfTheme: string = 'default',
   globalMermaidTheme?: MermaidTheme,
+  themeVariables?: Record<string, string>,
   timeoutMs: number = 10000,
   maxWidth: string = '100%',
   maxHeight: string = 'none',
@@ -74,7 +75,7 @@ export async function renderMermaidBlocks(
     let evaluatedResults: Array<{ id: string, svg: string | null, error: string | null }> = [];
     try {
       evaluatedResults = await Promise.race([
-        page.evaluate(async ({ blocks, timeout }) => {
+        page.evaluate(async ({ blocks, timeout, themeVariables }) => {
           const results = [];
         
         // Group blocks by theme to minimize initialize() calls and prevent CSS style accumulation
@@ -87,7 +88,7 @@ export async function renderMermaidBlocks(
 
         for (const [theme, themeBlocks] of blocksByTheme.entries()) {
           // @ts-expect-error window.mermaid is injected at runtime
-          window.mermaid.initialize({ startOnLoad: false, theme, fontFamily: 'Inter, sans-serif', flowchart: { htmlLabels: false } });
+          window.mermaid.initialize({ startOnLoad: false, theme, themeVariables: themeVariables || {}, fontFamily: 'Inter, sans-serif', flowchart: { htmlLabels: false } });
           
           for (const block of themeBlocks) {
             try {
@@ -111,7 +112,7 @@ export async function renderMermaidBlocks(
           }
         }
         return results;
-      }, { blocks: payloads, timeout: timeoutMs }),
+      }, { blocks: payloads, timeout: timeoutMs, themeVariables }),
       new Promise<any>((_, reject) => setTimeout(() => reject(new Error(`page.evaluate hung for ${timeoutMs + 2000}ms`)), timeoutMs + 2000))
     ]);
     } catch (e: any) {

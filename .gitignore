@@ -30,6 +30,7 @@ tests/diff/
 *.pdf
 # But allow approved golden snapshot PDFs
 !tests/snapshots/**/*.pdf
+!tests/themes/snapshots/**/*.pdf
 
 # Local IDE and hooks
 .claude/

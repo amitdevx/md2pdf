@@ -11,6 +11,7 @@ export async function processBeforeRender(
   options?: {
     theme?: string;
     globalMermaidTheme?: MermaidTheme;
+    themeVariables?: Record<string, string>;
     timeout?: number;
     mermaidEnabled?: boolean;
     maxWidth?: string;
@@ -29,6 +30,7 @@ export async function processBeforeRender(
       warnings,
       options?.theme, 
       options?.globalMermaidTheme,
+      options?.themeVariables,
       options?.timeout,
       options?.maxWidth,
       options?.maxHeight,
