@@ -21,15 +21,15 @@ Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headl
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.5.4)
+### Available (v0.6.0)
 - **Massive Performance Boost:** 5x faster single-file conversion via persistent Chromium daemon, local base64-bundled offline fonts (zero CDN latency), KaTeX lazy-loading, and regex optimization.
 - **Smaller Footprint:** npm package size reduced by ~80% (sourcemaps disabled, minification enabled, KaTeX unbundled).
 - **Codebase Restructuring:** CLI monolith split into focused command handlers, unused directories removed, and plugin layout rationalized.
 - **Enhanced Reliability:** Security updates (Vitest ^3.2.0), deep configuration merge testing, and 60+ new core test paths.
 
-### Available (v0.5.4)
-- **Mermaid Syntax Tolerance (New in v0.5.4):** Flawless native Mermaid compatibility by securely downgrading the embedded engine to `v10.9.1` (Obsidian parity). Intelligently bridges the syntax gap using proper AST regex preprocessing (e.g. converting `\"` to `#quot;` and `()` to `&#40;&#41;`) so your complex Obsidian diagrams and mindmaps compile without crashing the headless Chromium renderer.
-- **Robust CLI Processing (New in v0.5.4):** Added step-by-step per-file overwrite warnings, color-coded red terminal errors for deep plugin failures, and graceful batch interruptions using `Ctrl+C`.
+### Available (v0.6.0)
+- **Mermaid Syntax Tolerance (New in v0.6.0):** Flawless native Mermaid compatibility by securely downgrading the embedded engine to `v10.9.1` (Obsidian parity). Intelligently bridges the syntax gap using proper AST regex preprocessing (e.g. converting `\"` to `#quot;` and `()` to `&#40;&#41;`) so your complex Obsidian diagrams and mindmaps compile without crashing the headless Chromium renderer.
+- **Robust CLI Processing (New in v0.6.0):** Added step-by-step per-file overwrite warnings, color-coded red terminal errors for deep plugin failures, and graceful batch interruptions using `Ctrl+C`.
 
 ### Previous Versions
 - **Configuration (New in v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
