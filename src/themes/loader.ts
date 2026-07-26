@@ -20,7 +20,6 @@ export async function loadTheme(themeNameOrPath?: string): Promise<Theme | null>
   if (!themeNameOrPath) return null;
 
   let themeDir = '';
-  let isCustom = false;
   let customCssOnly = false;
 
   // Check if it's a built-in theme
@@ -29,7 +28,6 @@ export async function loadTheme(themeNameOrPath?: string): Promise<Theme | null>
     themeDir = builtInPath;
   } else {
     // Treat as custom path
-    isCustom = true;
     const resolvedPath = path.resolve(process.cwd(), themeNameOrPath);
     if (!fs.existsSync(resolvedPath)) {
       throw new Error(`Theme not found: ${themeNameOrPath}`);
@@ -66,8 +64,8 @@ export async function loadTheme(themeNameOrPath?: string): Promise<Theme | null>
     try {
       const module = await import(`file://${tsPath}`);
       metadata = module.default || {};
-    } catch (e) {
-      console.warn(`Failed to load theme metadata from ${tsPath}`, e);
+    } catch (_e) {
+      console.warn(`Failed to load theme metadata from ${tsPath}`, _e);
     }
   }
 
@@ -91,7 +89,7 @@ export function getBuiltInThemes(): string[] {
       const stat = fs.statSync(path.join(themesDir, name));
       return stat.isDirectory() && name !== 'loader.ts' && name !== 'loader.js';
     });
-  } catch (e) {
+  } catch {
     return [];
   }
 }

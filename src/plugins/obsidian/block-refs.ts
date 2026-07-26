@@ -1,14 +1,11 @@
 import { visit } from 'unist-util-visit';
-import { Node, Parent } from 'unist';
+import { Node } from 'unist';
 
-interface TextNode extends Node {
-  type: 'text';
-  value: string;
-}
+
 
 export default function remarkBlockRefs() {
   return (tree: Node) => {
-    visit(tree, (node: Node, index: number | undefined, parent: Parent | undefined) => {
+    visit(tree, (node: Node) => {
       // Look for block-level elements like paragraph, heading, list item, blockquote
       if (
         node.type === 'paragraph' ||
