@@ -16,6 +16,7 @@
   },
   "files": [
     "dist",
+    "themes",
     "assets",
     "README.md",
     "LICENSE",
@@ -30,7 +31,7 @@
   },
   "scripts": {
     "prebuild": "node scripts/build-katex-css.mjs",
-    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && node -e \"require('fs').cpSync('src/themes', 'themes', {recursive: true})\"",
     "dev": "tsup --watch",
     "pretest": "node scripts/build-katex-css.mjs",
     "test": "vitest run",
