@@ -9,6 +9,7 @@ export interface PdfMetadata {
 }
 
 export * from './config.js';
+export * from './theme.js';
 export interface ConvertOptions {
   input: string;
   output: string;

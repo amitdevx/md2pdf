@@ -1,19 +1,43 @@
 export const baseCss = `
 :root {
+  /* ── Typography ── */
   --md2pdf-font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --md2pdf-font-family-heading: inherit;
   --md2pdf-font-family-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --md2pdf-font-size: 11pt;
   --md2pdf-line-height: 1.7;
 
+  /* ── Colors ── */
+  --md2pdf-color-bg: #ffffff;
   --md2pdf-color-text: #1a1a1a;
   --md2pdf-color-heading: #111111;
   --md2pdf-color-link: #0066cc;
+  --md2pdf-color-link-visited: #0066cc;
   --md2pdf-color-code-bg: #f6f8fa;
+  --md2pdf-color-code-text: #1a1a1a;
   --md2pdf-color-border: #e1e4e8;
   --md2pdf-color-blockquote-border: #d0d7de;
+  --md2pdf-color-hr: #e1e4e8;
+  --md2pdf-color-text-muted: #555555;
+  --md2pdf-color-tag-bg: #f6f8fa;
+  --md2pdf-color-tag-text: #1a1a1a;
 
+  /* ── Accent ── */
+  --md2pdf-accent-color: #0066cc;
+  --md2pdf-accent-text: #ffffff;
+
+  /* ── Spacing ── */
+  --md2pdf-margin-top: 16px;
+  --md2pdf-margin-bottom: 16px;
+  --md2pdf-margin-left: 0;
+  --md2pdf-margin-right: 0;
+
+  /* ── Components ── */
   --md2pdf-code-border-radius: 6px;
+  --md2pdf-callout-border-radius: 4px;
+  --md2pdf-blockquote-border-width: 4px;
+  --md2pdf-table-header-bg: #f6f8fa;
+  --md2pdf-table-stripe-bg: #f8f9fa;
 }
 
 body {
@@ -21,7 +45,7 @@ body {
   font-size: var(--md2pdf-font-size);
   line-height: var(--md2pdf-line-height);
   color: var(--md2pdf-color-text);
-  background-color: #fff;
+  background-color: var(--md2pdf-color-bg);
   margin: 0;
   padding: 0;
   word-wrap: break-word;
@@ -60,11 +84,11 @@ a:hover { text-decoration: underline; }
 blockquote {
   margin: 1.5em 0;
   padding: 1em 1.5em;
-  color: #555;
-  background-color: #f9f9f9;
-  border-left: 4px solid var(--md2pdf-color-blockquote-border);
+  color: var(--md2pdf-color-text-muted);
+  background-color: var(--md2pdf-color-bg);
+  border-left: var(--md2pdf-blockquote-border-width) solid var(--md2pdf-color-blockquote-border);
   font-style: italic;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--md2pdf-callout-border-radius) var(--md2pdf-callout-border-radius) 0;
 }
 
 code, kbd, pre {
@@ -77,16 +101,18 @@ pre {
   overflow-x: auto;
   line-height: 1.45;
   background-color: var(--md2pdf-color-code-bg);
+  color: var(--md2pdf-color-code-text);
   border-radius: var(--md2pdf-code-border-radius);
   page-break-inside: avoid;
 }
 
-pre code { padding: 0; margin: 0; background-color: transparent; border: 0; }
+pre code { padding: 0; margin: 0; background-color: transparent; border: 0; color: inherit; }
 
 code {
   padding: 0.2em 0.4em;
   margin: 0;
   background-color: var(--md2pdf-color-code-bg);
+  color: var(--md2pdf-color-code-text);
   border-radius: var(--md2pdf-code-border-radius);
 }
 
@@ -104,16 +130,16 @@ table th, table td {
 
 table th {
   font-weight: 600;
-  background-color: #f6f8fa;
+  background-color: var(--md2pdf-table-header-bg);
 }
 
 table tr {
-  background-color: #fff;
+  background-color: var(--md2pdf-color-bg);
   border-top: 1px solid var(--md2pdf-color-border);
   page-break-inside: avoid;
 }
 
-table tr:nth-child(even) { background-color: #f8f9fa; }
+table tr:nth-child(even) { background-color: var(--md2pdf-table-stripe-bg); }
 
 img {
   max-width: 100%;
@@ -133,7 +159,7 @@ figure {
 figcaption {
   text-align: center;
   font-size: 85%;
-  color: #666;
+  color: var(--md2pdf-color-text-muted);
   margin-top: 0.5em;
 }
 
@@ -141,7 +167,7 @@ hr {
   height: 0.25em;
   padding: 0;
   margin: 24px 0;
-  background-color: var(--md2pdf-color-border);
+  background-color: var(--md2pdf-color-hr);
   border: 0;
 }
 
@@ -248,9 +274,9 @@ sup a[data-footnote-ref] {
 details {
   padding: 1em;
   border: 1px solid var(--md2pdf-color-border);
-  border-radius: 6px;
+  border-radius: var(--md2pdf-callout-border-radius);
   margin: 1em 0;
-  background-color: #fbfbfb;
+  background-color: var(--md2pdf-table-stripe-bg);
 }
 details > summary {
   font-weight: 600;
