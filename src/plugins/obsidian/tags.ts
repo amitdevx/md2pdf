@@ -20,7 +20,7 @@ export default function remarkTags(options: { showTags?: boolean } = {}) {
       if (!parent || typeof index !== 'number') return;
       const text = node.value;
       // Regex for tags: preceded by space or start of line, starts with #, contains word characters, hyphen, or slash
-      const regex = /(?<=\s|^)#([a-zA-Z][a-zA-Z0-9/_-]{0,100})(?=[\s.,;:!?\])]|$)/g;
+      const regex = /(?<=\s|^)#([a-zA-Z0-9/_-]+)(?=[\s.,;:!?\])]|$)/g;
       
       let match;
       let lastIndex = 0;
@@ -28,6 +28,9 @@ export default function remarkTags(options: { showTags?: boolean } = {}) {
       let found = false;
 
       while ((match = regex.exec(text)) !== null) {
+        if (/^\d+$/.test(match[1])) {
+          continue; // Obsidian tags cannot be entirely numeric
+        }
         found = true;
         const matchStart = match.index;
         if (matchStart > lastIndex) {
