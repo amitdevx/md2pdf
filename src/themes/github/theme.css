@@ -9,12 +9,14 @@
   --md2pdf-color-code-bg: #f6f8fa;
   --md2pdf-color-code-text: #24292f;
   --md2pdf-color-border: #d0d7de;
-  --md2pdf-color-blockquote-border: #d0d7de;
+  /* Fix: blockquote border must be distinct from the page border colour (#d0d7de = invisible on white) */
+  --md2pdf-color-blockquote-border: #0969da;
   --md2pdf-color-hr: #d0d7de;
   --md2pdf-color-text-muted: #57606a;
   --md2pdf-accent-color: #0969da;
   --md2pdf-accent-text: #ffffff;
-  --md2pdf-table-header-bg: #ffffff;
+  /* Fix: table header was #ffffff on a white page — use a visible blue-tinted header */
+  --md2pdf-table-header-bg: #ddf4ff;
   --md2pdf-table-stripe-bg: #f6f8fa;
 }
 
@@ -27,6 +29,24 @@ table tr {
   border-top: 1px solid var(--md2pdf-color-border);
 }
 
+table th {
+  background-color: var(--md2pdf-table-header-bg);
+  color: #0550ae;
+  font-weight: 600;
+}
+
 table tr:nth-child(2n) {
   background-color: var(--md2pdf-table-stripe-bg);
+}
+
+blockquote {
+  border-left: 4px solid var(--md2pdf-color-blockquote-border);
+  background-color: #f0f6ff;
+}
+
+/* Tag styling */
+.tag {
+  background-color: rgba(9, 105, 218, 0.1);
+  color: #0969da;
+  border: 1px solid rgba(9, 105, 218, 0.2);
 }

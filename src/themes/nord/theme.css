@@ -1,4 +1,6 @@
 :root {
+  --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --md2pdf-font-family-mono: 'Fira Code', 'Cascadia Code', monospace;
   --md2pdf-color-bg: #eceff4;
   --md2pdf-color-text: #2e3440;
   --md2pdf-color-heading: #2e3440;
@@ -12,6 +14,31 @@
   --md2pdf-color-text-muted: #4c566a;
   --md2pdf-accent-color: #5e81ac;
   --md2pdf-accent-text: #eceff4;
-  --md2pdf-table-header-bg: #e5e9f0;
-  --md2pdf-table-stripe-bg: #f0f4f9;
+  /* Clearly distinguishable table header (Nord polar night on snow storm) */
+  --md2pdf-table-header-bg: #d8dee9;
+  --md2pdf-table-stripe-bg: #e5e9f0;
+}
+
+/* Fix: body background must be explicitly declared for Chromium PDF rendering */
+body {
+  background-color: var(--md2pdf-color-bg);
+  color: var(--md2pdf-color-text);
+}
+
+/* Heading hierarchy — progressively lighter shades of Nord polar night */
+h1 { color: #2e3440; }
+h2 { color: #3b4252; }
+h3 { color: #434c5e; }
+h4, h5, h6 { color: #4c566a; }
+
+/* Blockquote left border uses Nord frost blue — clearly visible */
+blockquote {
+  border-left: 4px solid #81a1c1;
+}
+
+/* Tag variables for the Nord palette */
+.tag {
+  background-color: rgba(94, 129, 172, 0.15);
+  color: #5e81ac;
+  border: 1px solid rgba(94, 129, 172, 0.3);
 }

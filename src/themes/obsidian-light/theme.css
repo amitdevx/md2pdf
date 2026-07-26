@@ -14,11 +14,18 @@
   --md2pdf-color-text-muted: #5c5e62;
   --md2pdf-accent-color: #7b6cd9;
   --md2pdf-accent-text: #ffffff;
-  --md2pdf-table-header-bg: #f2f3f5;
-  --md2pdf-table-stripe-bg: #f9f9fa;
+  --md2pdf-table-header-bg: #eeecfb;
+  /* Fix: stripe was #f9f9fa — only 1.02:1 contrast vs white. Use a clearly visible alternate row. */
+  --md2pdf-table-stripe-bg: #f4f2fd;
 }
 
-/* Internal links in obsidian style */
+/* Fix: body background must be explicitly declared for PDF rendering reliability */
+body {
+  background-color: var(--md2pdf-color-bg);
+  color: var(--md2pdf-color-text);
+}
+
+/* Internal links in Obsidian style */
 a[href^="#"] {
   color: var(--md2pdf-accent-color);
   text-decoration: none;
@@ -31,10 +38,20 @@ a[href^="#"]:hover {
 table th, table td {
   border-left: none;
   border-right: none;
+  border-bottom: 1px solid var(--md2pdf-color-border);
 }
 table th {
-  background-color: transparent;
+  background-color: var(--md2pdf-table-header-bg);
+  color: #6254b5;
+  border-bottom: 2px solid var(--md2pdf-color-border);
 }
 table tr:nth-child(even) {
-  background-color: transparent;
+  background-color: var(--md2pdf-table-stripe-bg);
+}
+
+/* Tag styling */
+.tag {
+  background-color: rgba(123, 108, 217, 0.1);
+  color: #7b6cd9;
+  border: 1px solid rgba(123, 108, 217, 0.25);
 }

@@ -8,7 +8,7 @@
   --md2pdf-margin-bottom: 25mm;
   --md2pdf-margin-left: 25mm;
   --md2pdf-margin-right: 25mm;
-  
+
   --md2pdf-color-bg: #ffffff;
   --md2pdf-color-text: #000000;
   --md2pdf-color-heading: #000000;
@@ -22,26 +22,34 @@
   --md2pdf-color-text-muted: #555555;
   --md2pdf-accent-color: #990000;
   --md2pdf-accent-text: #ffffff;
-  
-  --md2pdf-table-header-bg: #ffffff;
-  --md2pdf-table-stripe-bg: #ffffff;
+
+  /* Fix: both header AND stripe were #ffffff — zero row distinction. Use visible grays. */
+  --md2pdf-table-header-bg: #e8e8e8;
+  --md2pdf-table-stripe-bg: #f5f5f5;
 }
 
 body {
   text-align: justify;
+  background-color: var(--md2pdf-color-bg);
 }
 
-/* Academic style table borders */
+/* Academic style table borders with visible row distinction */
 table {
   border-top: 2px solid #000;
   border-bottom: 2px solid #000;
+  width: 100%;
 }
 table th, table td {
   border: none;
   border-bottom: 1px solid #ccc;
 }
 table th {
+  background-color: var(--md2pdf-table-header-bg);
   border-bottom: 2px solid #000;
+  font-weight: bold;
+}
+table tr:nth-child(even) {
+  background-color: var(--md2pdf-table-stripe-bg);
 }
 
 /* Remove code borders */
@@ -51,4 +59,11 @@ pre {
 }
 code {
   border: none;
+}
+
+/* Tag styling */
+.tag {
+  background-color: rgba(153, 0, 0, 0.08);
+  color: #990000;
+  border: 1px solid rgba(153, 0, 0, 0.2);
 }
