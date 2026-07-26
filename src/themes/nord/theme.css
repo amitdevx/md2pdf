@@ -16,7 +16,8 @@
   --md2pdf-accent-text: #eceff4;
   /* Clearly distinguishable table header (Nord polar night on snow storm) */
   --md2pdf-table-header-bg: #d8dee9;
-  --md2pdf-table-stripe-bg: #e5e9f0;
+  /* Fix stripe: was #e5e9f0 — too close to header. Use a clearly visible alternate. */
+  --md2pdf-table-stripe-bg: #dde3ed;
 }
 
 /* Fix: body background must be explicitly declared for Chromium PDF rendering */

@@ -25,6 +25,13 @@ body {
   color: var(--md2pdf-color-text);
 }
 
+/* Fix: H1-H4 were all identical #2e3338 (same as body text) — add purple accent hierarchy */
+h1 { color: #7b6cd9; }
+h2 { color: #6254b5; }
+h3 { color: #4c3e9e; }
+h4 { color: #3d3187; }
+h5, h6 { color: #2e3338; font-weight: 600; }
+
 /* Internal links in Obsidian style */
 a[href^="#"] {
   color: var(--md2pdf-accent-color);

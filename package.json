@@ -31,7 +31,7 @@
   },
   "scripts": {
     "prebuild": "node scripts/build-katex-css.mjs",
-    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && node -e \"require('fs').cpSync('src/themes', 'themes', {recursive: true})\"",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && tsc -p tsconfig.themes.json && node -e \"const fs=require('fs'),path=require('path');fs.readdirSync('src/themes').forEach(d=>{const s=path.join('src/themes',d,'theme.css');if(fs.existsSync(s))fs.copyFileSync(s,path.join('themes',d,'theme.css'));});\"",
     "dev": "tsup --watch",
     "pretest": "node scripts/build-katex-css.mjs",
     "test": "vitest run",
