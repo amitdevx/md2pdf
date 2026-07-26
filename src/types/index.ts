@@ -22,6 +22,7 @@ export interface ConvertOptions {
   toc?: boolean;
   tocDepth?: number;
   tocTitle?: string;
+  title?: boolean;
   metadata?: PdfMetadata;
   header?: boolean | { enabled?: boolean; template?: string };
   footer?: boolean | { enabled?: boolean; template?: string };

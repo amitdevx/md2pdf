@@ -187,7 +187,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     });
 
     title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
-    html = await renderHtmlTemplate(parsed.html, title, { 
+    
+    let finalHtml = parsed.html;
+    if (options.title !== false) {
+      finalHtml = `<h1 class="document-title" style="margin-top: 0; padding-top: 0;">${title}</h1>\n` + finalHtml;
+    }
+
+    html = await renderHtmlTemplate(finalHtml, title, { 
       cssclass: frontmatter.cssclass,
       mathEnabled: options.math?.enabled,
       obsidianEnabled: !!options.obsidian,
