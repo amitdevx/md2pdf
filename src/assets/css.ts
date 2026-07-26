@@ -85,8 +85,8 @@ blockquote {
   margin: 1.5em 0;
   padding: 1em 1.5em;
   color: var(--md2pdf-color-text-muted);
-  background-color: var(--md2pdf-color-bg);
-  border-left: var(--md2pdf-blockquote-border-width) solid var(--md2pdf-color-blockquote-border);
+  background-color: transparent;
+  border-left: var(--md2pdf-blockquote-border-width) solid var(--md2pdf-accent-color);
   font-style: italic;
   border-radius: 0 var(--md2pdf-callout-border-radius) var(--md2pdf-callout-border-radius) 0;
 }
@@ -120,12 +120,15 @@ table {
   border-spacing: 0;
   border-collapse: collapse;
   width: 100%;
-  page-break-inside: avoid;
 }
 
 table th, table td {
   padding: 8px 12px;
   border: 1px solid var(--md2pdf-color-border);
+}
+
+table thead {
+  display: table-header-group;
 }
 
 table th {
@@ -136,7 +139,6 @@ table th {
 table tr {
   background-color: var(--md2pdf-color-bg);
   border-top: 1px solid var(--md2pdf-color-border);
-  page-break-inside: avoid;
 }
 
 table tr:nth-child(even) { background-color: var(--md2pdf-table-stripe-bg); }
