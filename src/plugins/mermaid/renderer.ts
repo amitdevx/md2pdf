@@ -173,7 +173,7 @@ export async function renderMermaidBlocks(
         }
         
         // Wrap in a div to prevent the PDF engine from breaking the SVG across multiple pages
-        processedSvg = `<div class="mermaid-diagram" style="page-break-inside: avoid; break-inside: avoid; overflow: hidden; display: flex; justify-content: center;">${processedSvg}</div>`;
+        processedSvg = `<div class="mermaid-diagram" style="page-break-inside: avoid; break-inside: avoid; overflow: hidden; display: flex; justify-content: flex-start;">${processedSvg}</div>`;
       }
 
       results.push({
