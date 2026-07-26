@@ -1,0 +1,17 @@
+:root {
+  --md2pdf-color-bg: #eceff4;
+  --md2pdf-color-text: #2e3440;
+  --md2pdf-color-heading: #2e3440;
+  --md2pdf-color-link: #5e81ac;
+  --md2pdf-color-link-visited: #5e81ac;
+  --md2pdf-color-code-bg: #e5e9f0;
+  --md2pdf-color-code-text: #2e3440;
+  --md2pdf-color-border: #d8dee9;
+  --md2pdf-color-blockquote-border: #81a1c1;
+  --md2pdf-color-hr: #d8dee9;
+  --md2pdf-color-text-muted: #4c566a;
+  --md2pdf-accent-color: #5e81ac;
+  --md2pdf-accent-text: #eceff4;
+  --md2pdf-table-header-bg: #e5e9f0;
+  --md2pdf-table-stripe-bg: #f0f4f9;
+}

@@ -1,0 +1,32 @@
+:root {
+  --md2pdf-font-family-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --md2pdf-font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #24292f;
+  --md2pdf-color-heading: #24292f;
+  --md2pdf-color-link: #0969da;
+  --md2pdf-color-link-visited: #0969da;
+  --md2pdf-color-code-bg: #f6f8fa;
+  --md2pdf-color-code-text: #24292f;
+  --md2pdf-color-border: #d0d7de;
+  --md2pdf-color-blockquote-border: #d0d7de;
+  --md2pdf-color-hr: #d0d7de;
+  --md2pdf-color-text-muted: #57606a;
+  --md2pdf-accent-color: #0969da;
+  --md2pdf-accent-text: #ffffff;
+  --md2pdf-table-header-bg: #ffffff;
+  --md2pdf-table-stripe-bg: #f6f8fa;
+}
+
+table th, table td {
+  border: 1px solid var(--md2pdf-color-border);
+}
+
+table tr {
+  background-color: var(--md2pdf-color-bg);
+  border-top: 1px solid var(--md2pdf-color-border);
+}
+
+table tr:nth-child(2n) {
+  background-color: var(--md2pdf-table-stripe-bg);
+}

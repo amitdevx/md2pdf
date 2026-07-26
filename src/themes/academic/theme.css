@@ -1,0 +1,54 @@
+:root {
+  --md2pdf-font-family-body: 'Source Serif 4', 'Times New Roman', Times, serif;
+  --md2pdf-font-family-heading: 'Source Serif 4', 'Times New Roman', Times, serif;
+  --md2pdf-font-family-mono: 'Courier New', Courier, monospace;
+  --md2pdf-font-size: 11pt;
+  --md2pdf-line-height: 1.5;
+  --md2pdf-margin-top: 25mm;
+  --md2pdf-margin-bottom: 25mm;
+  --md2pdf-margin-left: 25mm;
+  --md2pdf-margin-right: 25mm;
+  
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #000000;
+  --md2pdf-color-heading: #000000;
+  --md2pdf-color-link: #990000;
+  --md2pdf-color-link-visited: #990000;
+  --md2pdf-color-code-bg: #f9f9f9;
+  --md2pdf-color-code-text: #000000;
+  --md2pdf-color-border: #cccccc;
+  --md2pdf-color-blockquote-border: #990000;
+  --md2pdf-color-hr: #cccccc;
+  --md2pdf-color-text-muted: #555555;
+  --md2pdf-accent-color: #990000;
+  --md2pdf-accent-text: #ffffff;
+  
+  --md2pdf-table-header-bg: #ffffff;
+  --md2pdf-table-stripe-bg: #ffffff;
+}
+
+body {
+  text-align: justify;
+}
+
+/* Academic style table borders */
+table {
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+}
+table th, table td {
+  border: none;
+  border-bottom: 1px solid #ccc;
+}
+table th {
+  border-bottom: 2px solid #000;
+}
+
+/* Remove code borders */
+pre {
+  border: 1px solid #eee;
+  border-left: 3px solid #ccc;
+}
+code {
+  border: none;
+}

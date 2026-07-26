@@ -1,0 +1,86 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { Theme } from '../types/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export async function loadTheme(themeNameOrPath?: string): Promise<Theme | null> {
+  if (!themeNameOrPath) return null;
+
+  let themeDir = '';
+  let isCustom = false;
+  let customCssOnly = false;
+
+  // Check if it's a built-in theme
+  const builtInPath = path.resolve(__dirname, themeNameOrPath);
+  if (fs.existsSync(builtInPath) && fs.statSync(builtInPath).isDirectory()) {
+    themeDir = builtInPath;
+  } else {
+    // Treat as custom path
+    isCustom = true;
+    const resolvedPath = path.resolve(process.cwd(), themeNameOrPath);
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(`Theme not found: ${themeNameOrPath}`);
+    }
+    
+    if (fs.statSync(resolvedPath).isFile()) {
+      customCssOnly = true;
+      themeDir = resolvedPath;
+    } else {
+      themeDir = resolvedPath;
+    }
+  }
+
+  if (customCssOnly) {
+    const cssContent = await fs.promises.readFile(themeDir, 'utf-8');
+    return {
+      name: path.basename(themeDir, '.css'),
+      description: 'Custom CSS theme',
+      css: cssContent
+    };
+  }
+
+  const cssPath = path.join(themeDir, 'theme.css');
+  const tsPath = path.join(themeDir, 'theme.js'); // after compilation
+
+  if (!fs.existsSync(cssPath)) {
+    throw new Error(`Theme missing theme.css in ${themeDir}`);
+  }
+
+  const cssContent = await fs.promises.readFile(cssPath, 'utf-8');
+  let metadata: Partial<Theme> = {};
+
+  if (fs.existsSync(tsPath)) {
+    try {
+      const module = await import(`file://${tsPath}`);
+      metadata = module.default || {};
+    } catch (e) {
+      console.warn(`Failed to load theme metadata from ${tsPath}`, e);
+    }
+  }
+
+  return {
+    name: metadata.name || path.basename(themeDir),
+    description: metadata.description || 'Custom theme',
+    author: metadata.author,
+    css: cssContent,
+    fontUrls: metadata.fontUrls,
+    fontFaces: metadata.fontFaces,
+    mermaidTheme: metadata.mermaidTheme,
+    mermaidThemeVariables: metadata.mermaidThemeVariables,
+    shikiTheme: metadata.shikiTheme
+  };
+}
+
+export function getBuiltInThemes(): string[] {
+  try {
+    return fs.readdirSync(__dirname).filter(name => {
+      const stat = fs.statSync(path.join(__dirname, name));
+      return stat.isDirectory() && name !== 'loader.ts' && name !== 'loader.js';
+    });
+  } catch (e) {
+    return [];
+  }
+}

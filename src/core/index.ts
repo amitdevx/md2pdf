@@ -166,6 +166,15 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   let title: string = '';
   
   try {
+    const { loadTheme } = await import('../themes/loader.js');
+    const themeName = frontmatter.theme || options.theme || 'default';
+    let theme = null;
+    try {
+      theme = await loadTheme(themeName);
+    } catch (e: any) {
+      warnings.push(`Failed to load theme "${themeName}": ${e.message}`);
+    }
+
     parsed = await parseMarkdown(processedMarkdown, {
       toc: options.toc,
       tocDepth: options.tocDepth,
@@ -174,6 +183,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       mermaidBlocks,
       math: options.math,
       obsidian: options.obsidian,
+      shikiTheme: theme?.shikiTheme,
     });
 
     title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
@@ -181,6 +191,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       cssclass: frontmatter.cssclass,
       mathEnabled: options.math?.enabled,
       obsidianEnabled: !!options.obsidian,
+      theme,
     });
 
     if (options.sharedBrowser) {
@@ -196,7 +207,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const { processBeforeRender } = await import('../renderer/pipeline.js');
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, warnings, {
       theme: frontmatter.theme || options.theme,
-      globalMermaidTheme: frontmatter.mermaid?.theme || options.mermaid?.theme,
+      globalMermaidTheme: theme?.mermaidTheme || frontmatter.mermaid?.theme || options.mermaid?.theme,
+      themeVariables: theme?.mermaidThemeVariables,
       timeout: frontmatter.mermaid?.timeout || options.mermaid?.timeout,
       mermaidEnabled: frontmatter.mermaid?.enabled ?? options.mermaid?.enabled,
       maxWidth: frontmatter.mermaid?.maxWidth || options.mermaid?.maxWidth,

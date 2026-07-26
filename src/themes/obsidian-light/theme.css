@@ -1,0 +1,28 @@
+:root {
+  --md2pdf-font-family-body: 'Inter', sans-serif;
+  --md2pdf-font-family-mono: 'Fira Code', monospace;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #2e3338;
+  --md2pdf-color-heading: #2e3338;
+  --md2pdf-color-link: #7b6cd9;
+  --md2pdf-color-link-visited: #7b6cd9;
+  --md2pdf-color-code-bg: #f2f3f5;
+  --md2pdf-color-code-text: #2e3338;
+  --md2pdf-color-border: #dcddde;
+  --md2pdf-color-blockquote-border: #7b6cd9;
+  --md2pdf-color-hr: #dcddde;
+  --md2pdf-color-text-muted: #5c5e62;
+  --md2pdf-accent-color: #7b6cd9;
+  --md2pdf-accent-text: #ffffff;
+  --md2pdf-table-header-bg: #f2f3f5;
+  --md2pdf-table-stripe-bg: #f9f9fa;
+}
+
+/* Internal links in obsidian style */
+a[href^="#"] {
+  color: var(--md2pdf-accent-color);
+  text-decoration: none;
+}
+a[href^="#"]:hover {
+  text-decoration: underline;
+}

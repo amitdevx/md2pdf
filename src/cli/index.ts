@@ -97,6 +97,15 @@ program
     }
     return n;
   })
+  .option('--list-themes', 'List all available built-in themes and exit')
   .action(runConvert);
 
-program.parse(process.argv);
+if (process.argv.includes('--list-themes')) {
+  import('../themes/loader.js').then(({ getBuiltInThemes }) => {
+    const themes = getBuiltInThemes();
+    process.stdout.write(`Available built-in themes:\n${themes.map(t => `  - ${t}`).join('\n')}\n`);
+    process.exit(0);
+  });
+} else {
+  program.parse(process.argv);
+}
