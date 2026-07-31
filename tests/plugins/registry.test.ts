@@ -51,7 +51,7 @@ describe('PluginRegistry', () => {
       { type: 'theme', name: 'my-theme', theme: {} as any }
     ]);
     
-    const themes = registry.getPlugins('theme');
+    const themes = registry.getThemePlugins();
     expect(themes.length).toBe(1);
     expect(themes[0].name).toBe('my-theme');
   });
