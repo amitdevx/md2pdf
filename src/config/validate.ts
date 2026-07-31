@@ -72,6 +72,7 @@ const baseConfigSchema = z.object({
     filename: z.string().optional(),
     merge: z.boolean().optional(),
   }).optional(),
+  plugins: z.array(z.any()).optional(),
 });
 
 const strippedBaseConfigSchema = baseConfigSchema.strip();
