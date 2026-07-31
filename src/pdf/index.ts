@@ -13,6 +13,8 @@ export interface PdfOptions {
   headerTemplate?: string;
   footerTemplate?: string;
   browser?: Browser;
+  registry?: import('../plugins/registry.js').PluginRegistry;
+  renderContext?: import('../types/context.js').RenderContext;
 }
 
 export async function generatePdf(options: PdfOptions): Promise<void> {
@@ -77,10 +79,22 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
 
 
 
+    // Call afterPageLoad hook
+    if (options.registry && options.renderContext) {
+      for (const plugin of options.registry.getRenderPlugins()) {
+        if (plugin.hooks?.afterPageLoad) {
+          try {
+            await plugin.hooks.afterPageLoad(page, options.renderContext);
+          } catch (e) {
+            options.renderContext.logger.error(`Error in afterPageLoad hook of plugin "${plugin.name}":`, e);
+          }
+        }
+      }
+    }
+
     const marginValue = options.margin || '20mm';
 
-    await page.pdf({
-      path: options.outputPath,
+    let pdfBuffer = await page.pdf({
       format: options.format || 'A4',
       printBackground: true,
       margin: {
@@ -93,6 +107,22 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       headerTemplate: options.headerTemplate,
       footerTemplate: options.footerTemplate,
     });
+
+    // Call afterPdf hook
+    if (options.registry && options.renderContext) {
+      for (const plugin of options.registry.getRenderPlugins()) {
+        if (plugin.hooks?.afterPdf) {
+          try {
+            pdfBuffer = await plugin.hooks.afterPdf(pdfBuffer, options.renderContext);
+          } catch (e) {
+            options.renderContext.logger.error(`Error in afterPdf hook of plugin "${plugin.name}":`, e);
+          }
+        }
+      }
+    }
+
+    const fs = await import('node:fs/promises');
+    await fs.writeFile(options.outputPath, pdfBuffer);
   } finally {
     if (context) {
       await context.close();

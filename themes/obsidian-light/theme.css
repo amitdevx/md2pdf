@@ -1,0 +1,68 @@
+:root {
+  --md2pdf-font-family-body: 'Inter', sans-serif;
+  --md2pdf-font-family-mono: 'Fira Code', monospace;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #2e3338;
+  --md2pdf-color-heading: #2e3338;
+  --md2pdf-color-link: #7b6cd9;
+  --md2pdf-color-link-visited: #7b6cd9;
+  --md2pdf-color-code-bg: #f2f3f5;
+  --md2pdf-color-code-text: #2e3338;
+  --md2pdf-color-border: #dcddde;
+  --md2pdf-color-blockquote-border: #7b6cd9;
+  --md2pdf-color-hr: #dcddde;
+  --md2pdf-color-text-muted: #5c5e62;
+  --md2pdf-accent-color: #7b6cd9;
+  --md2pdf-accent-text: #ffffff;
+  --md2pdf-table-header-bg: #eeecfb;
+  /* Fix: stripe was #f9f9fa — only 1.02:1 contrast vs white. Use a clearly visible alternate row. */
+  --md2pdf-table-stripe-bg: #f4f2fd;
+}
+
+/* Fix: body background must be explicitly declared for PDF rendering reliability */
+body {
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
+}
+
+table td {
+  color: var(--md2pdf-color-text) !important;
+}
+
+/* Fix: H1-H4 were all identical #2e3338 (same as body text) — add purple accent hierarchy */
+h1 { color: #7b6cd9; }
+h2 { color: #6254b5; }
+h3 { color: #4c3e9e; }
+h4 { color: #3d3187; }
+h5, h6 { color: #2e3338; font-weight: 600; }
+
+/* Internal links in Obsidian style */
+a[href^="#"] {
+  color: var(--md2pdf-accent-color);
+  text-decoration: none;
+}
+a[href^="#"]:hover {
+  text-decoration: underline;
+}
+
+/* Minimalist Tables for Obsidian */
+table th, table td {
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid var(--md2pdf-color-border);
+}
+table th {
+  background-color: var(--md2pdf-table-header-bg);
+  color: #6254b5;
+  border-bottom: 2px solid var(--md2pdf-color-border);
+}
+table tr:nth-child(even) {
+  background-color: var(--md2pdf-table-stripe-bg);
+}
+
+/* Tag styling */
+.tag {
+  background-color: rgba(123, 108, 217, 0.1);
+  color: #7b6cd9;
+  border: 1px solid rgba(123, 108, 217, 0.25);
+}

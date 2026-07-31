@@ -17,6 +17,8 @@ export async function processBeforeRender(
     maxWidth?: string;
     maxHeight?: string;
     sharedMermaidPage?: any;
+    registry?: import('../plugins/registry.js').PluginRegistry;
+    ctx?: import('../types/context.js').RenderContext;
   }
 ): Promise<string> {
   if (options?.mermaidEnabled === false) {
@@ -36,7 +38,20 @@ export async function processBeforeRender(
       options?.maxHeight,
       options?.sharedMermaidPage
     );
-    return inlineMermaidSvgs(html, renderedSvgs);
+    html = inlineMermaidSvgs(html, renderedSvgs);
   }
+
+  if (options?.registry && options?.ctx) {
+    for (const plugin of options.registry.getRenderPlugins()) {
+      if (plugin.hooks?.beforeRender) {
+        try {
+          html = await plugin.hooks.beforeRender(html, options.ctx);
+        } catch (e) {
+          options.ctx.logger.error(`Error in beforeRender hook of plugin "${plugin.name}":`, e);
+        }
+      }
+    }
+  }
+
   return html;
 }

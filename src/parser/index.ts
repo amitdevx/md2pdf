@@ -37,6 +37,7 @@ function rehypeExpandDetails() {
 export async function parseMarkdown(
   markdown: string,
   options?: { 
+    registry?: import('../plugins/registry.js').PluginRegistry;
     theme?: string;
     toc?: boolean; 
     tocDepth?: number; 
@@ -83,6 +84,12 @@ export async function parseMarkdown(
     processor = processor.use(remarkMath as any);
   }
 
+  if (options?.registry) {
+    for (const p of options.registry.getMarkdownPlugins()) {
+      processor = processor.use(p.plugin, p.options);
+    }
+  }
+
   processor = processor
     // remark-gfm natively enables GFM footnotes, tables, and tasklists
     .use(remarkGfm)
@@ -96,6 +103,12 @@ export async function parseMarkdown(
       throwOnError: false,
       errorColor: '#cc0000',
     });
+  }
+
+  if (options?.registry) {
+    for (const p of options.registry.getHtmlPlugins()) {
+      processor = processor.use(p.plugin, p.options);
+    }
   }
 
   const file = await processor

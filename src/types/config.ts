@@ -1,3 +1,5 @@
+import type { AnyPlugin } from './plugin.js';
+
 export interface Md2PdfConfig {
   /** Theme name or path to custom CSS/dir */
   theme?: string;
@@ -63,4 +65,6 @@ export interface Md2PdfConfig {
   };
   /** Named profiles */
   profiles?: Record<string, Omit<Md2PdfConfig, 'profiles'>>;
+  /** Array of plugins */
+  plugins?: AnyPlugin[];
 }

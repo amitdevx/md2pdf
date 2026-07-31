@@ -1,0 +1,53 @@
+:root {
+  --md2pdf-font-family-body: 'Inter', sans-serif;
+  --md2pdf-font-family-mono: 'Fira Code', monospace;
+  /* Fix: correct Obsidian dark background — #1e1e2e is the real Obsidian dark palette (Catppuccin Mocha base) */
+  /* Fix: headings must be visually distinct from body text — use Obsidian's purple/lavender */
+  --md2pdf-color-heading: #cba6f7;
+  --md2pdf-color-link: #89b4fa;
+  --md2pdf-color-link-visited: #89b4fa;
+  /* Fix: code block contrast was 1.3:1 — use proper surface1 bg (#313244) with text #cdd6f4 = 8.5:1 contrast */
+  --md2pdf-color-code-bg: #313244;
+  --md2pdf-color-code-text: #cdd6f4;
+  --md2pdf-color-border: #45475a;
+  --md2pdf-color-blockquote-border: #cba6f7;
+  --md2pdf-color-hr: #45475a;
+  --md2pdf-color-text-muted: #a6adc8;
+  --md2pdf-accent-color: #cba6f7;
+  --md2pdf-accent-text: #1e1e2e;
+}
+
+/* Internal links in Obsidian style */
+a[href^="#"] {
+  color: var(--md2pdf-accent-color);
+  text-decoration: none;
+}
+a[href^="#"]:hover {
+  text-decoration: underline;
+}
+
+
+
+/* Heading hierarchy — distinct from body text */
+h1 { color: #cba6f7; }
+h2 { color: #b4befe; }
+h3 { color: #89b4fa; }
+h4, h5, h6 { color: #74c7ec; }
+
+/* Minimalist Tables for Obsidian */
+table th, table td {
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid var(--md2pdf-color-border);
+}
+table th {
+  color: var(--md2pdf-color-heading) !important;
+  border-bottom: 2px solid var(--md2pdf-color-border);
+}
+
+/* Tag variables for dark mode */
+.tag {
+  background-color: rgba(203, 166, 247, 0.15);
+  color: #cba6f7;
+  border: 1px solid rgba(203, 166, 247, 0.3);
+}

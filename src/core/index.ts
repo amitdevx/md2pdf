@@ -9,6 +9,8 @@ import { resolveObsidianEmbeds } from '../plugins/obsidian/embeds.js';
 
 import matter from 'gray-matter';
 import { injectMetadata } from '../pdf/metadata.js';
+import { PluginRegistry } from '../plugins/registry.js';
+import type { RenderContext } from '../types/context.js';
 
 function sanitizeFrontmatterValue(val: unknown): string {
   if (val === null || val === undefined) return '';
@@ -33,6 +35,14 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       'The input property must be a string path to a markdown file.'
     );
   }
+
+  const registry = new PluginRegistry();
+  if (options.plugins) {
+    for (const plugin of options.plugins) {
+      registry.register(plugin);
+    }
+  }
+  await registry.setupAll();
 
   if (typeof output === 'string') {
     const resolvedOutput = path.resolve(process.cwd(), output);
@@ -175,7 +185,16 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       warnings.push(`Failed to load theme "${themeName}": ${e.message}`);
     }
 
+    const ctx: RenderContext = {
+      inputPath,
+      outputPath,
+      frontmatter,
+      options: options as any,
+      logger: console
+    };
+
     parsed = await parseMarkdown(processedMarkdown, {
+      registry,
       toc: options.toc,
       tocDepth: options.tocDepth,
       tocTitle: options.tocTitle,
@@ -219,7 +238,9 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       mermaidEnabled: frontmatter.mermaid?.enabled ?? options.mermaid?.enabled,
       maxWidth: frontmatter.mermaid?.maxWidth || options.mermaid?.maxWidth,
       maxHeight: frontmatter.mermaid?.maxHeight || options.mermaid?.maxHeight,
-      sharedMermaidPage: (options as any).sharedMermaidPage
+      sharedMermaidPage: (options as any).sharedMermaidPage,
+      registry,
+      ctx
     });
     
     let headerTemplate = undefined;
@@ -290,6 +311,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       headerTemplate,
       footerTemplate,
       browser,
+      registry,
+      renderContext: ctx
     });
     
     const pageCounts = await injectMetadata(outputPath, metadata);
@@ -308,6 +331,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     if (browser && internallyLaunchedBrowser) {
       await browser.close();
     }
+    await registry.teardownAll();
   }
 }
 

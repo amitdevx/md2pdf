@@ -1,3 +1,5 @@
+import type { AnyPlugin } from './plugin.js';
+
 export interface PdfMetadata {
   title?: string;
   author?: string;
@@ -10,9 +12,12 @@ export interface PdfMetadata {
 
 export * from './config.js';
 export * from './theme.js';
+export * from './plugin.js';
+export * from './context.js';
 export interface ConvertOptions {
   input: string;
   output: string;
+  plugins?: AnyPlugin[];
   sharedBrowser?: import('playwright-core').Browser;
   /** Internal shared Mermaid page for batch processing performance */
   sharedMermaidPage?: any;

@@ -21,8 +21,11 @@ Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headl
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.6.1)
-- **Theming System:** Introducing 7 professionally crafted built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to instantly transform your PDF's aesthetics. Includes printer-friendly styling for dark themes.
+### Available (v0.7.0)
+- **Plugin Infrastructure:** A fully documented, stable plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle. See [Plugin Documentation](docs/plugins.md) and [Authoring Guide](docs/PLUGIN_AUTHORING.md).
+
+### Previous Versions
+- **Theming System (v0.6.1):** Introducing 7 professionally crafted built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to instantly transform your PDF's aesthetics. Includes printer-friendly styling for dark themes.
 - **Strict Obsidian Parity:** Flawless visual alignment with Obsidian's native exports. Features perfect Lucide SVG callout icons with exact color matching, stripped `^block-identifiers`, automatic `H1` document title injection, and minimalist tables for `obsidian-light/dark` themes.
 - **Dynamic Syntax Highlighting:** Massive parsing speedup. Shiki grammars are now dynamically detected and loaded on-the-fly, reducing compilation overhead by up to 10 seconds per file.
 - **Improved Layout Engine:** Mermaid diagrams now naturally left-align (matching standard markdown flow), and large tables gracefully span across page breaks with repeating headers.
@@ -46,7 +49,7 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
 
 ### Coming Soon
-- **Plugin System:** Extensible architecture for custom rendering logic.
+- **Live Preview:** Real-time hot-reloading preview in the browser while editing markdown.
 
 ## Installation
 

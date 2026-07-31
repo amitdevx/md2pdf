@@ -1,0 +1,42 @@
+:root {
+  /* Fix: font was never explicitly declared for Dracula — use a modern monospace-friendly stack */
+  --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --md2pdf-font-family-mono: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+  --md2pdf-color-heading: #ff79c6;
+  --md2pdf-color-link: #8be9fd;
+  --md2pdf-color-link-visited: #8be9fd;
+  --md2pdf-color-code-bg: #44475a;
+  --md2pdf-color-code-text: #f8f8f2;
+  --md2pdf-color-border: #6272a4;
+  --md2pdf-color-blockquote-border: #bd93f9;
+  --md2pdf-color-hr: #6272a4;
+  --md2pdf-color-text-muted: #6272a4;
+  --md2pdf-accent-color: #bd93f9;
+  --md2pdf-accent-text: #282a36;
+}
+
+
+
+/* Heading hierarchy using Dracula's color palette */
+h1 { color: #ff79c6; }
+h2 { color: #bd93f9; }
+h3 { color: #8be9fd; }
+h4, h5, h6 { color: #50fa7b; }
+
+/* Blockquote */
+blockquote {
+  border-left: 4px solid var(--md2pdf-color-blockquote-border);
+  background-color: rgba(189, 147, 249, 0.05);
+}
+
+/* Fix: tag variables set for dark mode */
+.tag {
+  background-color: rgba(189, 147, 249, 0.15);
+  color: #bd93f9;
+  border: 1px solid rgba(189, 147, 249, 0.35);
+}
+
+/* Table styling for dark mode */
+table th {
+  color: var(--md2pdf-color-heading) !important;
+}

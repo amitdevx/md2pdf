@@ -1,0 +1,5 @@
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+Warning: Permanently added 'serveo.net' (RSA) to the list of known hosts.
+[32mForwarding HTTP traffic from https://4bb5b83372a91b03-152-56-1-88.serveousercontent.com
+[0m[33mTip (1): Add your SSH key to reserve names and keep URLs stable. Pro removes the browser warning page: https://console.serveo.net/settings?n=1&src=ssh_nudge&v=A
+[0m
