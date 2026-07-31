@@ -145,5 +145,6 @@ export function mergeConfig(
         ? merged.metadata.keywords.join(', ') 
         : merged.metadata?.keywords
     } as any,
+    plugins: merged.plugins,
   };
 }
