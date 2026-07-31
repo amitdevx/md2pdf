@@ -6,8 +6,9 @@ Security updates are provided exclusively for the latest major and minor release
 
 | Version | Supported          |
 | :---    | :---               |
-| 0.2.x   | :white_check_mark: |
-| < 0.2   | :x:                |
+| 0.7.x   | :white_check_mark: |
+| 0.6.x   | :white_check_mark: |
+| < 0.6   | :x:                |
 
 ## 2. Maintainer Availability & Policy Suspension
 

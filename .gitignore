@@ -45,3 +45,8 @@ test-out.svg
 # OS Files
 .DS_Store
 docs/audit*
+
+# Generated artifacts
+logs.zip
+test-artifact.zip
+out.pdf

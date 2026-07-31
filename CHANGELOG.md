@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-31
+
+### Added
+- **Plugin Infrastructure**: A fully documented, stable plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle.
+- **Plugin Registry**: Added internal registry and lifecycle hooks (`setup`, `beforeRender`, `afterPageLoad`, `afterPdf`, `teardown`).
+- **Configuration Mapping**: Ensured `plugins` array correctly maps from Zod configuration to the internal `ConvertOptions`.
+
+## [0.6.1] - 2026-07-20
+
+### Added
+- **Theming System**: Introduced 7 professionally crafted built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`).
+- **Dynamic Syntax Highlighting**: Shiki grammars are now dynamically detected and loaded on-the-fly, reducing compilation overhead.
+- **Strict Obsidian Parity**: Flawless visual alignment with Obsidian's native exports, including Lucide SVG callout icons.
+- **Improved Layout Engine**: Mermaid diagrams now naturally left-align, and large tables gracefully span across page breaks with repeating headers.
+
 ## [0.5.0] - 2026-07-12
 
 ### Added
