@@ -50,3 +50,9 @@ docs/audit*
 logs.zip
 test-artifact.zip
 out.pdf
+
+# Local root scratch files
+test-browser.js
+ci-out.txt
+lt.txt
+serveo.txt
