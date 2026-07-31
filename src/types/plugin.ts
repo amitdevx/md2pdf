@@ -6,6 +6,7 @@ import type { PluginRegistry } from '../plugins/registry.js';
 
 export interface BasePlugin {
   name: string;
+  priority?: 'first' | 'normal';
   setup?: (registry: PluginRegistry) => void | Promise<void>;
   teardown?: () => void | Promise<void>;
 }
