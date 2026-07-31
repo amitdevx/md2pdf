@@ -29,8 +29,6 @@ For detailed release notes and changelogs, please visit the [GitHub Releases](ht
 - **Strict Obsidian Parity:** Flawless visual alignment with Obsidian's native exports. Features perfect Lucide SVG callout icons with exact color matching, stripped `^block-identifiers`, automatic `H1` document title injection, and minimalist tables for `obsidian-light/dark` themes.
 - **Dynamic Syntax Highlighting:** Massive parsing speedup. Shiki grammars are now dynamically detected and loaded on-the-fly, reducing compilation overhead by up to 10 seconds per file.
 - **Improved Layout Engine:** Mermaid diagrams now naturally left-align (matching standard markdown flow), and large tables gracefully span across page breaks with repeating headers.
-
-### Previous Versions
 - **Performance & Core (v0.5.4):** 5x faster single-file conversion via persistent Chromium daemon and local base64 offline fonts. Flawless Mermaid syntax tolerance bridging complex AST diagrams. Smaller npm footprint and graceful CLI interruptions.
 - **Configuration (v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
 - **Batch Processing & Error Resilience (v0.5.1):** Process multiple files at once (`md2pdf *.md`). Intelligently continues on conversion errors, emits rich JSON failure mappings, and fully resolves Windows pathing.
