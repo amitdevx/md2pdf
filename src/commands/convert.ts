@@ -366,7 +366,13 @@ import { Md2PdfError } from '../errors/index.js';
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
         } else {
+          // 1. Stop the spinner and log the main error
           spinner.fail(pc.red(err.message));
+
+          // 2. ADD YOUR CUSTOM GITHUB MESSAGE HERE
+          console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n`));
+
+          // 3. Print the debug stack trace if enabled
           if (options.debug && err.stack) {
             console.error(pc.dim(err.stack));
           }
