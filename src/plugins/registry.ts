@@ -1,3 +1,4 @@
+import type { AnyPlugin, MarkdownPlugin, HtmlPlugin, RenderPlugin, ThemePlugin, ExportPlugin } from '../types/plugin.js';
 import type { Page } from 'playwright-core';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import type { RenderContext } from '../types/context.js';
@@ -64,6 +65,10 @@ function deepReadonlyProxy<T extends object>(target: T, pluginName: string): T {
     }
   });
 }
+
+export class PluginRegistry {
+  private plugins: AnyPlugin[] = [];
+  private registeredNames = new Set<string>();
 
   register(plugin: AnyPlugin) {
     if (this.registeredNames.has(plugin.name)) return;
