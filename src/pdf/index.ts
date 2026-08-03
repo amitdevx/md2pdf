@@ -81,15 +81,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
 
     // Call afterPageLoad hook
     if (options.registry && options.renderContext) {
-      for (const plugin of options.registry.getRenderPlugins()) {
-        if (plugin.hooks?.afterPageLoad) {
-          try {
-            await plugin.hooks.afterPageLoad(page, options.renderContext);
-          } catch (e) {
-            options.renderContext.logger.error(`Error in afterPageLoad hook of plugin "${plugin.name}":`, e);
-          }
-        }
-      }
+      await options.registry.executeAfterPageLoad(page, options.renderContext);
     }
 
     const marginValue = options.margin || '20mm';
@@ -110,15 +102,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
 
     // Call afterPdf hook
     if (options.registry && options.renderContext) {
-      for (const plugin of options.registry.getRenderPlugins()) {
-        if (plugin.hooks?.afterPdf) {
-          try {
-            pdfBuffer = await plugin.hooks.afterPdf(pdfBuffer, options.renderContext);
-          } catch (e) {
-            options.renderContext.logger.error(`Error in afterPdf hook of plugin "${plugin.name}":`, e);
-          }
-        }
-      }
+      pdfBuffer = await options.registry.executeAfterPdf(pdfBuffer, options.renderContext);
     }
 
     const fs = await import('node:fs/promises');

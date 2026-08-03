@@ -42,15 +42,7 @@ export async function processBeforeRender(
   }
 
   if (options?.registry && options?.ctx) {
-    for (const plugin of options.registry.getRenderPlugins()) {
-      if (plugin.hooks?.beforeRender) {
-        try {
-          html = await plugin.hooks.beforeRender(html, options.ctx);
-        } catch (e) {
-          options.ctx.logger.error(`Error in beforeRender hook of plugin "${plugin.name}":`, e);
-        }
-      }
-    }
+    html = await options.registry.executeBeforeRender(html, options.ctx);
   }
 
   return html;
