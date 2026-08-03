@@ -21,7 +21,7 @@ Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headl
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.7.0)
+### Available (v0.7.1)
 - **Plugin Infrastructure:** A fully documented, stable plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle. See [Plugin Documentation](docs/plugins.md) and [Authoring Guide](docs/PLUGIN_AUTHORING.md).
 
 ### Previous Versions
