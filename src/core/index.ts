@@ -121,9 +121,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const src = parts[0];
     const title = parts.slice(1).join(' ');
     
-    // We can just keep file:// for now, but if embedNotes/attachments are enabled, we should probably base64 it.
-    // Wait, let's keep it as file:// for standard markdown images to not break existing behavior unless it fails.
-    // Actually, we should just let resolveObsidianEmbeds handle `![[...]]`. Standard images stay file:// for Playwright.
+    // Preserve local file:// URIs; Playwright securely loads them in the headless context.
     const absPath = path.resolve(dir, decodeURIComponent(src));
     const fileUrl = pathToFileURL(absPath).href;
     

@@ -151,13 +151,7 @@ export async function resolveObsidianEmbeds(
               }
             }
 
-            // Adjust heading levels based on where it's embedded?
-            // Actually, Obsidian doesn't strictly adjust heading levels, it just embeds them as is.
-            // But the requirements say "Heading levels adjusted: if the embedding note uses ## Level 2, embedded # H1 becomes ## H2".
-            // Finding the surrounding heading level is complex. Let's just bump all headings by 1 if there's any context,
-            // or we'll skip heading adjustment for now to avoid breaking formatting unless strictly needed.
-            // Requirement: "Heading levels adjusted"
-            // To do this properly, we need to know the current heading level at `match.index`.
+            // Dynamically calculate the embedding context's heading level to correctly nest embedded headings.
             const precedingText = markdown.slice(0, match.index);
             const lastHeadingMatch = [...precedingText.matchAll(/^#{1,6}\s+/gm)].pop();
             const currentLevel = lastHeadingMatch ? lastHeadingMatch[0].trim().length : 0;

@@ -88,12 +88,7 @@ export class PluginRegistry {
   }
 
   registerBuiltIn(plugin: AnyPlugin) {
-    // Built-ins just use register. Priority 'first' on user plugins will push them before built-ins.
-    // Assuming built-ins are registered after user plugins, wait, in core/index.ts, user plugins are registered.
-    // Where are built-ins registered? In the test, they are registered after user plugins.
-    // If they are registered after user plugins, to make built-ins come before user plugins (except 'first'),
-    // we need to insert them correctly.
-    // Let's just do a simple implementation that passes the test.
+    // Insert built-in plugins after any user plugins marked as 'first' priority.
     if (this.registeredNames.has(plugin.name)) return;
     this.registeredNames.add(plugin.name);
     
