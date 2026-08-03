@@ -2,8 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.7.1] - 2026-08-03
+
+### Fixed
+- **Plugin Security (Sandboxing Escape)**: Plugins accessing the Playwright `Page` object in the `afterPageLoad` hook are now restricted via a Javascript Proxy. Destructive methods (`close`, `goto`, `pdf`) are aggressively blocked, throwing a `PluginSecurityError`.
+- **Plugin Security (Context Mutability)**: Implemented a deep-readonly Proxy for `RenderContext`. Malicious or poorly designed plugins can no longer overwrite core engine options or configurations during runtime.
+- **Resilience (Infinite Loops)**: All asynchronous plugin hooks are now aggressively wrapped in a 10,000ms `Promise.race` timeout to prevent single plugins from permanently hanging the batch processing CLI.
+- **Resilience (Broken Initialization)**: Plugins that throw an error during the `setup()` initialization phase are now automatically evicted from the active registry and will not trigger cascading failures during the render pipeline.
+- **Resilience (Type Integrity)**: Implemented strict runtime Zod-style type verification on hook return values. If `beforeRender` does not return a string, or `afterPdf` does not return a Buffer, the pipeline immediately aborts rather than feeding corrupted memory downstream to libraries like `pdf-lib`.
+- **Resilience (Error Swallowing)**: Unhandled plugin hook errors now correctly propagate and abort the current file's generation, rather than silently failing and producing incomplete PDFs.
 
 ## [0.7.0] - 2026-07-31
 
