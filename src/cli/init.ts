@@ -56,7 +56,7 @@ export default new Command('init')
           }
 
           if (!hasSudo) {
-            console.warn(pc.yellow('⚠  sudo not available — skipping system library install'));
+            console.warn(pc.yellow('⚠  sudo not available - skipping system library install'));
             console.log(pc.dim('  If Playwright fails, install these manually as root:'));
             console.log(pc.dim('  npx playwright-core install-deps chromium'));
           } else {

@@ -33,7 +33,7 @@ export default function rehypeToc(options: TocOptions = {}) {
 
     if (headings.length === 0) return;
 
-    // Build nested list AST — proper semantic nesting per heading depth
+    // Build nested list AST - proper semantic nesting per heading depth
     const buildList = (items: typeof headings): Element => {
       const root: Element = {
         type: 'element',

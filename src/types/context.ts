@@ -18,7 +18,7 @@ export interface RenderContext {
   frontmatter: Record<string, unknown>;
   /** Final merged options for this render */
   options: ResolvedMd2PdfConfig;
-  /** Logger — use instead of console.log */
+  /** Logger - use instead of console.log */
   logger: Logger;
 }
 
@@ -31,6 +31,6 @@ export interface ExportContext {
   frontmatter: Record<string, unknown>;
   /** Final merged options for this export */
   options: ResolvedMd2PdfConfig;
-  /** Logger — use instead of console.log */
+  /** Logger - use instead of console.log */
   logger: Logger;
 }

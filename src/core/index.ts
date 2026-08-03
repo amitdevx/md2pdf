@@ -1,4 +1,5 @@
 import { parseMarkdown } from '../parser/index.js';
+import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import { renderHtmlTemplate } from '../renderer/index.js';
 import { generatePdf } from '../pdf/index.js';
 import { ConvertOptions, ConvertResult, PdfMetadata } from '../types/index.js';
@@ -182,7 +183,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     try {
       theme = await loadTheme(themeName);
     } catch (e: any) {
-      warnings.push(`Failed to load theme "${themeName}": ${e.message}`);
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_INVALID_THEME,
+        'Theme Load Error',
+        `Failed to load theme "${themeName}": ${e.message}`
+      );
     }
 
     const ctx: RenderContext = {
@@ -224,7 +229,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     } else {
       const { getWarmBrowser, scheduleClose } = await import('../pdf/daemon.js');
       browser = await getWarmBrowser();
-      // Don't set internallyLaunchedBrowser — daemon manages lifecycle
+      // Don't set internallyLaunchedBrowser - daemon manages lifecycle
       // Schedule close after idle period
       scheduleClose();
     }
@@ -276,7 +281,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         headerTemplate = `
         <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; border-bottom: 0.5px solid #ccc; margin-bottom: 5mm; padding-bottom: 2mm;">
           <span class="title"></span>
-          <span>${metadata.author ? metadata.author + ' — ' : ''}<span class="date"></span></span>
+          <span>${metadata.author ? metadata.author + ' - ' : ''}<span class="date"></span></span>
         </div>`;
       }
     }

@@ -112,7 +112,7 @@ import { Md2PdfError } from '../errors/index.js';
       hasErrors = true;
       failedCount++;
       if (!options.jsonErrors) {
-        console.error(pc.red(`✖ ${input} — ${reason}`));
+        console.error(pc.red(`✖ ${input} - ${reason}`));
       }
     };
 
@@ -315,7 +315,7 @@ import { Md2PdfError } from '../errors/index.js';
           }
           hasErrors = true;
           failedCount++;
-          const msg = `${path.basename(input)} — ${err.reason || err.message}`;
+          const msg = `${path.basename(input)} - ${err.reason || err.message}`;
           
           if (!options.jsonErrors && isBatch) {
             (spinner as any).stop();
@@ -345,7 +345,7 @@ import { Md2PdfError } from '../errors/index.js';
         } else {
           if (hasErrors) {
             const res = results[0] as any;
-            const errStr = res?.isError ? `${path.basename(inputs[0])} — ${res.error}` : `Failed in ${totalTime}s`;
+            const errStr = res?.isError ? `${path.basename(inputs[0])} - ${res.error}` : `Failed in ${totalTime}s`;
             spinner.fail(pc.red(errStr));
           } else {
             spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));

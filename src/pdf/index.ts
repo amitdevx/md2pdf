@@ -68,13 +68,13 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       route.continue();
     });
 
-    // Load HTML — use domcontentloaded first, then briefly wait for networkidle
+    // Load HTML - use domcontentloaded first, then briefly wait for networkidle
     // (covers Google Fonts CDN). Falls back gracefully if fonts are slow/offline.
     await page.setContent(options.html, { waitUntil: 'domcontentloaded' });
     try {
       await page.waitForLoadState('networkidle', { timeout: 3000 });
     } catch {
-      // Font CDN timed out — PDF renders with fallback fonts, no crash
+      // Font CDN timed out - PDF renders with fallback fonts, no crash
     }
 
 

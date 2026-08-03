@@ -117,12 +117,7 @@ export async function renderMermaidBlocks(
     ]);
     } catch (e: any) {
       // If the entire evaluate fails
-      warnings.push(`Mermaid Batch Render Error: ${e.message}`);
-      evaluatedResults = payloads.map(b => ({
-        id: b.id,
-        svg: null,
-        error: 'Batch execution failed: ' + e.message
-      }));
+      throw new Error(`Mermaid Batch Render Error: ${e.message}`);
     }
 
     const results: RenderedMermaid[] = [];
@@ -133,21 +128,7 @@ export async function renderMermaidBlocks(
 
       if (res.error) {
         const lineInfo = block.line ? ` at line ${block.line}` : '';
-        warnings.push(`Mermaid Error${lineInfo}: ${res.error}`);
-        results.push({
-          id: block.id,
-          svgHtml: `
-            <div class="mermaid-error" style="border: 1px solid red; padding: 10px; color: red; font-family: sans-serif; page-break-inside: avoid;">
-              <strong>Mermaid Error</strong>
-              <pre style="white-space: pre-wrap; overflow-x: auto;">${res.error}</pre>
-              <details>
-                <summary>Source</summary>
-                <pre style="white-space: pre-wrap; color: black;">${block.source}</pre>
-              </details>
-            </div>
-          `
-        });
-        continue;
+        throw new Error(`Mermaid Error${lineInfo}: ${res.error}`);
       }
 
       let processedSvg = res.svg || '';

@@ -23,7 +23,7 @@ describe('CLI End-to-End Tests', () => {
   it('should fail on missing file with exit code 1', () => {
     const result = runCli('nonexistent.md');
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("nonexistent.md — file not found");
+    expect(result.stderr).toContain("nonexistent.md - file not found");
   });
 
   it('should fail on directory input with exit code 1', () => {
@@ -62,7 +62,7 @@ describe('CLI End-to-End Tests', () => {
   it('should fail on same input and output with exit code 1', () => {
     const result = runCli(`README.md -o README.md`);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('README.md — input and output cannot be the same file');
+    expect(result.stderr).toContain('README.md - input and output cannot be the same file');
   });
 
   it('should fail on trailing slash output with exit code 1', () => {
