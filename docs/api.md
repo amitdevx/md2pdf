@@ -32,6 +32,7 @@ const result: ConvertResult = await convert(options);
 | `mermaid` | `object` | `{ enabled: true }` | Configuration for Mermaid diagram rendering. |
 | `math` | `object` | `{ enabled: true }` | Configuration for KaTeX math rendering. |
 | `obsidian` | `object` | `undefined` | Compatibility options for Obsidian syntax. |
+| `plugins` | `AnyPlugin[]` | `undefined` | Array of custom plugins to extend md2pdf capabilities. |
 | `sharedBrowser` | `Browser` | `undefined` | Inject an existing Playwright `Browser` instance (optimizes batch processing). |
 
 ### `ConvertResult`

@@ -44,6 +44,10 @@ export default defineConfig({
     resolveWikiLinks: true,
     embedNotes: true,
   },
+
+  plugins: [
+    // Array of custom plugins
+  ],
 });
 ```
 

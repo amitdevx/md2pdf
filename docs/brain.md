@@ -5,8 +5,8 @@
 > and extend the project without reading any other file.
 >
 > # md2pdf Brain
-Version: v0.5.3
-Last Updated: 2026-07-15
+Version: v0.7.1
+Last Updated: 2026-08-03
 
 ---
 
@@ -26,8 +26,8 @@ Last Updated: 2026-07-15
 | Field | Value |
 |-------|-------|
 | **Package name** | `@amitdevx/md2pdf` |
-| **Version** | `0.5.3` |
-| **Description** | Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API. |
+| **Version** | `0.7.1` |
+| **Description** | Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, custom themes, and a secure plugin architecture. CLI + Node.js API. |
 | **Author** | Amit Divekar |
 | **License** | MIT |
 | **Repository** | `https://github.com/amitdevx/md2pdf` (shorthand in package.json) |
@@ -52,7 +52,7 @@ Last Updated: 2026-07-15
 
 ## 2. Architecture & Pipeline
 
-### Core Pipeline (v0.5.0)
+### Core Pipeline (v0.7.1)
 
 ```
 Input .md file
@@ -67,6 +67,7 @@ Input .md file
 │  - Collects mermaidBlocks[] (filled during parsing)      │
 │  - Builds PdfMetadata from options + frontmatter         │
 │  - Builds header/footer templates if requested           │
+│  - Initializes PluginRegistry (loads built-ins & users)  │
 │  - Launches Playwright browser (shared across steps)     │
 └──────────────┬───────────────────────────────────────────┘
                │

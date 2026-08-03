@@ -135,6 +135,14 @@ Plugins can optionally define `setup` and `teardown` hooks.
 - `setup(registry)`: Called once during initialization.
 - `teardown()`: Called after all processing is complete.
 
+## Security & Architecture Hardening
+
+Starting with `v0.7.1`, the plugin architecture implements strict security and reliability boundaries:
+
+1. **Immutable Context**: The `RenderContext` and `ExportContext` objects passed to plugins are deeply frozen. Plugins can read configuration and metadata, but they cannot maliciously or accidentally mutate `ctx.options` or `ctx.frontmatter`.
+2. **Safe Playwright Proxy**: When a `RenderPlugin` receives the Playwright `Page` object in the `afterPageLoad` hook, it is wrapped in a restrictive proxy. Destructive methods like `page.close()`, `page.goto()`, `page.pdf()`, and `page.evaluateHandle()` are blocked.
+3. **Strict Timeouts**: All asynchronous hooks (`beforeRender`, `afterPageLoad`, `afterPdf`) are bounded by a strict 10,000ms execution timeout. If a plugin hangs or deadlocks, the core engine will catch the timeout, abort the plugin, and automatically evict it from the registry to prevent cascading failures in batch processing.
+
 ## Publishing to npm
 
 If you wish to share your plugin, simply publish it as an npm package. For best practices, we recommend prefixing your package name with `md2pdf-plugin-` (e.g. `md2pdf-plugin-watermark`). Users can then install it and add it to their configuration file.
