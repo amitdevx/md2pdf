@@ -17,7 +17,7 @@ function readCache(): { channel?: string; default?: boolean } | null {
     if (fs.existsSync(CACHE_FILE)) {
       return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8'));
     }
-  } catch (e) {
+  } catch {
     // Ignore error
   }
   return null;
@@ -29,7 +29,7 @@ function writeCache(data: { channel?: string; default?: boolean }) {
       fs.mkdirSync(CACHE_DIR, { recursive: true });
     }
     fs.writeFileSync(CACHE_FILE, JSON.stringify(data), 'utf-8');
-  } catch (e) {
+  } catch {
     // Ignore error
   }
 }

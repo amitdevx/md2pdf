@@ -21,8 +21,10 @@ Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headl
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.7.1)
-- **Plugin Infrastructure & Security:** A fully documented, stable plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle. Features enterprise-grade security hardening with deep-frozen contexts, safe Playwright page proxies, and strict 10s async hook timeouts. See [Plugin Documentation](docs/plugins.md) and [Authoring Guide](docs/PLUGIN_AUTHORING.md).
+### Available (v0.7.2)
+- **Plugin Infrastructure:** A fully documented plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle. See [Plugin Documentation](docs/plugins.md) and [Authoring Guide](docs/PLUGIN_AUTHORING.md).
+- **Security & Stability:** Context objects passed to plugins are deeply frozen to prevent accidental mutation, Playwright page instances are safely proxied, and async hooks enforce strict timeouts.
+- **CLI Improvements:** Improved JSON error formatting (`--json-errors`) for easier piping, enhanced verbose logging (`--verbose`), automatic output directory creation, and local browser caching to speed up initialization.
 
 ### Previous Versions
 - **Theming System (v0.6.1):** Introducing 7 professionally crafted built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to instantly transform your PDF's aesthetics. Includes printer-friendly styling for dark themes.
