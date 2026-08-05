@@ -72,7 +72,13 @@ program
   .option('--hr-page-break', 'Treat --- as a page break')
   .option('--h1-new-page', 'Force a page break before each H1 heading')
   .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)')
-  .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)')
+  .option('--mermaid-theme <theme>', 'Override theme for Mermaid diagrams (default, dark, base, neutral)', (val) => {
+    const valid = ['default', 'dark', 'base', 'neutral'];
+    if (!valid.includes(val)) {
+      throw new InvalidArgumentError(`must be one of: ${valid.join(', ')}`);
+    }
+    return val;
+  })
   .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds', (val) => {
     const n = parseInt(val);
     if (isNaN(n) || n <= 0) {

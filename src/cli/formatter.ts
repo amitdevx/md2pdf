@@ -12,11 +12,7 @@ export const EXIT = {
 
 export function jsonOut(data: object) {
   const str = JSON.stringify(data, null, 2);
-  if ((data as any).success === false && !(data as any).results) {
-    process.stderr.write(str + '\n');
-  } else {
-    process.stdout.write(str + '\n');
-  }
+  process.stdout.write(str + '\n');
 }
 
 export function renderCliError(err: Md2PdfError, options: CliOptions) {

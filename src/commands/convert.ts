@@ -62,6 +62,18 @@ import { Md2PdfError } from '../errors/index.js';
       }
     }
     
+    if (cliFlags.headerTemplate && !cliFlags.header) {
+      if (!options.jsonErrors) {
+        console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
+      }
+    }
+
+    if (cliFlags.footerTemplate && !cliFlags.footer) {
+      if (!options.jsonErrors) {
+        console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
+      }
+    }
+    
     const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
       jsonOut({
         success: false,
@@ -262,6 +274,25 @@ import { Md2PdfError } from '../errors/index.js';
           output = input.replace(/\.md$/i, '.pdf');
         }
 
+        try {
+          const outDir = path.dirname(output as string);
+          if (!fs.existsSync(outDir)) {
+            fs.mkdirSync(outDir, { recursive: true });
+          }
+        } catch (dirErr: any) {
+          hasErrors = true;
+          failedCount++;
+          if (!options.jsonErrors && isBatch) {
+            (spinner as any).stop();
+            console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
+          } else if (!options.jsonErrors && !isBatch) {
+            spinner.fail(pc.red(`Cannot create output directory: ${dirErr.message}`));
+            process.exitCode = EXIT.USAGE_ERROR; return;
+          }
+          results.push({ isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
+          continue;
+        }
+
         const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
         if (isBatch) {
           convertOptions.sharedBrowser = globalBrowser;
@@ -288,7 +319,14 @@ import { Md2PdfError } from '../errors/index.js';
         }
 
         try {
+          if (options.verbose && !options.jsonErrors) {
+            console.log(pc.dim(`\n[Verbose] Starting conversion pipeline for: ${input}`));
+            console.log(pc.dim(`[Verbose] Output target: ${output}`));
+          }
           const result = await convert(convertOptions as any);
+          if (options.verbose && !options.jsonErrors) {
+            console.log(pc.dim(`[Verbose] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
+          }
           
           if (!options.jsonErrors && result.warnings.length > 0) {
             (spinner as any).stop();
@@ -321,20 +359,21 @@ import { Md2PdfError } from '../errors/index.js';
             (spinner as any).stop();
             console.error(pc.red(`✖ ${msg}`));
           }
-          results.push({ isError: true, error: err.reason || err.message, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
+          results.push({ isError: true, error: err.reason || err.message, code: err.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
         }
       }
 
       if (options.jsonErrors) {
         jsonOut({
-          success: !hasErrors,
+          success: !hasErrors && successfulCount > 0,
           results: results.map((r: any, index: number) => ({
             input: inputs[index],
             output: r.outputPath,
             pages: r.pageCounts,
             timeMs: r.renderTimeMs,
             warnings: r.warnings,
-            ...(r.isError ? { error: r.error } : {})
+            ...(r.isError ? { error: r.error, code: r.code } : {}),
+            ...(r.isSkipped ? { skipped: true } : {})
           }))
         });
       } else {
