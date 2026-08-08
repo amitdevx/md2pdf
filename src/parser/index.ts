@@ -6,8 +6,8 @@ import rehypeSlug from 'rehype-slug';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
-import rehypeShiki from '@shikijs/rehype';
-import { bundledLanguages } from 'shiki';
+import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
+import { getSingletonHighlighter, bundledLanguages, Highlighter } from 'shiki';
 import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/layout/toc.js';
 import rehypePageBreaks from '../plugins/layout/page-breaks.js';
@@ -21,7 +21,8 @@ import rehypeCallouts from '../plugins/obsidian/callouts.js';
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
 import { visit } from 'unist-util-visit';
 
-
+let shikiHighlighter: Highlighter | null = null;
+const processorCache = new Map<string, any>();
 
 function rehypeExpandDetails() {
   return (tree: any) => {
@@ -71,7 +72,22 @@ export async function parseMarkdown(
   // We need at least one valid language or fallback language if array is empty, otherwise Shiki might default to all
   const shikiLangs = validLangs.length > 0 ? validLangs : ['txt'];
 
-  let processor: any = unified()
+  if (!shikiHighlighter) {
+    shikiHighlighter = await getSingletonHighlighter({
+      themes: ['github-light', 'github-dark', 'dracula', 'nord'],
+      langs: Object.keys(bundledLanguages)
+    });
+  }
+
+  const cacheKey = JSON.stringify({
+    options,
+    shikiLangs
+  });
+
+  let processor = processorCache.get(cacheKey);
+
+  if (!processor) {
+    processor = unified()
     .use(remarkParse)
     .use(remarkBlockRefs)
     .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
@@ -111,7 +127,7 @@ export async function parseMarkdown(
     }
   }
 
-  const file = await processor
+  processor = processor
     .use(rehypeSlug)
     .use(rehypeCallouts as any)
     .use(rehypePageBreaks, options?.pageBreaks)
@@ -120,11 +136,9 @@ export async function parseMarkdown(
       depth: options?.tocDepth,
       title: options?.tocTitle,
     })
-    .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
     .use(rehypeExpandDetails)
-    .use(rehypeShiki, {
+    .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
       theme: options?.shikiTheme || 'github-light',
-      langs: shikiLangs,
       fallbackLanguage: 'txt',
       onError: (err: unknown) => {
         if (err instanceof Error) {
@@ -133,10 +147,15 @@ export async function parseMarkdown(
           warnings.push(String(err));
         }
       }
-    })
+    }))
     // allowDangerousHtml: true stringifies any raw HTML nodes so they render correctly.
-    .use(rehypeStringify, { allowDangerousHtml: true })
-    .process(markdown);
+    .use(rehypeStringify, { allowDangerousHtml: true });
+
+    processorCache.set(cacheKey, processor);
+  }
+
+  // We add rehypeMermaidDetector per-file because it mutates the blocks array passed to it
+  const file = await processor().use(rehypeMermaidDetector, { blocks: mermaidBlocks }).process(markdown);
 
   // Add any warnings from unified itself
   file.messages.forEach((msg: any) => {

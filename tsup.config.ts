@@ -7,7 +7,11 @@ export default defineConfig({
   sourcemap: false,
   clean: true,
   treeshake: true,
-  minify: true,
-  splitting: false,
   outDir: 'dist',
+  noExternal: [
+    'unified', 'remark-parse', 'remark-rehype', 'rehype-stringify',
+    'remark-gfm', 'remark-math', 'rehype-katex', 'rehype-slug',
+    'unist-util-visit', '@shikijs/rehype'
+  ],
+  external: ['playwright-core', 'shiki', 'mermaid'],
 });

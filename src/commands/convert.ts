@@ -3,6 +3,7 @@ import ora from 'ora';
 import pc from 'picocolors';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import fg from 'fast-glob';
 import { loadConfig } from '../config/loader.js';
 import { mergeConfig } from '../config/merge.js';
@@ -225,143 +226,208 @@ import { Md2PdfError } from '../errors/index.js';
 
     try {
       const { getBrowser } = await import('../pdf/browser.js');
+      let mermaidInitPromise: Promise<void> | null = null;
+      
       if (isBatch) {
         globalBrowser = await getBrowser();
-      }
-      
-      const results = [];
+        
+        // Fast heuristic check across all inputs to start Mermaid warmup early
+        const hasMermaidAnywhere = await Promise.all(inputs.map(input => {
+          return new Promise<boolean>((resolve) => {
+            const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
+            stream.once('data', (chunk) => { stream.destroy(); resolve((chunk as string).includes('```mermaid')); });
+            stream.once('error', () => resolve(false));
+            stream.once('end', () => resolve(false));
+          });
+        })).then(results => results.some(r => r));
 
-      for (let i = 0; i < inputs.length; i++) {
-        if (isShuttingDown) break;
-        const input = inputs[i];
-        
-        // Lazy-load Mermaid page ONLY if the file actually contains Mermaid diagrams
-        const hasMermaid = await new Promise<boolean>((resolve) => {
-          const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
-          stream.once('data', (chunk) => { stream.destroy(); resolve((chunk as string).includes('```mermaid')); });
-          stream.once('error', () => resolve(false));
-          stream.once('end', () => resolve(false));
-        });
-        
-        if (isBatch && hasMermaid && !globalMermaidPage) {
-          globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
-          globalMermaidPage = await globalMermaidContext.newPage();
-          await globalMermaidPage.setContent(`<!DOCTYPE html>
+        if (hasMermaidAnywhere) {
+          mermaidInitPromise = (async () => {
+            globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
+            globalMermaidPage = await globalMermaidContext.newPage();
+            const { fontCss } = await import('../assets/fonts.js');
+            await globalMermaidPage.setContent(`<!DOCTYPE html>
 <html>
 <head>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    ${fontCss}
     body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
 <body></body>
 </html>`);
-          await globalMermaidPage.evaluate(() => document.fonts.ready);
+            await globalMermaidPage.evaluate(() => document.fonts.ready);
+            try {
+              const scriptPath = path.resolve(new URL(import.meta.url).pathname, '../../assets/mermaid.min.js');
+              await globalMermaidPage.addScriptTag({ path: scriptPath });
+            } catch {
+              // Fallback
+            }
+          })();
+        }
+      }
+      
+      const concurrencyLimit = cliFlags.concurrency ? parseInt(cliFlags.concurrency as string) : os.cpus().length;
+      const results: any[] = new Array(inputs.length);
+      let completedCount = 0;
+
+      if (!options.jsonErrors && isBatch) {
+        spinner.text = `Converting (0/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+        (spinner as any).start();
+      } else if (!options.jsonErrors && !isBatch) {
+        spinner.text = 'Converting...';
+        (spinner as any).start();
+      }
+
+      const queue = inputs.map((input, i) => ({ input, i }));
+
+      const worker = async () => {
+        while (queue.length > 0 && !isShuttingDown) {
+          const { input, i } = queue.shift()!;
+          
+          // Lazy-load Mermaid page ONLY if the file actually contains Mermaid diagrams
+          const hasMermaid = await new Promise<boolean>((resolve) => {
+            const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
+            stream.once('data', (chunk) => { stream.destroy(); resolve((chunk as string).includes('```mermaid')); });
+            stream.once('error', () => resolve(false));
+            stream.once('end', () => resolve(false));
+          });
+          
+          if (isBatch && hasMermaid) {
+            if (mermaidInitPromise) await mermaidInitPromise;
+            
+            if (!globalMermaidPage) {
+              // Fallback if not initialized via batch check
+              globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
+              globalMermaidPage = await globalMermaidContext.newPage();
+              const { fontCss } = await import('../assets/fonts.js');
+              await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
+              await globalMermaidPage.evaluate(() => document.fonts.ready);
+              try {
+                const scriptPath = path.resolve(new URL(import.meta.url).pathname, '../../assets/mermaid.min.js');
+                await globalMermaidPage.addScriptTag({ path: scriptPath });
+              } catch {
+                // Fallback or warning if Mermaid isn't installed
+              }
+            }
+          }
+
+          let output = cliFlags.output;
+          if (isBatch && output) {
+            output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
+          } else if (!output) {
+            output = input.replace(/\.md$/i, '.pdf');
+          }
+
           try {
-            const requireModule = (await import('node:module')).createRequire(import.meta.url);
-            const scriptPath = requireModule.resolve('mermaid/dist/mermaid.min.js');
-            await globalMermaidPage.addScriptTag({ path: scriptPath });
-          } catch {
-            // Fallback or warning if Mermaid isn't installed
-          }
-        }
-
-        let output = cliFlags.output;
-        if (isBatch && output) {
-          // output is a directory
-          output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-        } else if (!output) {
-          output = input.replace(/\.md$/i, '.pdf');
-        }
-
-        try {
-          const outDir = path.dirname(output as string);
-          if (!fs.existsSync(outDir)) {
-            fs.mkdirSync(outDir, { recursive: true });
-          }
-        } catch (dirErr: any) {
-          hasErrors = true;
-          failedCount++;
-          if (!options.jsonErrors && isBatch) {
-            (spinner as any).stop();
-            console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
-          } else if (!options.jsonErrors && !isBatch) {
-            spinner.fail(pc.red(`Cannot create output directory: ${dirErr.message}`));
-            process.exitCode = EXIT.USAGE_ERROR; return;
-          }
-          results.push({ isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
-          continue;
-        }
-
-        const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
-        if (isBatch) {
-          convertOptions.sharedBrowser = globalBrowser;
-          if (globalMermaidPage) {
-            (convertOptions as any).sharedMermaidPage = globalMermaidPage;
-          }
-        }
-
-        if (fs.existsSync(output as string)) {
-          if (!options.jsonErrors && isBatch) {
-            (spinner as any).stop();
-            console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
-          } else if (!options.jsonErrors && !isBatch) {
-            console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
-          }
-        }
-
-        if (!options.jsonErrors && isBatch) {
-          spinner.text = `Converting (${i + 1}/${inputs.length}): ${path.basename(input)}...`;
-          (spinner as any).start(); // restart spinner in case it was stopped by the warning
-        } else if (!options.jsonErrors && !isBatch) {
-          spinner.text = 'Converting...';
-          (spinner as any).start();
-        }
-
-        try {
-          if (options.verbose && !options.jsonErrors) {
-            console.log(pc.dim(`\n[Verbose] Starting conversion pipeline for: ${input}`));
-            console.log(pc.dim(`[Verbose] Output target: ${output}`));
-          }
-          const result = await convert(convertOptions as any);
-          if (options.verbose && !options.jsonErrors) {
-            console.log(pc.dim(`[Verbose] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
-          }
-          
-          if (!options.jsonErrors && result.warnings.length > 0) {
-            (spinner as any).stop();
-            result.warnings.forEach(w => console.warn(pc.red(`⚠ ${w}`)));
-            if (!isBatch) (spinner as any).start();
-          }
-          
-          if (!options.jsonErrors && isBatch) {
-            (spinner as any).stop();
-            console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${result.renderTimeMs}ms)`));
-          }
-          
-          successfulCount++;
-          results.push(result);
-        } catch (err: any) {
-          if (isShuttingDown) break;
-          
-          if (err?.code === 'ERR_PUBLISH_SKIPPED') {
-            results.push({ isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'] });
-            if (!options.jsonErrors) {
-              console.log(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
+            const outDir = path.dirname(output as string);
+            if (!fs.existsSync(outDir)) {
+              fs.mkdirSync(outDir, { recursive: true });
+            }
+          } catch (dirErr: any) {
+            hasErrors = true;
+            failedCount++;
+            if (!options.jsonErrors && isBatch) {
+              (spinner as any).stop();
+              console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
+              (spinner as any).start();
+            } else if (!options.jsonErrors && !isBatch) {
+              spinner.fail(pc.red(`Cannot create output directory: ${dirErr.message}`));
+              process.exitCode = EXIT.USAGE_ERROR; return;
+            }
+            results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            if (!options.jsonErrors && isBatch) {
+              completedCount++;
+              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
             }
             continue;
           }
-          hasErrors = true;
-          failedCount++;
-          const msg = `${path.basename(input)} - ${err.reason || err.message}`;
+
+          const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
+          if (isBatch) {
+            convertOptions.sharedBrowser = globalBrowser;
+            if (globalMermaidPage) {
+              (convertOptions as any).sharedMermaidPage = globalMermaidPage;
+            }
+          }
+
+          if (fs.existsSync(output as string)) {
+            if (!options.jsonErrors && isBatch) {
+              (spinner as any).stop();
+              console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
+              (spinner as any).start();
+            } else if (!options.jsonErrors && !isBatch) {
+              console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
+            }
+          }
+
+          try {
+            if (options.verbose && !options.jsonErrors) {
+              (spinner as any).stop();
+              console.log(pc.dim(`\n[Verbose] Starting conversion pipeline for: ${input}`));
+              console.log(pc.dim(`[Verbose] Output target: ${output}`));
+              if (isBatch) (spinner as any).start();
+            }
+            
+            const result = await convert(convertOptions as any);
+            
+            if (options.verbose && !options.jsonErrors) {
+              (spinner as any).stop();
+              console.log(pc.dim(`[Verbose] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
+              if (isBatch) (spinner as any).start();
+            }
+            
+            if (!options.jsonErrors && result.warnings.length > 0) {
+              (spinner as any).stop();
+              result.warnings.forEach(w => console.warn(pc.red(`⚠ ${w}`)));
+              if (isBatch) (spinner as any).start();
+            }
+            
+            if (!options.jsonErrors && isBatch) {
+              (spinner as any).stop();
+              console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${result.renderTimeMs}ms)`));
+              (spinner as any).start();
+            }
+            
+            successfulCount++;
+            results[i] = result;
+          } catch (err: any) {
+            if (isShuttingDown) break;
+            
+            if (err?.code === 'ERR_PUBLISH_SKIPPED') {
+              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'] };
+              if (!options.jsonErrors) {
+                (spinner as any).stop();
+                console.log(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
+                (spinner as any).start();
+              }
+              if (!options.jsonErrors && isBatch) {
+                completedCount++;
+                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+              }
+              continue;
+            }
+            hasErrors = true;
+            failedCount++;
+            const msg = `${path.basename(input)} - ${err.reason || err.message}`;
+            
+            if (!options.jsonErrors && isBatch) {
+              (spinner as any).stop();
+              console.error(pc.red(`✖ ${msg}`));
+              (spinner as any).start();
+            }
+            results[i] = { isError: true, error: err.reason || err.message, code: err.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+          }
           
           if (!options.jsonErrors && isBatch) {
-            (spinner as any).stop();
-            console.error(pc.red(`✖ ${msg}`));
+            completedCount++;
+            spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
           }
-          results.push({ isError: true, error: err.reason || err.message, code: err.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] });
         }
-      }
+      };
+
+      const workers = Array.from({ length: Math.min(concurrencyLimit, inputs.length) }, () => worker());
+      await Promise.all(workers);
 
       if (options.jsonErrors) {
         jsonOut({

@@ -26,5 +26,6 @@ export interface CliOptions {
   config?: string;
   profile?: string;
   cache?: boolean;
+  concurrency?: string;
 }
 

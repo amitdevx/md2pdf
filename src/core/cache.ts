@@ -23,7 +23,7 @@ function loadCache(): Record<string, CacheEntry> {
   try {
     const data = fs.readFileSync(INDEX_FILE, 'utf-8');
     return JSON.parse(data);
-  } catch (e) {
+  } catch {
     return {};
   }
 }

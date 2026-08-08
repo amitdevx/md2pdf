@@ -90,7 +90,7 @@ export async function renderMermaidBlocks(
           // @ts-expect-error window.mermaid is injected at runtime
           window.mermaid.initialize({ startOnLoad: false, theme, themeVariables: themeVariables || {}, fontFamily: 'Inter, sans-serif', flowchart: { htmlLabels: false } });
           
-          for (const block of themeBlocks) {
+          const themePromises = themeBlocks.map(async (block) => {
             try {
               const renderPromise = (async () => {
                 // @ts-expect-error window.mermaid is injected at runtime
@@ -105,11 +105,13 @@ export async function renderMermaidBlocks(
 
               const res = await Promise.race([renderPromise, timeoutPromise]);
               clearTimeout(timerId!);
-              results.push(res);
+              return res;
             } catch (err: any) {
-              results.push({ id: block.id, svg: null, error: err.message || String(err) });
+              return { id: block.id, svg: null, error: err.message || String(err) };
             }
-          }
+          });
+          const themeResults = await Promise.all(themePromises);
+          results.push(...themeResults);
         }
         return results;
       }, { blocks: payloads, timeout: timeoutMs, themeVariables }),

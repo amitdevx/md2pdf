@@ -1,6 +1,6 @@
 {
   "name": "@amitdevx/md2pdf",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.",
   "type": "module",
   "main": "./dist/index.js",
@@ -31,7 +31,7 @@
   },
   "scripts": {
     "prebuild": "node scripts/build-katex-css.mjs",
-    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && tsc -p tsconfig.themes.json && node -e \"const fs=require('fs'),path=require('path');fs.readdirSync('src/themes').forEach(d=>{const s=path.join('src/themes',d,'theme.css');if(fs.existsSync(s))fs.copyFileSync(s,path.join('themes',d,'theme.css'));});\"",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && tsc -p tsconfig.themes.json && node -e \"const fs=require('fs'),path=require('path');fs.readdirSync('src/themes').forEach(d=>{const s=path.join('src/themes',d,'theme.css');if(fs.existsSync(s))fs.copyFileSync(s,path.join('themes',d,'theme.css'));}); fs.mkdirSync('dist/assets', {recursive: true}); fs.copyFileSync('node_modules/mermaid/dist/mermaid.min.js', 'dist/assets/mermaid.min.js');\"",
     "dev": "tsup --watch",
     "pretest": "node scripts/build-katex-css.mjs",
     "test": "vitest run",
@@ -109,7 +109,7 @@
     "jiti": "^2.7.0",
     "js-yaml": "^5.2.1",
     "katex": "^0.16.47",
-    "mermaid": "^10.9.1",
+
     "mime-types": "^3.0.2",
     "ora": "^5.4.1",
     "pdf-lib": "^1.17.1",
@@ -136,6 +136,7 @@
     "eslint": "^9.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.1.0",
+    "mermaid": "^10.9.1",
     "prettier": "^3.1.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.2",

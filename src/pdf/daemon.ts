@@ -13,7 +13,11 @@ export async function getWarmBrowser(): Promise<Browser> {
     return warmBrowser;
   }
   
-  warmBrowser = await getBrowser();
+  const [browser] = await Promise.all([
+    getBrowser()
+  ]);
+  
+  warmBrowser = browser;
   
   // Auto-close after idle period
   warmBrowser.on('disconnected', () => { warmBrowser = null; });
