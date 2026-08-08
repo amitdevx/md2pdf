@@ -21,12 +21,14 @@ Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headl
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.7.2)
-- **Plugin Infrastructure:** A fully documented plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle. See [Plugin Documentation](docs/plugins.md) and [Authoring Guide](docs/PLUGIN_AUTHORING.md).
-- **Security & Stability:** Context objects passed to plugins are deeply frozen to prevent accidental mutation, Playwright page instances are safely proxied, and async hooks enforce strict timeouts.
-- **CLI Improvements:** Improved JSON error formatting (`--json-errors`) for easier piping, enhanced verbose logging (`--verbose`), automatic output directory creation, and local browser caching to speed up initialization.
+### Available (v0.8.0)
+- **Incremental Rendering Cache**: Dramatically speeds up batch conversions (`md2pdf *.md`) by hashing content and reusing unchanged PDFs. Centralized cache ensures your workspace remains clean. Control it natively using `--no-cache` and `--clear-cache` flags.
+- **Flawless Parallel Mermaid Rendering**: Complete re-architecture of the Mermaid rendering engine guarantees perfect diagram output under heavy multi-file concurrency. Eliminated race conditions and layout corruptions via robust mutex locks and isolated DOM generation.
 
 ### Previous Versions
+- **Plugin Infrastructure (v0.7.x):** A fully documented plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle. See [Plugin Documentation](docs/plugins.md) and [Authoring Guide](docs/PLUGIN_AUTHORING.md).
+- **Security & Stability:** Context objects passed to plugins are deeply frozen to prevent accidental mutation, Playwright page instances are safely proxied, and async hooks enforce strict timeouts.
+- **CLI Improvements:** Improved JSON error formatting (`--json-errors`) for easier piping, enhanced verbose logging (`--verbose`), automatic output directory creation, and local browser caching to speed up initialization.
 - **Theming System (v0.6.1):** Introducing 7 professionally crafted built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to instantly transform your PDF's aesthetics. Includes printer-friendly styling for dark themes.
 - **Strict Obsidian Parity:** Flawless visual alignment with Obsidian's native exports. Features perfect Lucide SVG callout icons with exact color matching, stripped `^block-identifiers`, automatic `H1` document title injection, and minimalist tables for `obsidian-light/dark` themes.
 - **Dynamic Syntax Highlighting:** Massive parsing speedup. Shiki grammars are now dynamically detected and loaded on-the-fly, reducing compilation overhead by up to 10 seconds per file.

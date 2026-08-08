@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2026-08-08
+
+### Added
+- **Incremental Rendering Cache**: Implemented a robust content-hash based caching system (centralized in the OS temp directory) to significantly speed up batch conversions by automatically skipping unmodified files.
+- **Cache Management CLI**: Added `--no-cache` flag to bypass the cache and force a complete re-render, and `--clear-cache` to wipe all stored cache records.
+
+### Fixed
+- **Parallel Diagram Rendering**: Re-architected Mermaid rendering for high-concurrency environments. Implemented a strict Mutex lock to serialize `page.evaluate` requests and utilized uniquely generated DOM IDs, entirely eliminating race conditions and visual layout corruption when processing multiple diagrams in parallel.
+- **CLI Options Integrity**: Fixed an issue where the `--no-cache` flag would be dropped during configuration merging.
+- **Automated Cache Cleanup**: The temporary cache directory is now cleanly purged upon running `npm uninstall -g @amitdevx/md2pdf`.
+
 ## [0.7.1] - 2026-08-03
 
 ### Fixed

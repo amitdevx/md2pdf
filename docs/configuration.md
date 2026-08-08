@@ -16,6 +16,7 @@ export default defineConfig({
   toc: true,
   tocDepth: 3,
   title: true, // injects H1 at the top
+  cache: true, // enable incremental caching
 
   header: {
     enabled: true,

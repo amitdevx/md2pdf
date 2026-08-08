@@ -25,3 +25,11 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `--mermaid-theme` | string | auto | Mermaid theme override |
 | `--resolve-links` | boolean | false | Resolve wiki link status |
 | `--debug` | boolean | false | Debug diagnostics |
+| `--verbose` | boolean | false | Enable verbose execution logging |
+| `--json-errors` | boolean | false | Output errors in JSON format |
+| `--config` | string | auto | Path to custom config file |
+| `--profile` | string | default | Config profile to apply |
+| `-f, --force` | boolean | false | Force overwrite of existing PDFs |
+| `--concurrency` | number | os.cpus() | Number of parallel workers for batch mode |
+| `--no-cache` | boolean | false | Disable incremental rendering cache |
+| `--clear-cache` | boolean | false | Wipe the centralized rendering cache |

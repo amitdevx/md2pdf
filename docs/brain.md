@@ -5,8 +5,8 @@
 > and extend the project without reading any other file.
 >
 > # md2pdf Brain
-Version: v0.7.1
-Last Updated: 2026-08-03
+Version: v0.8.0
+Last Updated: 2026-08-08
 
 ---
 
@@ -26,7 +26,7 @@ Last Updated: 2026-08-03
 | Field | Value |
 |-------|-------|
 | **Package name** | `@amitdevx/md2pdf` |
-| **Version** | `0.7.1` |
+| **Version** | `0.8.0` |
 | **Description** | Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, custom themes, and a secure plugin architecture. CLI + Node.js API. |
 | **Author** | Amit Divekar |
 | **License** | MIT |
@@ -52,7 +52,7 @@ Last Updated: 2026-08-03
 
 ## 2. Architecture & Pipeline
 
-### Core Pipeline (v0.7.1)
+### Core Pipeline (v0.8.0)
 
 ```
 Input .md file
