@@ -22,6 +22,7 @@ import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js
 import { visit } from 'unist-util-visit';
 
 let shikiHighlighter: Highlighter | null = null;
+// Cache the pre-shiki pipeline (everything up to but not including the mermaid detector + shiki)
 const processorCache = new Map<string, any>();
 
 function rehypeExpandDetails() {
@@ -63,15 +64,14 @@ export async function parseMarkdown(
   const warnings: string[] = [];
   const mermaidBlocks = options?.mermaidBlocks || [];
   
-  // Dynamically detect languages used in the markdown to prevent Shiki from loading all 200+ grammars (saves ~10 seconds)
+  // Dynamically detect languages used in the markdown (excluding mermaid, handled separately)
   const codeBlockRegex = /(?:```|~~~)([a-zA-Z0-9_\-+]+)/g;
   const matches = [...markdown.matchAll(codeBlockRegex)];
-  const detectedLangs = Array.from(new Set(matches.map(m => m[1].toLowerCase())));
+  const detectedLangs = Array.from(new Set(matches.map(m => m[1].toLowerCase()).filter(l => l !== 'mermaid')));
   const validLangs = detectedLangs.filter(lang => lang in bundledLanguages);
-  
-  // We need at least one valid language or fallback language if array is empty, otherwise Shiki might default to all
   const shikiLangs = validLangs.length > 0 ? validLangs : ['txt'];
 
+  // Initialise the Shiki singleton once (expensive — loads grammar bundles)
   if (!shikiHighlighter) {
     shikiHighlighter = await getSingletonHighlighter({
       themes: ['github-light', 'github-dark', 'dracula', 'nord'],
@@ -79,7 +79,7 @@ export async function parseMarkdown(
     });
   }
 
-  // Cache key excludes mermaidBlocks since detector is added per-call below
+  // Cache key for the pre-shiki pipeline (no mermaid blocks — those are per-file)
   const cacheKey = JSON.stringify({
     math: options?.math,
     toc: options?.toc,
@@ -87,13 +87,11 @@ export async function parseMarkdown(
     tocTitle: options?.tocTitle,
     pageBreaks: options?.pageBreaks,
     obsidian: options?.obsidian,
-    shikiTheme: options?.shikiTheme,
-    shikiLangs
   });
 
-  let processor = processorCache.get(cacheKey);
+  let baseProcessor = processorCache.get(cacheKey);
 
-  if (!processor) {
+  if (!baseProcessor) {
     let proc: any = unified()
       .use(remarkParse)
       .use(remarkBlockRefs)
@@ -114,9 +112,7 @@ export async function parseMarkdown(
     }
 
     proc = proc
-      // remark-gfm natively enables GFM footnotes, tables, and tasklists
       .use(remarkGfm)
-      // allowDangerousHtml: true passes raw HTML tags in Markdown directly to the PDF output.
       .use(remarkRehype, { allowDangerousHtml: true });
 
     if (options?.math?.enabled !== false) {
@@ -143,29 +139,30 @@ export async function parseMarkdown(
         depth: options?.tocDepth,
         title: options?.tocTitle,
       })
-      .use(rehypeExpandDetails)
-      .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
-        theme: options?.shikiTheme || 'github-light',
-        fallbackLanguage: 'txt',
-        onError: (err: unknown) => {
-          if (err instanceof Error) {
-            warnings.push(err.message);
-          } else {
-            warnings.push(String(err));
-          }
-        }
-      }))
-      // allowDangerousHtml: true stringifies any raw HTML nodes so they render correctly.
-      .use(rehypeStringify, { allowDangerousHtml: true });
+      .use(rehypeExpandDetails);
 
-    processor = proc;
-    processorCache.set(cacheKey, processor);
+    baseProcessor = proc;
+    processorCache.set(cacheKey, baseProcessor);
   }
 
-  // We add rehypeMermaidDetector per-file because it mutates the blocks array passed to it.
-  // It must run BEFORE shiki so it can intercept the raw <pre><code class="language-mermaid"> nodes.
-  const file = await processor()
+  // Build the final per-file pipeline:
+  //   baseProcessor → mermaid detector (mutates mermaidBlocks, replaces <pre><code.language-mermaid> with placeholders)
+  //                 → shiki (highlights remaining code blocks, AFTER mermaid placeholders are already gone)
+  //                 → stringify
+  const file = await baseProcessor()
     .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
+    .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
+      theme: options?.shikiTheme || 'github-light',
+      fallbackLanguage: 'txt',
+      onError: (err: unknown) => {
+        if (err instanceof Error) {
+          warnings.push(err.message);
+        } else {
+          warnings.push(String(err));
+        }
+      }
+    }))
+    .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdown);
 
   // Add any warnings from unified itself
