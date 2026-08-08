@@ -17,7 +17,6 @@ export async function processBeforeRender(
     maxWidth?: string;
     maxHeight?: string;
     sharedMermaidPage?: any;
-    force?: boolean;
     registry?: import('../plugins/registry.js').PluginRegistry;
     ctx?: import('../types/context.js').RenderContext;
   }
@@ -37,8 +36,7 @@ export async function processBeforeRender(
       options?.timeout,
       options?.maxWidth,
       options?.maxHeight,
-      options?.sharedMermaidPage,
-      options?.force
+      options?.sharedMermaidPage
     );
     html = inlineMermaidSvgs(html, renderedSvgs);
   }

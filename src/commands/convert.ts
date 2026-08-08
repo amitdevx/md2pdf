@@ -386,14 +386,12 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
             }
           }
 
+          // If the output file already exists, check if we should skip it
+          // Only enforce --force protection for large batch operations (25+ files)
           if (fs.existsSync(output as string)) {
-            if (!options.force) {
-              if (isBatch) {
-                skippedFilesCount++;
-              } else if (!options.jsonErrors) {
-                console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists. Use --force to overwrite.`));
-              }
-              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: file exists'] };
+            if (inputs.length >= 25 && !options.force) {
+              skippedFilesCount++;
+              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
                 spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
