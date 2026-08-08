@@ -27,5 +27,6 @@ export interface CliOptions {
   profile?: string;
   cache?: boolean;
   concurrency?: string;
+  force?: boolean;
 }
 

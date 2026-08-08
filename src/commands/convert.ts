@@ -131,6 +131,7 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
     let hasErrors = false;
     let successfulCount = 0;
     let failedCount = 0;
+    let skippedFilesCount = 0;
     const validInputs: string[] = [];
 
     const reportError = (input: string, reason: string) => {
@@ -368,12 +369,18 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
           }
 
           if (fs.existsSync(output as string)) {
-            if (!options.jsonErrors && isBatch) {
-              (spinner as any).stop();
-              console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
-              (spinner as any).start();
-            } else if (!options.jsonErrors && !isBatch) {
-              console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
+            if (!options.force) {
+              if (isBatch) {
+                skippedFilesCount++;
+              } else if (!options.jsonErrors) {
+                console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists. Use --force to overwrite.`));
+              }
+              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: file exists'] };
+              if (!options.jsonErrors && isBatch) {
+                completedCount++;
+                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+              }
+              continue;
             }
           }
 
@@ -462,14 +469,22 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
         if (isBatch) {
           (spinner as any).stop();
-          console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
+          const outDest = options.output ? ` (Saved to: ${options.output})` : '';
+          console.log(`\n${pc.green('✔')} Successfully generated ${successfulCount} PDFs in ${totalTime}s${outDest}`);
+          if (failedCount > 0) {
+            console.log(pc.red(`  ✖ ${failedCount} failed`));
+          }
+          if (skippedFilesCount > 0) {
+            console.log(pc.yellow(`  ⚠ Skipped ${skippedFilesCount} existing PDFs (use --force to overwrite)`));
+          }
         } else {
           if (hasErrors) {
             const res = results[0] as any;
             const errStr = res?.isError ? `${path.basename(inputs[0])} - ${res.error}` : `Failed in ${totalTime}s`;
             spinner.fail(pc.red(errStr));
           } else {
-            spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!`));
+            const outDest = options.output ? ` (Saved to: ${options.output})` : '';
+            spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!${outDest}`));
           }
         }
       }

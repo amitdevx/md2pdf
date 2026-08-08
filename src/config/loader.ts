@@ -14,6 +14,7 @@ const CONFIG_FILES = [
   'md2pdf.config.ts',
   'md2pdf.config.js',
   'md2pdf.config.mjs',
+  '.md2pdf.json',
   '.md2pdfrc.json',
   '.md2pdfrc.yaml',
   '.md2pdfrc.yml'
@@ -23,12 +24,36 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
   let filepath = explicitPath ? path.resolve(cwd, explicitPath) : null;
 
   if (!filepath) {
-    for (const file of CONFIG_FILES) {
-      const p = path.resolve(cwd, file);
-      if (existsSync(p)) {
-        filepath = p;
-        break;
+    let current = cwd;
+    const root = path.parse(cwd).root;
+    while (true) {
+      for (const file of CONFIG_FILES) {
+        const p = path.resolve(current, file);
+        if (existsSync(p)) {
+          filepath = p;
+          break;
+        }
       }
+      if (filepath) break;
+      
+      const pkgPath = path.resolve(current, 'package.json');
+      if (existsSync(pkgPath)) {
+        try {
+          // We read it synchronously here to avoid async in the loop if we can,
+          // but fs.readFile is async so we use await.
+          const pkgData = await fs.readFile(pkgPath, 'utf8');
+          const pkg = JSON.parse(pkgData);
+          if (pkg.md2pdf) {
+            filepath = pkgPath;
+            break;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (current === root) break;
+      current = path.dirname(current);
     }
   }
 
@@ -47,7 +72,12 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
     try {
       const ext = path.extname(filepath);
       if (ext === '.json') {
-        rawConfig = JSON.parse(await fs.readFile(filepath, 'utf8'));
+        const parsed = JSON.parse(await fs.readFile(filepath, 'utf8'));
+        if (path.basename(filepath) === 'package.json') {
+          rawConfig = parsed.md2pdf || {};
+        } else {
+          rawConfig = parsed;
+        }
       } else if (ext === '.yaml' || ext === '.yml') {
         rawConfig = yaml.load(await fs.readFile(filepath, 'utf8'));
       } else {
@@ -63,20 +93,6 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
         { configFile: filepath },
         err
       );
-    }
-  } else {
-    // Check package.json
-    const pkgPath = path.resolve(cwd, 'package.json');
-    if (existsSync(pkgPath)) {
-      try {
-        const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
-        if (pkg.md2pdf) {
-          rawConfig = pkg.md2pdf;
-          filepath = pkgPath;
-        }
-      } catch {
-        // ignore
-      }
     }
   }
 

@@ -114,6 +114,33 @@ program
     }
     return n;
   })
+  .option('-f, --force', 'Force overwrite of existing PDF files')
+  .addHelpText('after', `
+Categories:
+  Output & Processing
+    -o, --output <output>
+    -f, --force
+    --concurrency <n>
+    --no-cache
+    --clear-cache
+
+  Document Formatting
+    --theme <theme>
+    --paper <format>
+    --margin <margin>
+    --no-title
+
+  Features
+    --toc, --toc-depth <n>, --toc-title <title>
+    --header, --footer, --header-template, --footer-template
+    --no-math, --hr-page-break, --h1-new-page
+    --mermaid-theme, --mermaid-timeout
+
+  Obsidian Support
+    --vault-root <path>
+    --resolve-links
+    --attachment-folder, --max-attachment-size
+`)
   .action(runConvert);
 
 if (process.argv.includes('--list-themes')) {
@@ -129,5 +156,9 @@ if (process.argv.includes('--list-themes')) {
     process.exit(0);
   });
 } else {
-  program.parse(process.argv);
+  if (process.argv.length <= 2) {
+    program.help();
+  } else {
+    program.parse(process.argv);
+  }
 }
