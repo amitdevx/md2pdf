@@ -2,6 +2,7 @@ import type { Browser } from 'playwright-core';
 import { getBrowser } from './browser.js';
 
 let warmBrowser: Browser | null = null;
+let browserPromise: Promise<Browser> | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 const IDLE_TIMEOUT_MS = 30_000; // Close browser after 30s of inactivity
 
@@ -13,16 +14,22 @@ export async function getWarmBrowser(): Promise<Browser> {
     return warmBrowser;
   }
   
-  const [browser] = await Promise.all([
-    getBrowser()
-  ]);
+  if (browserPromise) {
+    return browserPromise;
+  }
   
-  warmBrowser = browser;
+  browserPromise = getBrowser().then(browser => {
+    warmBrowser = browser;
+    browserPromise = null;
+    // Auto-close after idle period
+    warmBrowser.on('disconnected', () => { 
+      warmBrowser = null; 
+      browserPromise = null; 
+    });
+    return browser;
+  });
   
-  // Auto-close after idle period
-  warmBrowser.on('disconnected', () => { warmBrowser = null; });
-  
-  return warmBrowser;
+  return browserPromise;
 }
 
 export function scheduleClose(): void {

@@ -75,8 +75,12 @@ export async function parseMarkdown(
   if (!shikiHighlighter) {
     shikiHighlighter = await getSingletonHighlighter({
       themes: ['github-light', 'github-dark', 'dracula', 'nord'],
-      langs: Object.keys(bundledLanguages)
+      langs: []
     });
+  }
+
+  if (shikiLangs.length > 0) {
+    await shikiHighlighter.loadLanguage(...(shikiLangs as any));
   }
 
   // Cache key for the pre-shiki pipeline (no mermaid blocks — those are per-file)

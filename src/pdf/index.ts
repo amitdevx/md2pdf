@@ -53,11 +53,17 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
         try {
           const rawPath = decodeURIComponent(new URL(url).pathname);
           const resolvedPath = path.resolve(rawPath);
-          const allowedDir = path.resolve(process.cwd());
+          const allowedDirs = [path.resolve(process.cwd())];
+          if (options.renderContext?.inputPath) {
+            allowedDirs.push(path.dirname(path.resolve(options.renderContext.inputPath)));
+          }
+          if (options.renderContext?.options?.obsidian?.vaultRoot) {
+            allowedDirs.push(path.resolve(options.renderContext.options.obsidian.vaultRoot));
+          }
 
-          const isAllowed =
-            resolvedPath.startsWith(allowedDir + path.sep) ||
-            resolvedPath === allowedDir;
+          const isAllowed = allowedDirs.some(dir => 
+            resolvedPath.startsWith(dir + path.sep) || resolvedPath === dir
+          );
 
           if (!isAllowed) return route.abort('accessdenied');
         } catch {

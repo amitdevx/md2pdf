@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 
 import os from 'node:os';
 
-const CACHE_DIR = path.join(os.tmpdir(), 'md2pdf-cache');
+const CACHE_DIR = path.join(os.homedir(), '.md2pdf-cache');
 const INDEX_FILE = path.join(CACHE_DIR, 'index.json');
 
 interface CacheEntry {
@@ -34,7 +34,9 @@ function saveCache(cache: Record<string, CacheEntry>) {
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
   }
-  fs.writeFileSync(INDEX_FILE, JSON.stringify(cache, null, 2), 'utf-8');
+  const tmpFile = INDEX_FILE + '.' + crypto.randomBytes(4).toString('hex') + '.tmp';
+  fs.writeFileSync(tmpFile, JSON.stringify(cache, null, 2), 'utf-8');
+  fs.renameSync(tmpFile, INDEX_FILE);
 }
 
 export function computeHash(content: string, options: any): string {
