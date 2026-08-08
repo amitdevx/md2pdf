@@ -13,9 +13,10 @@ export interface MermaidDetectorOptions {
   blocks: MermaidBlock[];
 }
 
-export const rehypeMermaidDetector: Plugin<[MermaidDetectorOptions], Root> = (options) => {
-  return (tree) => {
+export const rehypeMermaidDetector: Plugin<[], Root> = () => {
+  return (tree, file) => {
     let counter = 0;
+    const blocks = (file.data.mermaidBlocks as MermaidBlock[]) || [];
 
     visit(tree, 'element', (node: Element, index, parent) => {
       // Find <pre><code class="language-mermaid">
@@ -54,7 +55,7 @@ export const rehypeMermaidDetector: Plugin<[MermaidDetectorOptions], Root> = (op
           const id = `mermaid-placeholder-${counter++}`;
 
           // Save to blocks array
-          options.blocks.push({
+          blocks.push({
             id,
             source,
             theme,

@@ -118,8 +118,18 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
       error
     );
   }
+  // 9. Mermaid Errors
+  if (fullText.match(/Mermaid Error/i)) {
+    return new Md2PdfError(
+      Md2PdfErrorCode.ERR_INVALID_MARKDOWN,
+      'Mermaid Syntax Error',
+      error instanceof Error ? error.message : String(error),
+      context,
+      error
+    );
+  }
 
-  // 9. Unknown Error
+  // 10. Unknown Error
   return new Md2PdfError(
     Md2PdfErrorCode.ERR_UNKNOWN,
     'Unknown Error',

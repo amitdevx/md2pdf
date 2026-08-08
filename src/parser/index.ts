@@ -16,6 +16,7 @@ import remarkBlockRefs from '../plugins/obsidian/block-refs.js';
 import remarkWikiLinks from '../plugins/obsidian/wiki-links.js';
 import remarkTags from '../plugins/obsidian/tags.js';
 import remarkHighlight from '../plugins/obsidian/highlight.js';
+import { VFile } from 'vfile';
 import rehypeCallouts from '../plugins/obsidian/callouts.js';
 
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
@@ -137,6 +138,7 @@ export async function parseMarkdown(
       title: options?.tocTitle,
     })
     .use(rehypeExpandDetails)
+    .use(rehypeMermaidDetector)
     .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
       theme: options?.shikiTheme || 'github-light',
       fallbackLanguage: 'txt',
@@ -154,8 +156,10 @@ export async function parseMarkdown(
     processorCache.set(cacheKey, processor);
   }
 
-  // We add rehypeMermaidDetector per-file because it mutates the blocks array passed to it
-  const file = await processor().use(rehypeMermaidDetector, { blocks: mermaidBlocks }).process(markdown);
+  // Inject the array into vfile data for the plugin to populate
+  const vfile = new VFile(markdown);
+  vfile.data.mermaidBlocks = mermaidBlocks;
+  const file = await processor().process(vfile);
 
   // Add any warnings from unified itself
   file.messages.forEach((msg: any) => {
