@@ -2,6 +2,9 @@ import { Command } from 'commander';
 import ora from 'ora';
 import pc from 'picocolors';
 import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import readline from 'node:readline';
 import { EXIT } from './formatter.js';
 
 export default new Command('init')
@@ -60,19 +63,52 @@ export default new Command('init')
             console.log(pc.dim('  If Playwright fails, install these manually as root:'));
             console.log(pc.dim('  npx playwright-core install-deps chromium'));
           } else {
+            spinner.stop();
+            console.log(pc.cyan('\n[i] Playwright requires system libraries to run Chromium headless.'));
+            console.log(pc.cyan('    Requesting sudo access to install dependencies...'));
             execSync('sudo npx playwright-core install-deps chromium', { stdio: 'inherit' });
+            spinner.start('Finishing installation...');
           }
         }
         
         spinner.succeed('Successfully installed browser dependencies!');
-      } catch {
+      } catch (e: any) {
         spinner.fail('Failed to install dependencies automatically.');
-        console.error(pc.red('Please run the installation commands manually.'));
+        if (e.stderr || e.stdout || e.message) {
+          console.error(pc.red(`\nError details:`));
+          console.error(pc.dim((e.stderr || e.stdout || e.message).toString()));
+        }
+        console.error(pc.red('\nPlease run the installation commands manually.'));
         process.exit(EXIT.ENVIRONMENT_ERROR);
       }
     }
 
     console.log(pc.green('\n[v] Your environment is fully set up and ready to generate PDFs!\n'));
-    console.log(`Try running: ${pc.cyan('md2pdf input.md')}\n`);
-    process.exit(EXIT.OK);
+    
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question(pc.cyan('Would you like to create a default .md2pdf.json config file here? (y/N) '), (ans) => {
+      if (ans.toLowerCase().startsWith('y')) {
+        const configPath = path.resolve(process.cwd(), '.md2pdf.json');
+        if (fs.existsSync(configPath)) {
+          console.warn(pc.yellow('\n[!] .md2pdf.json already exists in this directory.'));
+        } else {
+          fs.writeFileSync(configPath, JSON.stringify({
+            theme: "github",
+            margin: "1in",
+            paper: "A4",
+            toc: false
+          }, null, 2));
+          console.log(pc.green('\n[v] Created .md2pdf.json\n'));
+        }
+      } else {
+        console.log('');
+      }
+      rl.close();
+      console.log(`Try running: ${pc.cyan('md2pdf input.md')}\n`);
+      process.exit(EXIT.OK);
+    });
   });

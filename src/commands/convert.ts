@@ -121,7 +121,7 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
         const inferredFilename = path.basename(inputs[0]).replace(/\.md$/i, '.pdf');
         options.output = path.join(options.output, inferredFilename);
         cliFlags.output = options.output;
-      } else if (!options.output.toLowerCase().endsWith('.pdf')) {
+      } else if (!path.extname(options.output)) {
         options.output += '.pdf';
         cliFlags.output = options.output;
       }

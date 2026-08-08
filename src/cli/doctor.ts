@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import pc from 'picocolors';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { EXIT } from './formatter.js';
 import { Md2PdfError } from '../errors/index.js';
@@ -42,10 +43,14 @@ export default new Command('doctor')
       errorContext: null as any,
     };
 
+    const cpus = os.cpus().length;
+    const ramGB = Math.round(os.totalmem() / 1024 / 1024 / 1024);
+
     const checks = [
       { name: `Node.js (${results.node})`, status: true },
       { name: `md2pdf (${results.md2pdf})`, status: true },
       { name: `Playwright (${results.playwright})`, status: true },
+      { name: `Hardware (${cpus} CPUs, ${ramGB}GB RAM)`, status: true },
     ];
 
     let browser: import('playwright-core').Browser | undefined;
@@ -72,7 +77,7 @@ export default new Command('doctor')
       fs.writeFileSync(tmpPath, pdfBuf);
       fs.unlinkSync(tmpPath);
       results.checks.filesystem = true;
-      checks.push({ name: 'Filesystem write', status: true });
+      checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)', status: true });
 
     } catch (e: unknown) {
       mdError = detectBrowserError(e, { platform: process.platform });
@@ -86,7 +91,7 @@ export default new Command('doctor')
       else if (!results.checks.browserLaunch) checks.push({ name: 'Browser launch', status: false });
       else if (!results.checks.htmlRender) checks.push({ name: 'HTML render', status: false });
       else if (!results.checks.pdfGenerate) checks.push({ name: 'PDF generate', status: false });
-      else if (!results.checks.filesystem) checks.push({ name: 'Filesystem write', status: false });
+      else if (!results.checks.filesystem) checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)', status: false });
     } finally {
       if (browser) await browser.close();
     }
@@ -121,6 +126,21 @@ export default new Command('doctor')
         }
       }
       console.log(pc.dim('────────────────────────────────────────\n'));
+      
+      console.log(pc.bold('If you need to report this issue, copy and paste the block below into GitHub:\n'));
+      console.log('```markdown');
+      console.log(`**OS**: ${process.platform} ${os.release()} (${os.arch()})`);
+      console.log(`**Node**: ${process.version}`);
+      console.log(`**md2pdf**: v${pkg.version}`);
+      console.log(`**Error Code**: ${mdError.code}`);
+      console.log(`\n**Stack Trace**:`);
+      if (mdError.originalError && (mdError.originalError as Error).stack) {
+        console.log((mdError.originalError as Error).stack);
+      } else {
+        console.log(mdError.stack || mdError.message);
+      }
+      console.log('```\n');
+
       process.exit(EXIT.ENVIRONMENT_ERROR);
     } else {
       console.log(`\n${pc.green('Everything is OK!')} Your system is ready to generate PDFs.\n`);
