@@ -386,8 +386,7 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
             }
           }
 
-          // If the output file already exists, check if we should skip it
-          // Only enforce --force protection for large batch operations (25+ files)
+          // For 25+ file batches without --force: skip existing files to prevent overwrite spam
           if (fs.existsSync(output as string)) {
             if (inputs.length >= 25 && !options.force) {
               skippedFilesCount++;
@@ -397,6 +396,15 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
                 spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
               }
               continue;
+            }
+            // For <25 files: show yellow warning and proceed (matches v0.7.x behavior)
+            if (!options.force && !options.jsonErrors) {
+              (spinner as any).stop();
+              console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
+              if (isBatch) {
+                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+                (spinner as any).start();
+              }
             }
           }
 
@@ -448,14 +456,17 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
             }
             hasErrors = true;
             failedCount++;
-            const msg = `${path.basename(input)} - ${err.reason || err.message}`;
+            // Use only the first line of the error message to avoid showing stack traces
+            const rawMsg = (err.reason || err.message || String(err));
+            const cleanMsg = rawMsg.split('\n')[0];
+            const msg = `${path.basename(input)} - ${cleanMsg}`;
             
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
               console.error(pc.red(`✖ ${msg}`));
               (spinner as any).start();
             }
-            results[i] = { isError: true, error: err.reason || err.message, code: err.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: err.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
           }
           
           if (!options.jsonErrors && isBatch) {
@@ -485,21 +496,16 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
         if (isBatch) {
           (spinner as any).stop();
-          const outDest = options.output ? ` (Saved to: ${options.output})` : '';
-          console.log(`\n${pc.green('✔')} Successfully generated ${successfulCount} PDFs in ${totalTime}s${outDest}`);
-          if (failedCount > 0) {
-            console.log(pc.red(`  ✖ ${failedCount} failed`));
-          }
+          console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
           if (skippedFilesCount > 0) {
             console.log(pc.yellow(`  ⚠ Skipped ${skippedFilesCount} existing PDFs (use --force to overwrite)`));
           }
         } else {
           if (hasErrors) {
             const res = results[0] as any;
-            const errStr = res?.isError ? `${path.basename(inputs[0])} - ${res.error}` : `Failed in ${totalTime}s`;
+            const errMsg = res?.isError ? res.error.split('\n')[0] : `Failed in ${totalTime}s`;
+            const errStr = res?.isError ? `${path.basename(inputs[0])} - ${errMsg}` : errMsg;
             spinner.fail(pc.red(errStr));
-          } else if (skippedFilesCount > 0) {
-            spinner.info(pc.yellow(`Skipped existing file (use --force to overwrite)`));
           } else {
             const outDest = options.output ? ` (Saved to: ${options.output})` : '';
             spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!${outDest}`));

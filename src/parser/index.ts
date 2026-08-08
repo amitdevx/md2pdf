@@ -16,7 +16,6 @@ import remarkBlockRefs from '../plugins/obsidian/block-refs.js';
 import remarkWikiLinks from '../plugins/obsidian/wiki-links.js';
 import remarkTags from '../plugins/obsidian/tags.js';
 import remarkHighlight from '../plugins/obsidian/highlight.js';
-import { VFile } from 'vfile';
 import rehypeCallouts from '../plugins/obsidian/callouts.js';
 
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
@@ -80,86 +79,94 @@ export async function parseMarkdown(
     });
   }
 
+  // Cache key excludes mermaidBlocks since detector is added per-call below
   const cacheKey = JSON.stringify({
-    options,
+    math: options?.math,
+    toc: options?.toc,
+    tocDepth: options?.tocDepth,
+    tocTitle: options?.tocTitle,
+    pageBreaks: options?.pageBreaks,
+    obsidian: options?.obsidian,
+    shikiTheme: options?.shikiTheme,
     shikiLangs
   });
 
   let processor = processorCache.get(cacheKey);
 
   if (!processor) {
-    processor = unified()
-    .use(remarkParse)
-    .use(remarkBlockRefs)
-    .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
-    .use(remarkTags as any, { showTags: options?.obsidian?.showTags })
-    .use(remarkHighlight as any);
+    let proc: any = unified()
+      .use(remarkParse)
+      .use(remarkBlockRefs)
+      .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
+      .use(remarkTags as any, { showTags: options?.obsidian?.showTags })
+      .use(remarkHighlight as any);
 
-  if (options?.math?.enabled !== false) {
-    // @ts-expect-error - no types available for mhchem
-    await import('katex/contrib/mhchem');
-    processor = processor.use(remarkMath as any);
-  }
-
-  if (options?.registry) {
-    for (const p of options.registry.getMarkdownPlugins()) {
-      processor = processor.use(p.plugin, p.options);
+    if (options?.math?.enabled !== false) {
+      // @ts-expect-error - no types available for mhchem
+      await import('katex/contrib/mhchem');
+      proc = proc.use(remarkMath as any);
     }
-  }
 
-  processor = processor
-    // remark-gfm natively enables GFM footnotes, tables, and tasklists
-    .use(remarkGfm)
-    // allowDangerousHtml: true passes raw HTML tags in Markdown directly to the PDF output.
-    .use(remarkRehype, { allowDangerousHtml: true });
-
-  if (options?.math?.enabled !== false) {
-    processor = processor.use(rehypeKatex as any, {
-      strict: options?.math?.strict ?? false,
-      macros: options?.math?.macros,
-      throwOnError: false,
-      errorColor: '#cc0000',
-    });
-  }
-
-  if (options?.registry) {
-    for (const p of options.registry.getHtmlPlugins()) {
-      processor = processor.use(p.plugin, p.options);
-    }
-  }
-
-  processor = processor
-    .use(rehypeSlug)
-    .use(rehypeCallouts as any)
-    .use(rehypePageBreaks, options?.pageBreaks)
-    .use(rehypeToc, {
-      enable: options?.toc,
-      depth: options?.tocDepth,
-      title: options?.tocTitle,
-    })
-    .use(rehypeExpandDetails)
-    .use(rehypeMermaidDetector)
-    .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
-      theme: options?.shikiTheme || 'github-light',
-      fallbackLanguage: 'txt',
-      onError: (err: unknown) => {
-        if (err instanceof Error) {
-          warnings.push(err.message);
-        } else {
-          warnings.push(String(err));
-        }
+    if (options?.registry) {
+      for (const p of options.registry.getMarkdownPlugins()) {
+        proc = proc.use(p.plugin, p.options);
       }
-    }))
-    // allowDangerousHtml: true stringifies any raw HTML nodes so they render correctly.
-    .use(rehypeStringify, { allowDangerousHtml: true });
+    }
 
+    proc = proc
+      // remark-gfm natively enables GFM footnotes, tables, and tasklists
+      .use(remarkGfm)
+      // allowDangerousHtml: true passes raw HTML tags in Markdown directly to the PDF output.
+      .use(remarkRehype, { allowDangerousHtml: true });
+
+    if (options?.math?.enabled !== false) {
+      proc = proc.use(rehypeKatex as any, {
+        strict: options?.math?.strict ?? false,
+        macros: options?.math?.macros,
+        throwOnError: false,
+        errorColor: '#cc0000',
+      });
+    }
+
+    if (options?.registry) {
+      for (const p of options.registry.getHtmlPlugins()) {
+        proc = proc.use(p.plugin, p.options);
+      }
+    }
+
+    proc = proc
+      .use(rehypeSlug)
+      .use(rehypeCallouts as any)
+      .use(rehypePageBreaks, options?.pageBreaks)
+      .use(rehypeToc, {
+        enable: options?.toc,
+        depth: options?.tocDepth,
+        title: options?.tocTitle,
+      })
+      .use(rehypeExpandDetails)
+      .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
+        theme: options?.shikiTheme || 'github-light',
+        fallbackLanguage: 'txt',
+        onError: (err: unknown) => {
+          if (err instanceof Error) {
+            warnings.push(err.message);
+          } else {
+            warnings.push(String(err));
+          }
+        }
+      }))
+      // allowDangerousHtml: true stringifies any raw HTML nodes so they render correctly.
+      .use(rehypeStringify, { allowDangerousHtml: true });
+
+    processor = proc;
     processorCache.set(cacheKey, processor);
   }
 
-  // Inject the array into vfile data for the plugin to populate
-  const vfile = new VFile(markdown);
-  vfile.data.mermaidBlocks = mermaidBlocks;
-  const file = await processor().process(vfile);
+  // We add rehypeMermaidDetector per-file because it mutates the blocks array passed to it.
+  // It must run BEFORE shiki so it can intercept the raw <pre><code class="language-mermaid"> nodes.
+  const file = await processor()
+    .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
+    .process(markdown);
 
   // Add any warnings from unified itself
   file.messages.forEach((msg: any) => {
