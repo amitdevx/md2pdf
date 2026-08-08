@@ -51,7 +51,7 @@ export const rehypeMermaidDetector: Plugin<[MermaidDetectorOptions], Root> = (op
             }
           }
 
-          const id = `mermaid-placeholder-${counter++}`;
+          const id = `mermaid-${Math.random().toString(36).substring(2, 10)}-${counter++}`;
 
           // Save to blocks array
           options.blocks.push({

@@ -14,6 +14,18 @@ export interface RenderedMermaid {
 
 let cachedMermaidScriptPath: string | null = null;
 
+class Mutex {
+  private mutex = Promise.resolve();
+  lock(): Promise<() => void> {
+    let begin: (unlock: () => void) => void = () => {};
+    this.mutex = this.mutex.then(() => new Promise(begin));
+    return new Promise(res => {
+      begin = res;
+    });
+  }
+}
+const mermaidMutex = new Mutex();
+
 export async function renderMermaidBlocks(
   browser: Browser,
   blocks: MermaidBlock[],
@@ -73,50 +85,56 @@ export async function renderMermaidBlocks(
     }));
 
     let evaluatedResults: Array<{ id: string, svg: string | null, error: string | null }> = [];
+    
     try {
-      evaluatedResults = await Promise.race([
-        page.evaluate(async ({ blocks, timeout, themeVariables }) => {
-          const results = [];
-        
-        // Group blocks by theme to minimize initialize() calls and prevent CSS style accumulation
-        const blocksByTheme = new Map<string, typeof blocks>();
-        for (const block of blocks) {
-          const theme = block.theme || 'default';
-          if (!blocksByTheme.has(theme)) blocksByTheme.set(theme, []);
-          blocksByTheme.get(theme)!.push(block);
-        }
-
-        for (const [theme, themeBlocks] of blocksByTheme.entries()) {
-          // @ts-expect-error window.mermaid is injected at runtime
-          window.mermaid.initialize({ startOnLoad: false, theme, themeVariables: themeVariables || {}, fontFamily: 'Inter, sans-serif', flowchart: { htmlLabels: false } });
+      const unlock = sharedMermaidPage ? await mermaidMutex.lock() : () => {};
+      try {
+        evaluatedResults = await Promise.race([
+          page.evaluate(async ({ blocks, timeout, themeVariables }) => {
+            const results = [];
           
-          const themePromises = themeBlocks.map(async (block) => {
-            try {
-              const renderPromise = (async () => {
-                // @ts-expect-error window.mermaid is injected at runtime
-                const { svg } = await window.mermaid.render(block.id + '-svg', block.source);
-                return { id: block.id, svg, error: null };
-              })();
+          // Group blocks by theme to minimize initialize() calls and prevent CSS style accumulation
+          const blocksByTheme = new Map<string, typeof blocks>();
+          for (const block of blocks) {
+            const theme = block.theme || 'default';
+            if (!blocksByTheme.has(theme)) blocksByTheme.set(theme, []);
+            blocksByTheme.get(theme)!.push(block);
+          }
 
-              let timerId: ReturnType<typeof setTimeout>;
-              const timeoutPromise = new Promise<any>((_, reject) => {
-                timerId = setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
-              });
+          for (const [theme, themeBlocks] of blocksByTheme.entries()) {
+            // @ts-expect-error window.mermaid is injected at runtime
+            window.mermaid.initialize({ startOnLoad: false, theme, themeVariables: themeVariables || {}, fontFamily: 'Inter, sans-serif', flowchart: { htmlLabels: false } });
+            
+            const themePromises = themeBlocks.map(async (block) => {
+              try {
+                const renderPromise = (async () => {
+                  // @ts-expect-error window.mermaid is injected at runtime
+                  const { svg } = await window.mermaid.render(block.id + '-svg', block.source);
+                  return { id: block.id, svg, error: null };
+                })();
 
-              const res = await Promise.race([renderPromise, timeoutPromise]);
-              clearTimeout(timerId!);
-              return res;
-            } catch (err: any) {
-              return { id: block.id, svg: null, error: err.message || String(err) };
-            }
-          });
-          const themeResults = await Promise.all(themePromises);
-          results.push(...themeResults);
-        }
-        return results;
-      }, { blocks: payloads, timeout: timeoutMs, themeVariables }),
-      new Promise<any>((_, reject) => setTimeout(() => reject(new Error(`page.evaluate hung for ${timeoutMs + 2000}ms`)), timeoutMs + 2000))
-    ]);
+                let timerId: ReturnType<typeof setTimeout>;
+                const timeoutPromise = new Promise<any>((_, reject) => {
+                  timerId = setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
+                });
+
+                const res = await Promise.race([renderPromise, timeoutPromise]);
+                clearTimeout(timerId!);
+                return res;
+              } catch (err: any) {
+                return { id: block.id, svg: null, error: err.message || String(err) };
+              }
+            });
+            const themeResults = await Promise.all(themePromises);
+            results.push(...themeResults);
+          }
+          return results;
+        }, { blocks: payloads, timeout: timeoutMs, themeVariables }),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error(`page.evaluate hung for ${timeoutMs + 2000}ms`)), timeoutMs + 2000))
+      ]);
+      } finally {
+        unlock();
+      }
     } catch (e: any) {
       // If the entire evaluate fails
       throw new Error(`Mermaid Batch Render Error: ${e.message}`);
