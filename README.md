@@ -21,7 +21,7 @@ Convert Markdown to high-fidelity PDF: CLI tool and Node.js API powered by headl
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.8.0)
+### Available (v0.8.1)
 - **Incremental Rendering Cache**: Dramatically speeds up batch conversions (`md2pdf *.md`) by hashing content and reusing unchanged PDFs. Centralized cache ensures your workspace remains clean. Control it natively using `--no-cache` and `--clear-cache` flags.
 - **Flawless Parallel Mermaid Rendering**: Complete re-architecture of the Mermaid rendering engine guarantees perfect diagram output under heavy multi-file concurrency. Eliminated race conditions and layout corruptions via robust mutex locks and isolated DOM generation.
 
