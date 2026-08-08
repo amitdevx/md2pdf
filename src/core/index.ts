@@ -105,6 +105,25 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     );
   }
 
+  const outputPath = path.resolve(process.cwd(), output);
+  let cacheHash = '';
+  if (options.cache !== false) {
+    const { computeHash, checkCache } = await import('./cache.js');
+    // Ensure we hash both content and relevant options
+    const hashOptions = { ...options };
+    delete hashOptions.sharedBrowser;
+    delete hashOptions.sharedMermaidPage;
+    cacheHash = computeHash(rawMarkdown, hashOptions);
+    if (checkCache(inputPath, cacheHash, outputPath)) {
+      return {
+        outputPath,
+        pageCounts: 0, // Skip page counting for cached hits
+        renderTimeMs: Date.now() - startTime,
+        warnings: []
+      };
+    }
+  }
+
   if (frontmatter.publish === false) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
     throw new Md2PdfError(
@@ -165,8 +184,6 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   processedMarkdown = prependMarkdown + processedMarkdown;
 
   const mermaidBlocks: any[] = []; // Using any to avoid importing MermaidBlock type here for now, or we can just let it be any array
-
-  const outputPath = path.resolve(process.cwd(), output);
 
   let parsed: any;
   let html: string;
@@ -319,6 +336,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     });
     
     const pageCounts = await injectMetadata(outputPath, metadata);
+
+    if (options.cache !== false && cacheHash) {
+      const { updateCache } = await import('./cache.js');
+      updateCache(inputPath, cacheHash, outputPath);
+    }
 
     return {
       outputPath,

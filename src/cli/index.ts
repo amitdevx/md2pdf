@@ -105,12 +105,20 @@ program
     return n;
   })
   .option('--list-themes', 'List all available built-in themes and exit')
+  .option('--no-cache', 'Disable incremental rendering cache')
+  .option('--clear-cache', 'Clear the incremental rendering cache and exit')
   .action(runConvert);
 
 if (process.argv.includes('--list-themes')) {
   import('../themes/loader.js').then(({ getBuiltInThemes }) => {
     const themes = getBuiltInThemes();
     process.stdout.write(`Available built-in themes:\n${themes.map(t => `  - ${t}`).join('\n')}\n`);
+    process.exit(0);
+  });
+} else if (process.argv.includes('--clear-cache')) {
+  import('../core/cache.js').then(({ clearCache }) => {
+    clearCache();
+    process.stdout.write(`Cache cleared.\n`);
     process.exit(0);
   });
 } else {

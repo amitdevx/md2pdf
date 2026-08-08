@@ -58,6 +58,7 @@ export interface ConvertOptions {
     maxEmbedDepth?: number;
     maxAttachmentSizeMb?: number;
   };
+  cache?: boolean;
 }
 
 export interface ConvertResult {

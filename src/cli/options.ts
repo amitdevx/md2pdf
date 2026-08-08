@@ -25,5 +25,6 @@ export interface CliOptions {
   maxAttachmentSize?: string;
   config?: string;
   profile?: string;
+  cache?: boolean;
 }
 
