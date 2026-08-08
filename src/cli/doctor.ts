@@ -96,7 +96,7 @@ export default new Command('doctor')
       process.exit(mdError ? EXIT.ENVIRONMENT_ERROR : EXIT.OK);
     }
 
-    console.log(pc.bold('\n⚕️  md2pdf System Health Check\n'));
+    console.log(pc.bold('\n[i] md2pdf System Health Check\n'));
 
     checks.forEach(check => {
       if (check.status) {

@@ -58,11 +58,11 @@ program
     }
     return val;
   }, 'A4')
-  .option('--browser <browser>', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --browser option is not currently supported.'); })
-  .option('--stdin', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --stdin option is not currently supported.'); })
-  .option('--stdout', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --stdout option is not currently supported.'); })
-  .option('--quiet', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --quiet option is not currently supported.'); })
-  .option('--input <input>', 'Unsupported option (future use)', () => { throw new InvalidArgumentError('The --input option is not currently supported. Pass input as an argument.'); })
+  .option('--browser <browser>', 'Unsupported option (future use)')
+  .option('--stdin', 'Unsupported option (future use)')
+  .option('--stdout', 'Unsupported option (future use)')
+  .option('--quiet', 'Unsupported option (future use)')
+  .option('--input <input>', 'Unsupported option (future use)')
   .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in)', (val) => {
     if (!/^\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%)$/.test(val)) {
       throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm`);
@@ -107,6 +107,13 @@ program
   .option('--list-themes', 'List all available built-in themes and exit')
   .option('--no-cache', 'Disable incremental rendering cache')
   .option('--clear-cache', 'Clear the incremental rendering cache and exit')
+  .option('--concurrency <n>', 'Limit concurrent file processing workers', (val) => {
+    const n = parseInt(val);
+    if (isNaN(n) || n <= 0) {
+      throw new InvalidArgumentError(`must be a positive integer`);
+    }
+    return n;
+  })
   .action(runConvert);
 
 if (process.argv.includes('--list-themes')) {

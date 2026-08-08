@@ -51,11 +51,33 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
     // Add output to cliFlags so mergeConfig maps them. We'll set input individually in the loop.
     const cliFlags = { ...options, output: options.output };
     
-    if (cliFlags.vaultRoot && !fs.existsSync(cliFlags.vaultRoot)) {
-      if (!options.jsonErrors) {
-        console.warn(pc.yellow(`⚠ --vault-root '${cliFlags.vaultRoot}' does not exist, ignoring.`));
+    const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
+      jsonOut({
+        success: false,
+        error: { code, title, reason }
+      });
+      process.exitCode = EXIT.USAGE_ERROR; return;
+    };
+
+    const unsupported = ['browser', 'stdin', 'stdout', 'quiet', 'input'];
+    for (const flag of unsupported) {
+      if ((cliFlags as any)[flag]) {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_UNSUPPORTED_OPTION', 'Unsupported Option', `The --${flag} option is not currently supported.`);
+        } else {
+          console.error(pc.red(`error: The --${flag} option is not currently supported.`));
+          process.exitCode = EXIT.USAGE_ERROR; return;
+        }
       }
-      delete cliFlags.vaultRoot;
+    }
+    
+    if (cliFlags.vaultRoot && !fs.existsSync(cliFlags.vaultRoot)) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_VAULT_ROOT_NOT_FOUND', 'Vault Root Not Found', `--vault-root '${cliFlags.vaultRoot}' does not exist.`);
+      } else {
+        console.error(pc.red(`✖ --vault-root '${cliFlags.vaultRoot}' does not exist.`));
+        process.exitCode = EXIT.USAGE_ERROR; return;
+      }
     }
     
     if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
@@ -75,14 +97,6 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
         console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
       }
     }
-    
-    const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
-      jsonOut({
-        success: false,
-        error: { code, title, reason }
-      });
-      process.exitCode = EXIT.USAGE_ERROR; return;
-    };
 
     const isBatch = inputs.length > 1;
 
@@ -102,17 +116,14 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
         fs.mkdirSync(options.output, { recursive: true });
       }
     } else if (!isBatch && options.output) {
-      // Single file mode: --output must not be a directory unless the user provides a filename.
-      // If it exists and is a directory, fail gracefully rather than throwing EISDIR later.
       const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
       if (outputStat?.isDirectory() || options.output.endsWith('/') || options.output.endsWith(path.sep)) {
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_OUTPUT_IS_DIRECTORY', 'Output is Directory', `Output path '${options.output}' is a directory, not a file.`);
-        } else {
-          console.error(pc.red(`✖ Output path '${options.output}' is a directory, not a file.`));
-          console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
-          process.exitCode = EXIT.USAGE_ERROR; return;
-        }
+        const inferredFilename = path.basename(inputs[0]).replace(/\.md$/i, '.pdf');
+        options.output = path.join(options.output, inferredFilename);
+        cliFlags.output = options.output;
+      } else if (!options.output.toLowerCase().endsWith('.pdf')) {
+        options.output += '.pdf';
+        cliFlags.output = options.output;
       }
     }
 
@@ -470,19 +481,21 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
     } catch (err: any) {
       spinner.stop();
 
-      if (err instanceof Md2PdfError) {
+      const isMdError = err instanceof Md2PdfError || err?.name === 'Md2PdfError' || err?.code?.startsWith('ERR_');
+      if (isMdError) {
         renderCliError(err, options);
       } else {
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
         } else {
-          // 1. Stop the spinner and log the main error
           spinner.fail(pc.red(err.message));
 
-          // 2. ADD YOUR CUSTOM GITHUB MESSAGE HERE
-          console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n`));
+          // Don't show GitHub banner for known user-level exceptions
+          const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.message?.includes('not found') || err.message?.includes('Invalid');
+          if (!isUserError) {
+            console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n`));
+          }
 
-          // 3. Print the debug stack trace if enabled
           if (options.debug && err.stack) {
             console.error(pc.dim(err.stack));
           }

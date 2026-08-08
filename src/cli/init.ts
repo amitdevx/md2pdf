@@ -7,7 +7,7 @@ import { EXIT } from './formatter.js';
 export default new Command('init')
   .description('Interactive guided setup for new environments')
   .action(async () => {
-    console.log(pc.bold('\n🚀 md2pdf Environment Setup\n'));
+    console.log(pc.bold('\n[i] md2pdf Environment Setup\n'));
     
     let spinner = ora('Checking Node environment...').start();
     spinner.succeed(`Node.js ${process.version}`);
@@ -56,7 +56,7 @@ export default new Command('init')
           }
 
           if (!hasSudo) {
-            console.warn(pc.yellow('⚠  sudo not available - skipping system library install'));
+            console.warn(pc.yellow('[!] sudo not available - skipping system library install'));
             console.log(pc.dim('  If Playwright fails, install these manually as root:'));
             console.log(pc.dim('  npx playwright-core install-deps chromium'));
           } else {
@@ -72,7 +72,7 @@ export default new Command('init')
       }
     }
 
-    console.log(pc.green('\n✨ Your environment is fully set up and ready to generate PDFs!\n'));
+    console.log(pc.green('\n[v] Your environment is fully set up and ready to generate PDFs!\n'));
     console.log(`Try running: ${pc.cyan('md2pdf input.md')}\n`);
     process.exit(EXIT.OK);
   });

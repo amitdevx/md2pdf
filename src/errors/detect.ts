@@ -66,6 +66,15 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
 
   // 5. Permission Denied
   if (fullText.match(/EACCES/i) || fullText.match(/Permission denied/i)) {
+    if (fullText.match(/open|writeFile/i)) {
+      return new Md2PdfError(
+        Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+        'Permission Denied',
+        `Cannot write to the output file due to restrictive filesystem permissions.`,
+        context,
+        error
+      );
+    }
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_PERMISSION_DENIED,
       'Permission Denied',
