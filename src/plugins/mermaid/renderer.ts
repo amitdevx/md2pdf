@@ -24,7 +24,8 @@ export async function renderMermaidBlocks(
   timeoutMs: number = 10000,
   maxWidth: string = '100%',
   maxHeight: string = 'none',
-  sharedMermaidPage?: import('playwright-core').Page
+  sharedMermaidPage?: import('playwright-core').Page,
+  force?: boolean
 ): Promise<RenderedMermaid[]> {
   if (blocks.length === 0) return [];
 
@@ -136,6 +137,15 @@ export async function renderMermaidBlocks(
       let processedSvg = res.svg || '';
       
       if (processedSvg) {
+        if (processedSvg.includes('-error') || processedSvg.includes('class="error-icon"')) {
+          const errText = `Mermaid Syntax Error at line ${block.line || 'unknown'}: Check diagram syntax.`;
+          if (force) {
+            warnings.push(errText);
+          } else {
+            throw new Error(errText);
+          }
+        }
+
         const m = processedSvg.match(/\bviewBox="([^"]+)"/);
         if (m) {
           const parts = m[1].trim().split(/[\s,]+/);

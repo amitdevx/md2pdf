@@ -168,9 +168,20 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
       }
 
       let predictedOutput = options.output;
-      if (isBatch && predictedOutput) {
-        predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
-      } else if (!predictedOutput) {
+      if (predictedOutput && path.resolve(input) === path.resolve(predictedOutput)) {
+        reportError(input, 'input and output cannot be the same file');
+        continue;
+      }
+
+      if (predictedOutput) {
+        if (fs.existsSync(predictedOutput) && fs.statSync(predictedOutput).isDirectory()) {
+          predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
+        } else if (isBatch) {
+          predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
+        } else if (!predictedOutput.toLowerCase().endsWith('.pdf')) {
+          predictedOutput += '.pdf';
+        }
+      } else {
         predictedOutput = input.replace(/\.md$/i, '.pdf');
       }
 
@@ -197,12 +208,13 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
       succeed(text?: string): void;
       warn(text?: string): void;
       fail(text?: string): void;
+      info(text?: string): void;
       text: string;
     }
 
     const noopSpinner: SpinnerLike = {
       start: () => {}, stop: () => {}, succeed: () => {},
-      warn: () => {}, fail: () => {}, text: ''
+      warn: () => {}, fail: () => {}, info: () => {}, text: ''
     };
 
     const spinner: SpinnerLike = options.jsonErrors
@@ -330,9 +342,15 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
           }
 
           let output = cliFlags.output;
-          if (isBatch && output) {
-            output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-          } else if (!output) {
+          if (output) {
+            if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
+              output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
+            } else if (isBatch) {
+              output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
+            } else if (!output.toLowerCase().endsWith('.pdf')) {
+              output += '.pdf';
+            }
+          } else {
             output = input.replace(/\.md$/i, '.pdf');
           }
 
@@ -482,6 +500,8 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
             const res = results[0] as any;
             const errStr = res?.isError ? `${path.basename(inputs[0])} - ${res.error}` : `Failed in ${totalTime}s`;
             spinner.fail(pc.red(errStr));
+          } else if (skippedFilesCount > 0) {
+            spinner.info(pc.yellow(`Skipped existing file (use --force to overwrite)`));
           } else {
             const outDest = options.output ? ` (Saved to: ${options.output})` : '';
             spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!${outDest}`));
@@ -506,7 +526,7 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
           spinner.fail(pc.red(err.message));
 
           // Don't show GitHub banner for known user-level exceptions
-          const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.message?.includes('not found') || err.message?.includes('Invalid');
+          const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME' || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
           if (!isUserError) {
             console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n`));
           }
