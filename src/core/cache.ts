@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-const CACHE_DIR = '.md2pdf-cache';
+import os from 'node:os';
+
+const CACHE_DIR = path.join(os.tmpdir(), 'md2pdf-cache');
 const INDEX_FILE = path.join(CACHE_DIR, 'index.json');
 
 interface CacheEntry {

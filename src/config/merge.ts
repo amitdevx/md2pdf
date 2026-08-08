@@ -146,5 +146,6 @@ export function mergeConfig(
         : merged.metadata?.keywords
     } as any,
     plugins: merged.plugins,
+    cache: cliFlags?.cache !== false,
   };
 }
