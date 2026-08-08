@@ -10,6 +10,7 @@ import { mergeConfig } from '../config/merge.js';
 import { jsonOut, renderCliError, EXIT } from '../cli/formatter.js';
 import type { CliOptions } from '../cli/options.js';
 import { Md2PdfError } from '../errors/index.js';
+import { buildVaultIndex, sortDependencies } from '../core/vault.js';
 
   export async function runConvert(inputsRaw: string[], options: CliOptions) {
     // Resolve globs for Windows compatibility
@@ -278,6 +279,10 @@ import { Md2PdfError } from '../errors/index.js';
         spinner.text = 'Converting...';
         (spinner as any).start();
       }
+
+      // Large Vault Handling: build index and sort in dependency order
+      const vaultIndex = buildVaultIndex(cliFlags.vaultRoot as string | undefined, inputs);
+      inputs = sortDependencies(inputs, vaultIndex);
 
       const queue = inputs.map((input, i) => ({ input, i }));
 
