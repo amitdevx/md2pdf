@@ -19,12 +19,12 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
   if (options.jsonErrors) {
     jsonOut({
       success: false,
-      error: {
+      results: [{
+        input: err.context?.markdownFile || null,
+        output: err.context?.outputPath || null,
+        error: err.reason,
         code: err.code,
-        title: err.title,
-        reason: err.reason,
-        context: err.context
-      }
+      }]
     });
     process.exit(EXIT.ENVIRONMENT_ERROR);
   }
