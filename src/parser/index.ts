@@ -20,6 +20,7 @@ import rehypeCallouts from '../plugins/obsidian/callouts.js';
 
 import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
 import { visit } from 'unist-util-visit';
+import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 
 let shikiHighlighter: Highlighter | null = null;
 // Cache the pre-shiki pipeline (everything up to but not including the mermaid detector + shiki)
@@ -153,21 +154,46 @@ export async function parseMarkdown(
   //   baseProcessor → mermaid detector (mutates mermaidBlocks, replaces <pre><code.language-mermaid> with placeholders)
   //                 → shiki (highlights remaining code blocks, AFTER mermaid placeholders are already gone)
   //                 → stringify
-  const file = await baseProcessor()
-    .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
-    .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
-      theme: options?.shikiTheme || 'github-light',
-      fallbackLanguage: 'txt',
-      onError: (err: unknown) => {
-        if (err instanceof Error) {
-          warnings.push(err.message);
-        } else {
-          warnings.push(String(err));
+  
+  // Prevent V8 stack overflow from pathologically nested blockquotes
+  const maxNestingDepth = Math.max(0, ...markdown.split('\n').map(
+    line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
+  ));
+  if (maxNestingDepth > 200) {
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX,
+      'Document Too Complex',
+      `The document contains blockquote nesting ${maxNestingDepth} levels deep. Maximum supported depth is 200.`
+    );
+  }
+
+  let file;
+  try {
+    file = await baseProcessor()
+      .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
+      .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {
+        theme: options?.shikiTheme || 'github-light',
+        fallbackLanguage: 'txt',
+        onError: (err: unknown) => {
+          if (err instanceof Error) {
+            warnings.push(err.message);
+          } else {
+            warnings.push(String(err));
+          }
         }
-      }
-    }))
-    .use(rehypeStringify, { allowDangerousHtml: true })
-    .process(markdown);
+      }))
+      .use(rehypeStringify, { allowDangerousHtml: true })
+      .process(markdown);
+  } catch (e) {
+    if (e instanceof RangeError) {
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX,
+        'Document Too Complex',
+        'The document structure is too deeply nested for the parser to process.'
+      );
+    }
+    throw e;
+  }
 
   // Add any warnings from unified itself
   file.messages.forEach((msg: any) => {
