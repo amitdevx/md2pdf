@@ -12,7 +12,7 @@ export function isMissingExecutableError(err: unknown): boolean {
 const CACHE_DIR = path.join(os.homedir(), '.md2pdf');
 const CACHE_FILE = path.join(CACHE_DIR, 'browser-cache.json');
 
-function readCache(): { channel?: string; default?: boolean } | null {
+function readCache(): { channel?: string; default?: boolean; executablePath?: string } | null {
   try {
     if (fs.existsSync(CACHE_FILE)) {
       return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8'));
@@ -23,7 +23,7 @@ function readCache(): { channel?: string; default?: boolean } | null {
   return null;
 }
 
-function writeCache(data: { channel?: string; default?: boolean }) {
+function writeCache(data: { channel?: string; default?: boolean; executablePath?: string }) {
   try {
     if (!fs.existsSync(CACHE_DIR)) {
       fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -46,7 +46,9 @@ export async function getBrowser(): Promise<Browser> {
   const cached = readCache();
   if (cached) {
     try {
-      if (cached.default) {
+      if (cached.executablePath) {
+        return await chromium.launch({ ...launchOptions, executablePath: cached.executablePath });
+      } else if (cached.default) {
         return await chromium.launch(launchOptions);
       } else if (cached.channel) {
         return await chromium.launch({ ...launchOptions, channel: cached.channel });
@@ -59,21 +61,21 @@ export async function getBrowser(): Promise<Browser> {
 
   try {
     const browser = await chromium.launch({ ...launchOptions, channel: 'chrome' }); 
-    writeCache({ channel: 'chrome' });
+    writeCache({ channel: 'chrome', executablePath: browser.browserType().executablePath() || process.env.PLAYWRIGHT_BROWSERS_PATH });
     return browser;
   } catch (err1) {
     if (!isMissingExecutableError(err1)) throw err1;
 
     try {
       const browser = await chromium.launch({ ...launchOptions, channel: 'msedge' });
-      writeCache({ channel: 'msedge' });
+      writeCache({ channel: 'msedge', executablePath: browser.browserType().executablePath() || process.env.PLAYWRIGHT_BROWSERS_PATH });
       return browser;
     } catch (err2) {
       if (!isMissingExecutableError(err2)) throw err2;
 
       try {
         const browser = await chromium.launch(launchOptions);
-        writeCache({ default: true });
+        writeCache({ default: true, executablePath: browser.browserType().executablePath() || process.env.PLAYWRIGHT_BROWSERS_PATH });
         return browser;
       } catch (err3) {
         if (!isMissingExecutableError(err3)) throw err3;
