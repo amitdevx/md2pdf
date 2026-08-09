@@ -69,7 +69,7 @@ describe('CLI End-to-End Tests', () => {
     const outDir = __dirname;
     const expectedOut = path.join(outDir, 'README.pdf');
     if (fs.existsSync(expectedOut)) fs.unlinkSync(expectedOut);
-    const result = runCli(`README.md -o "${outDir}"`);
+    const result = runCli(`README.md -o "${outDir}/"`);
     expect(result.status).toBe(0);
     expect(fs.existsSync(expectedOut)).toBe(true);
     if (fs.existsSync(expectedOut)) fs.unlinkSync(expectedOut);

@@ -34,7 +34,7 @@ program.addCommand(initCmd);
 
 program
   .name('md2pdf')
-  .description('Production-quality Markdown to PDF rendering engine')
+  .description('Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.')
   .version(pkg.version)
   .argument('<inputs...>', 'Input markdown files (supports wildcards like *.md)')
   .option('-o, --output <output>', 'Output PDF file (or directory if multiple inputs)')

@@ -118,7 +118,9 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
     } else if (!isBatch && options.output) {
       const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
-      if (outputStat?.isDirectory()) {
+      const hasTrailingSlash = options.output.endsWith('/') || options.output.endsWith(path.sep);
+
+      if (outputStat?.isDirectory() && !hasTrailingSlash) {
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
             `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
@@ -127,7 +129,9 @@ import { computeHash, checkCache } from '../core/cache.js';
           console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
           process.exitCode = EXIT.USAGE_ERROR; return;
         }
-      } else if (options.output.endsWith('/') || options.output.endsWith(path.sep)) {
+      }
+
+      if (hasTrailingSlash || (outputStat?.isDirectory() && hasTrailingSlash)) {
         const inferredFilename = path.basename(inputs[0]).replace(/\.md$/i, '.pdf');
         options.output = path.join(options.output, inferredFilename);
         cliFlags.output = options.output;

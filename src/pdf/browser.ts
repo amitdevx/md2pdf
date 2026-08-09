@@ -5,8 +5,8 @@ import path from 'node:path';
 import os from 'node:os';
 
 export function isMissingExecutableError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes("Executable doesn't exist") || msg.includes("not found");
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return msg.includes("executable doesn't exist") || msg.includes("not found");
 }
 
 const CACHE_DIR = path.join(os.homedir(), '.md2pdf');
