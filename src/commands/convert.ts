@@ -442,6 +442,7 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
             if (isShuttingDown) break;
             
             if (err?.code === 'ERR_PUBLISH_SKIPPED') {
+              skippedFilesCount++;
               results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'] };
               if (!options.jsonErrors) {
                 (spinner as any).stop();
@@ -481,7 +482,8 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
 
       if (options.jsonErrors) {
         jsonOut({
-          success: !hasErrors && successfulCount > 0,
+          success: !hasErrors && (successfulCount > 0 || skippedFilesCount > 0),
+          ...(skippedFilesCount > 0 ? { skipped: skippedFilesCount } : {}),
           results: results.map((r: any, index: number) => ({
             input: inputs[index],
             output: r.outputPath,
