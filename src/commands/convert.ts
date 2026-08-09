@@ -117,7 +117,16 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
       }
     } else if (!isBatch && options.output) {
       const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
-      if (outputStat?.isDirectory() || options.output.endsWith('/') || options.output.endsWith(path.sep)) {
+      if (outputStat?.isDirectory()) {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
+            `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
+        } else {
+          console.error(pc.red(`✖ Output path '${options.output}' is a directory, not a file.`));
+          console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
+          process.exitCode = EXIT.USAGE_ERROR; return;
+        }
+      } else if (options.output.endsWith('/') || options.output.endsWith(path.sep)) {
         const inferredFilename = path.basename(inputs[0]).replace(/\.md$/i, '.pdf');
         options.output = path.join(options.output, inferredFilename);
         cliFlags.output = options.output;
