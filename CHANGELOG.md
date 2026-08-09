@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.2] - 2026-08-09
+
+### Fixed
+- **Cache Optimization**: Skipped Playwright browser startup when all files in a batch are already cached, completely eliminating overhead for 100% cache hits.
+- **Browser Resolution**: Cached the fully resolved browser executable path to prevent Playwright from initiating a fallback waterfall search on every cold start when Chrome is missing.
+- **CLI Ergonomics**: Running \`md2pdf\` without arguments now correctly prints the help menu and exits with code 1 instead of 0.
+- **CLI Robustness**: Passing an existing directory to \`--output\` in single-file mode now correctly throws a fatal error instead of silently generating unexpected file paths.
+- **Data Integrity**: JSON \`--json-errors\` output now correctly maps and increments the skipped count when \`publish: false\` is used.
+- **Parser Resilience**: Added a strict depth limit (200) to pathological nested blockquotes to prevent AST call-stack overflow crashes (\`ERR_DOCUMENT_TOO_COMPLEX\`).
+- **Asset Resolution**: Fixed an issue where Mermaid assets (\`mermaid.min.js\`) failed to resolve in distributed bundles due to improper pathing.
+- **Unified Errors**: Unified the \`--json-errors\` output schema across all error code paths.
+
 ## [0.8.0] - 2026-08-08
 
 ### Added
