@@ -157,8 +157,9 @@ if (process.argv.includes('--list-themes')) {
   });
 } else {
   if (process.argv.length <= 2) {
-    program.help();
-  } else {
+  program.outputHelp();
+  process.exit(1);
+} else {
     program.parse(process.argv);
   }
 }
