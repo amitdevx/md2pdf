@@ -11,6 +11,7 @@ import { jsonOut, renderCliError, EXIT } from '../cli/formatter.js';
 import type { CliOptions } from '../cli/options.js';
 import { Md2PdfError } from '../errors/index.js';
 import { buildVaultIndex, sortDependencies } from '../core/vault.js';
+import { computeHash, checkCache } from '../core/cache.js';
 
   export async function runConvert(inputsRaw: string[], options: CliOptions) {
     // Resolve globs for Windows compatibility
@@ -262,11 +263,12 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
       const { getBrowser } = await import('../pdf/browser.js');
       let mermaidInitPromise: Promise<void> | null = null;
       
+      let globalBrowserPromise: Promise<import('playwright-core').Browser> | null = null;
+      let hasMermaidAnywhere = false;
       if (isBatch) {
-        globalBrowser = await getBrowser();
         
         // Fast heuristic check across all inputs to start Mermaid warmup early
-        const hasMermaidAnywhere = await Promise.all(inputs.map(input => {
+        hasMermaidAnywhere = await Promise.all(inputs.map(input => {
           return new Promise<boolean>((resolve) => {
             const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
             stream.once('data', (chunk) => { stream.destroy(); resolve((chunk as string).includes('```mermaid')); });
@@ -388,7 +390,57 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
           }
 
           const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
+          
+          // PRE-RENDER CACHE CHECK
+          const useCache = convertOptions.cache !== false;
+          let fileHash = '';
+          if (useCache) {
+            try {
+              const rawContent = fs.readFileSync(input, 'utf-8');
+              fileHash = computeHash(rawContent, convertOptions);
+              if (checkCache(input, fileHash, output as string)) {
+                results[i] = { fromCache: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+                if (!options.jsonErrors && isBatch) {
+                  completedCount++;
+                  spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+                  (spinner as any).stop();
+                  console.log(pc.green(`✔ ${path.basename(output as string)} (cached)`));
+                  (spinner as any).start();
+                } else if (!options.jsonErrors && !isBatch) {
+                  spinner.succeed(pc.green(`${path.basename(output as string)} (cached)`));
+                }
+                successfulCount++;
+                continue;
+              }
+            } catch {
+              // Ignore fs errors, let convert() handle them
+            }
+          }
+
           if (isBatch) {
+            if (!globalBrowserPromise) {
+              globalBrowserPromise = getBrowser().then(async (b) => {
+                globalBrowser = b;
+                if (hasMermaidAnywhere) {
+                  mermaidInitPromise = (async () => {
+                    globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
+                    globalMermaidPage = await globalMermaidContext.newPage();
+                    const { fontCss } = await import('../assets/fonts.js');
+                    await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
+                    await globalMermaidPage.evaluate(() => document.fonts.ready);
+                    try {
+                      const scriptPath = path.resolve(new URL(import.meta.url).pathname, '../../assets/mermaid.min.js');
+                      await globalMermaidPage.addScriptTag({ path: scriptPath });
+                    } catch {
+                      // ignore
+                    }
+                  })();
+                }
+                return b;
+              });
+            }
+            await globalBrowserPromise;
+
             convertOptions.sharedBrowser = globalBrowser;
             if (globalMermaidPage) {
               (convertOptions as any).sharedMermaidPage = globalMermaidPage;
@@ -441,7 +493,8 @@ import { buildVaultIndex, sortDependencies } from '../core/vault.js';
             
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
-              console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${result.renderTimeMs}ms)`));
+              const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
+              console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${timing})`));
               (spinner as any).start();
             }
             

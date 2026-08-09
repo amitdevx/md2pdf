@@ -67,4 +67,5 @@ export interface ConvertResult {
   renderTimeMs: number;
   warnings: string[];
   metadata?: PdfMetadata;
+  fromCache?: boolean;
 }
