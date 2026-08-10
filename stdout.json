@@ -1,8 +1,0 @@
-{
-  "success": false,
-  "error": {
-    "code": "ERR_VALIDATION",
-    "title": "Validation Failed",
-    "reason": "No valid input files to process."
-  }
-}
