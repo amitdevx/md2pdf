@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { convert } from '../core/index.js';
 import ora from 'ora';
 import pc from 'picocolors';
@@ -145,7 +146,8 @@ import { computeHash, checkCache } from '../core/cache.js';
     let hasErrors = false;
     let successfulCount = 0;
     let failedCount = 0;
-    let skippedFilesCount = 0;
+    let skippedExistingCount = 0;
+    let skippedPublishCount = 0;
     const validInputs: string[] = [];
 
     const reportError = (input: string, reason: string) => {
@@ -298,7 +300,7 @@ import { computeHash, checkCache } from '../core/cache.js';
 </html>`);
             await globalMermaidPage.evaluate(() => document.fonts.ready);
             try {
-              const scriptPath = path.resolve(new URL(import.meta.url).pathname, '../../assets/mermaid.min.js');
+              const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
               await globalMermaidPage.addScriptTag({ path: scriptPath });
             } catch {
               // Fallback
@@ -329,33 +331,6 @@ import { computeHash, checkCache } from '../core/cache.js';
         while (queue.length > 0 && !isShuttingDown) {
           const { input, i } = queue.shift()!;
           
-          // Lazy-load Mermaid page ONLY if the file actually contains Mermaid diagrams
-          const hasMermaid = await new Promise<boolean>((resolve) => {
-            const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
-            stream.once('data', (chunk) => { stream.destroy(); resolve((chunk as string).includes('```mermaid')); });
-            stream.once('error', () => resolve(false));
-            stream.once('end', () => resolve(false));
-          });
-          
-          if (isBatch && hasMermaid) {
-            if (mermaidInitPromise) await mermaidInitPromise;
-            
-            if (!globalMermaidPage) {
-              // Fallback if not initialized via batch check
-              globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
-              globalMermaidPage = await globalMermaidContext.newPage();
-              const { fontCss } = await import('../assets/fonts.js');
-              await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
-              await globalMermaidPage.evaluate(() => document.fonts.ready);
-              try {
-                const scriptPath = path.resolve(new URL(import.meta.url).pathname, '../../assets/mermaid.min.js');
-                await globalMermaidPage.addScriptTag({ path: scriptPath });
-              } catch {
-                // Fallback or warning if Mermaid isn't installed
-              }
-            }
-          }
-
           let output = cliFlags.output;
           if (output) {
             if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
@@ -398,9 +373,16 @@ import { computeHash, checkCache } from '../core/cache.js';
           // PRE-RENDER CACHE CHECK
           const useCache = convertOptions.cache !== false;
           let fileHash = '';
-          if (useCache) {
+          let rawContent = '';
+          try {
+            rawContent = fs.readFileSync(input, 'utf-8');
+          } catch (err: any) {
+             // If we can't read the file, let convert() handle it or fail here
+             rawContent = '';
+          }
+
+          if (useCache && rawContent) {
             try {
-              const rawContent = fs.readFileSync(input, 'utf-8');
               fileHash = computeHash(rawContent, convertOptions);
               if (checkCache(input, fileHash, output as string)) {
                 results[i] = { fromCache: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
@@ -417,45 +399,76 @@ import { computeHash, checkCache } from '../core/cache.js';
                 continue;
               }
             } catch {
-              // Ignore fs errors, let convert() handle them
+              // Ignore cache check errors
             }
           }
+
+          // Not cached. Check if it has mermaid.
+          const hasMermaid = rawContent.includes('```mermaid');
 
           if (isBatch) {
             if (!globalBrowserPromise) {
               globalBrowserPromise = getBrowser().then(async (b) => {
                 globalBrowser = b;
-                if (hasMermaidAnywhere) {
-                  mermaidInitPromise = (async () => {
-                    globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
-                    globalMermaidPage = await globalMermaidContext.newPage();
-                    const { fontCss } = await import('../assets/fonts.js');
-                    await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
-                    await globalMermaidPage.evaluate(() => document.fonts.ready);
-                    try {
-                      const scriptPath = path.resolve(new URL(import.meta.url).pathname, '../../assets/mermaid.min.js');
-                      await globalMermaidPage.addScriptTag({ path: scriptPath });
-                    } catch {
-                      // ignore
-                    }
-                  })();
-                }
                 return b;
               });
             }
-            await globalBrowserPromise;
+            try {
+              await globalBrowserPromise;
+            } catch (err: any) {
+              hasErrors = true;
+              failedCount++;
+              results[i] = { isError: true, error: `Browser launch failed: ${err.message}`, code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+              if (!options.jsonErrors && isBatch) {
+                completedCount++;
+                (spinner as any).stop();
+                console.error(pc.red(`✖ ${path.basename(input)} - Browser launch failed: ${err.message}`));
+                (spinner as any).start();
+              }
+              continue;
+            }
+            
+            if (!globalBrowser) {
+              hasErrors = true;
+              failedCount++;
+              results[i] = { isError: true, error: 'Browser launch failed: globalBrowser is null', code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+              if (!options.jsonErrors && isBatch) completedCount++;
+              continue;
+            }
+
+            if (hasMermaid) {
+              if (mermaidInitPromise) await mermaidInitPromise;
+              
+              if (!globalMermaidPage) {
+                mermaidInitPromise = (async () => {
+                  globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
+                  globalMermaidPage = await globalMermaidContext.newPage();
+                  const { fontCss } = await import('../assets/fonts.js');
+                  await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
+                  await globalMermaidPage.evaluate(() => document.fonts.ready);
+                  try {
+                    const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
+                    await globalMermaidPage.addScriptTag({ path: scriptPath });
+                  } catch {
+                    // Fallback
+                  }
+                })();
+                await mermaidInitPromise;
+              }
+            }
 
             convertOptions.sharedBrowser = globalBrowser;
             if (globalMermaidPage) {
-              (convertOptions as any).sharedMermaidPage = globalMermaidPage;
+              convertOptions.sharedMermaidPage = globalMermaidPage;
             }
           }
+
 
           // For 25+ file batches without --force: skip existing files to prevent overwrite spam
           if (fs.existsSync(output as string)) {
             if (inputs.length >= 25 && !options.force) {
-              skippedFilesCount++;
-              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+              skippedExistingCount++;
+              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
                 spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
@@ -508,8 +521,8 @@ import { computeHash, checkCache } from '../core/cache.js';
             if (isShuttingDown) break;
             
             if (err?.code === 'ERR_PUBLISH_SKIPPED') {
-              skippedFilesCount++;
-              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'] };
+              skippedPublishCount++;
+              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'], skipReason: 'publish: false' };
               if (!options.jsonErrors) {
                 (spinner as any).stop();
                 console.log(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
@@ -548,25 +561,31 @@ import { computeHash, checkCache } from '../core/cache.js';
 
       if (options.jsonErrors) {
         jsonOut({
-          success: !hasErrors && (successfulCount > 0 || skippedFilesCount > 0),
-          ...(skippedFilesCount > 0 ? { skipped: skippedFilesCount } : {}),
-          results: results.map((r: any, index: number) => ({
-            input: inputs[index],
-            output: r.outputPath,
-            pages: r.pageCounts,
-            timeMs: r.renderTimeMs,
-            warnings: r.warnings,
-            ...(r.isError ? { error: r.error, code: r.code } : {}),
-            ...(r.isSkipped ? { skipped: true } : {})
-          }))
+          success: !hasErrors && (successfulCount > 0 || skippedExistingCount > 0 || skippedPublishCount > 0),
+          ...(skippedExistingCount + skippedPublishCount > 0 ? { skipped: skippedExistingCount + skippedPublishCount } : {}),
+          results: results.map((r: any, index: number) => {
+            if (!r) return { input: inputs[index], error: 'Process aborted before conversion', code: 'ERR_ABORTED' };
+            return {
+              input: inputs[index],
+              output: r.outputPath,
+              pages: r.pageCounts,
+              timeMs: r.renderTimeMs,
+              warnings: r.warnings,
+              ...(r.isError ? { error: r.error, code: r.code } : {}),
+              ...(r.isSkipped ? { skipped: true, skipReason: r.skipReason } : {})
+            };
+          })
         });
       } else {
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
         if (isBatch) {
           (spinner as any).stop();
           console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
-          if (skippedFilesCount > 0) {
-            console.log(pc.yellow(`  ⚠ Skipped ${skippedFilesCount} existing PDFs (use --force to overwrite)`));
+          if (skippedExistingCount > 0) {
+            console.log(pc.yellow(`  ⚠ Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
+          }
+          if (skippedPublishCount > 0) {
+            console.log(pc.yellow(`  ⚠ Skipped ${skippedPublishCount} files (publish: false)`));
           }
         } else {
           if (hasErrors) {
@@ -574,6 +593,8 @@ import { computeHash, checkCache } from '../core/cache.js';
             const errMsg = res?.isError ? res.error.split('\n')[0] : `Failed in ${totalTime}s`;
             const errStr = res?.isError ? `${path.basename(inputs[0])} - ${errMsg}` : errMsg;
             spinner.fail(pc.red(errStr));
+          } else if (results[0]?.isSkipped) {
+            spinner.info(pc.yellow(`Skipped ${path.basename(inputs[0])} (${results[0].skipReason})`));
           } else {
             const outDest = options.output ? ` (Saved to: ${options.output})` : '';
             spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!${outDest}`));

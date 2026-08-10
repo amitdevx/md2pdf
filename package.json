@@ -31,7 +31,7 @@
   },
   "scripts": {
     "prebuild": "node scripts/build-katex-css.mjs",
-    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && tsc -p tsconfig.themes.json && node -e \"const fs=require('fs'),path=require('path');fs.readdirSync('src/themes').forEach(d=>{const s=path.join('src/themes',d,'theme.css');if(fs.existsSync(s))fs.copyFileSync(s,path.join('themes',d,'theme.css'));}); fs.mkdirSync('dist/assets', {recursive: true}); fs.copyFileSync('node_modules/mermaid/dist/mermaid.min.js', 'dist/assets/mermaid.min.js');\"",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && tsc -p tsconfig.themes.json && node -e \"const fs=require('fs'),path=require('path');fs.readdirSync('src/themes').forEach(d=>{const s=path.join('src/themes',d,'theme.css');if(fs.existsSync(s))fs.copyFileSync(s,path.join('themes',d,'theme.css'));}); fs.mkdirSync('assets', {recursive: true}); fs.copyFileSync('node_modules/mermaid/dist/mermaid.min.js', 'assets/mermaid.min.js');\"",
     "dev": "tsup --watch",
     "pretest": "node scripts/build-katex-css.mjs",
     "test": "vitest run",

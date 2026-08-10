@@ -74,6 +74,15 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         { markdownFile: inputPath }
       );
     }
+    if (stats.mode !== undefined && (stats.mode & 0o777) === 0) {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+        'Permission Denied',
+        `Cannot read file '${inputPath}': Permission denied (mode 000).`,
+        { markdownFile: inputPath }
+      );
+    }
     rawMarkdown = await fs.readFile(inputPath, 'utf-8');
   } catch (error: any) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');

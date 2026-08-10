@@ -23,8 +23,20 @@ const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.js
 
 const program = new Command();
 
+const isJsonErrors = process.argv.includes('--json-errors');
 program.configureOutput({
-  writeErr: (str) => process.stderr.write(str)
+  writeErr: (str) => {
+    if (isJsonErrors) {
+      process.stdout.write(JSON.stringify({
+        success: false,
+        results: [{
+          input: null, output: null, error: str.trim(), code: 'ERR_INVALID_ARGUMENT'
+        }]
+      }, null, 2) + '\n');
+    } else {
+      process.stderr.write(str);
+    }
+  }
 });
 program.showHelpAfterError('(run md2pdf --help for usage)');
 
@@ -63,9 +75,9 @@ program
   .option('--stdout', 'Unsupported option (future use)')
   .option('--quiet', 'Unsupported option (future use)')
   .option('--input <input>', 'Unsupported option (future use)')
-  .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in)', (val) => {
-    if (!/^\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%)$/.test(val)) {
-      throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm`);
+  .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in, 0)', (val) => {
+    if (!/^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/.test(val)) {
+      throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0`);
     }
     return val;
   }, '20mm')

@@ -54,3 +54,5 @@ out.pdf
 # Local root scratch files
 test-browser.js
 serveo.txt
+stdout.json
+stderr.json

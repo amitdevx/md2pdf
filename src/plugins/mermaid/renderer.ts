@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { Browser } from 'playwright-core';
 
 import { MermaidBlock } from './detector.js';
@@ -72,7 +73,7 @@ export async function renderMermaidBlocks(
         try {
           // In built package, renderer is at dist/chunk-*.js
           resolvedPath = path.resolve(
-            path.dirname(new URL(import.meta.url).pathname),
+            path.dirname(fileURLToPath(import.meta.url)),
             '../assets/mermaid.min.js'
           );
           if (!fs.existsSync(resolvedPath)) throw new Error('not found at dist path');
