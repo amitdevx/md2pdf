@@ -21,7 +21,7 @@ Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, synt
 
 For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.8.2)
+### Available (v0.8.3)
 - **Zero-Overhead Caching**: Dramatically speeds up batch conversions (`md2pdf *.md`) by hashing content and reusing unchanged PDFs. Centralized cache ensures your workspace remains clean, and Playwright browser initialization is entirely skipped for 100% cache hits. Control it natively using `--no-cache` and `--clear-cache` flags.
 - **Flawless Parallel Mermaid Rendering**: Complete re-architecture of the Mermaid rendering engine guarantees perfect diagram output under heavy multi-file concurrency. Eliminated race conditions and layout corruptions via robust mutex locks and isolated DOM generation.
 

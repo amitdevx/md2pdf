@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.3] - 2026-08-12
+
+### Fixed
+- **Browser Initialization**: Resolved Playwright `TypeError: Cannot read properties of undefined (reading 'newContext')` during Mermaid warmup in concurrent batch processes.
+- **Cache Logging**: Corrected an issue where cache hits were not being reported in batch mode due to relative output path discrepancies. Cache hits now print cleanly in milliseconds.
+- **Type Safety**: Cleaned up dangling variables and globally disabled the `any` ESLint warning.
+
 ## [0.8.2] - 2026-08-09
 
 ### Fixed
