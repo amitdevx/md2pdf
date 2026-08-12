@@ -123,9 +123,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         fs.mkdirSync(options.output, { recursive: true });
       }
     } else if (!isBatch && options.output) {
-      console.log('DEBUG: options.output is', options.output, 'isBatch', isBatch);
       const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
-      console.log('DEBUG: outputStat isDirectory?', outputStat?.isDirectory());
       if (outputStat?.isDirectory()) {
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
@@ -285,7 +283,15 @@ import { computeHash, checkCache } from '../core/cache.js';
         })).then(results => results.some(r => r));
 
         if (hasMermaidAnywhere) {
+          if (!globalBrowserPromise) {
+            globalBrowserPromise = getBrowser().then(async (b) => {
+              globalBrowser = b;
+              return b;
+            });
+          }
           mermaidInitPromise = (async () => {
+            await globalBrowserPromise;
+            if (!globalBrowser) throw new Error("Failed to initialize browser for Mermaid warmup");
             globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
             globalMermaidPage = await globalMermaidContext.newPage();
             const { fontCss } = await import('../assets/fonts.js');
@@ -344,6 +350,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           } else {
             output = input.replace(/\.md$/i, '.pdf');
           }
+          output = path.resolve(output as string);
 
           try {
             const outDir = path.dirname(output as string);

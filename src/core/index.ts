@@ -128,7 +128,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         outputPath,
         pageCounts: 0, // Skip page counting for cached hits
         renderTimeMs: Date.now() - startTime,
-        warnings: []
+        warnings: [],
+        fromCache: true
       };
     }
   }
