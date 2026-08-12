@@ -5,7 +5,6 @@ import crypto from 'node:crypto';
 import os from 'node:os';
 
 const CACHE_DIR = path.join(os.homedir(), '.md2pdf-cache');
-const INDEX_FILE = path.join(CACHE_DIR, 'index.json');
 
 interface CacheEntry {
   hash: string;
@@ -18,48 +17,47 @@ export function clearCache() {
   }
 }
 
-function loadCache(): Record<string, CacheEntry> {
-  if (!fs.existsSync(INDEX_FILE)) {
-    return {};
-  }
-  try {
-    const data = fs.readFileSync(INDEX_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return {};
-  }
-}
-
-function saveCache(cache: Record<string, CacheEntry>) {
-  if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
-  }
-  const tmpFile = INDEX_FILE + '.' + crypto.randomBytes(4).toString('hex') + '.tmp';
-  fs.writeFileSync(tmpFile, JSON.stringify(cache, null, 2), 'utf-8');
-  fs.renameSync(tmpFile, INDEX_FILE);
+function getCachePath(inputPath: string): string {
+  const pathHash = crypto.createHash('sha256').update(path.resolve(inputPath)).digest('hex');
+  return path.join(CACHE_DIR, `${pathHash}.json`);
 }
 
 export function computeHash(content: string, options: any): string {
   const hash = crypto.createHash('sha256');
   hash.update(content);
-  hash.update(JSON.stringify(options));
+  // PERF-3: Hash only stable options, not output path or environment details
+  const stableOptions = { ...options };
+  delete stableOptions.input;
+  delete stableOptions.output;
+  delete stableOptions.vaultRoot;
+  delete stableOptions.sharedBrowser;
+  delete stableOptions.sharedMermaidPage;
+  hash.update(JSON.stringify(stableOptions));
   return hash.digest('hex');
 }
 
 export function checkCache(inputPath: string, hash: string, outputPath: string): boolean {
-  const cache = loadCache();
-  const entry = cache[inputPath];
-  if (entry && entry.hash === hash && entry.output === outputPath) {
-    // Check if the output file actually exists
-    if (fs.existsSync(outputPath)) {
-      return true;
+  const cacheFile = getCachePath(inputPath);
+  if (!fs.existsSync(cacheFile)) return false;
+  try {
+    const entry: CacheEntry = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+    if (entry && entry.hash === hash && entry.output === outputPath) {
+      if (fs.existsSync(outputPath)) {
+        return true;
+      }
     }
+  } catch {
+    // Ignore invalid cache files
   }
   return false;
 }
 
 export function updateCache(inputPath: string, hash: string, outputPath: string) {
-  const cache = loadCache();
-  cache[inputPath] = { hash, output: outputPath };
-  saveCache(cache);
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+  const cacheFile = getCachePath(inputPath);
+  const tmpFile = cacheFile + '.' + crypto.randomBytes(4).toString('hex') + '.tmp';
+  fs.writeFileSync(tmpFile, JSON.stringify({ hash, output: outputPath }, null, 2), 'utf-8');
+  fs.renameSync(tmpFile, cacheFile);
 }

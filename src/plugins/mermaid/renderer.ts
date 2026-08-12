@@ -1,12 +1,9 @@
-import { fileURLToPath } from 'node:url';
 import { Browser } from 'playwright-core';
 
 import { MermaidBlock } from './detector.js';
 import { createRequire } from 'node:module';
 import { getMermaidTheme, MermaidTheme } from './theme-map.js';
 import { fontCss } from '../../assets/fonts.js';
-import path from 'node:path';
-import fs from 'node:fs';
 
 const require = createRequire(import.meta.url);
 
@@ -71,19 +68,9 @@ export async function renderMermaidBlocks(
       if (cachedMermaidScriptPath === null) {
         let resolvedPath: string;
         try {
-          // In built package, renderer is at dist/chunk-*.js
-          resolvedPath = path.resolve(
-            path.dirname(fileURLToPath(import.meta.url)),
-            '../assets/mermaid.min.js'
-          );
-          if (!fs.existsSync(resolvedPath)) throw new Error('not found at dist path');
+          resolvedPath = require.resolve('mermaid/dist/mermaid.min.js');
         } catch {
-          // Fallback: dev environment where mermaid is available in node_modules
-          try {
-            resolvedPath = require.resolve('mermaid/dist/mermaid.min.js');
-          } catch {
-            throw new Error('Could not find mermaid library. Ensure it is installed.');
-          }
+          throw new Error('Could not find mermaid library. Ensure it is installed.');
         }
         cachedMermaidScriptPath = resolvedPath;
       }

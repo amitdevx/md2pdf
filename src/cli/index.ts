@@ -48,7 +48,7 @@ program
   .name('md2pdf')
   .description('Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.')
   .version(pkg.version)
-  .argument('<inputs...>', 'Input markdown files (supports wildcards like *.md)')
+  .argument('[inputs...]', 'Input markdown files (supports wildcards like *.md)')
   .option('-o, --output <output>', 'Output PDF file (or directory if multiple inputs)')
   .option('--toc', 'Generate a Table of Contents')
   .option('--toc-depth <depth>', 'Maximum heading depth for TOC (1-6)', (val) => {

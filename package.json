@@ -31,7 +31,7 @@
   },
   "scripts": {
     "prebuild": "node scripts/build-katex-css.mjs",
-    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && tsc -p tsconfig.themes.json && node -e \"const fs=require('fs'),path=require('path');fs.readdirSync('src/themes').forEach(d=>{const s=path.join('src/themes',d,'theme.css');if(fs.existsSync(s))fs.copyFileSync(s,path.join('themes',d,'theme.css'));}); fs.mkdirSync('assets', {recursive: true}); fs.copyFileSync('node_modules/mermaid/dist/mermaid.min.js', 'assets/mermaid.min.js');\"",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly && tsc -p tsconfig.themes.json && node -e \"const fs=require('fs'),path=require('path');fs.readdirSync('src/themes').forEach(d=>{const s=path.join('src/themes',d,'theme.css');if(fs.existsSync(s))fs.copyFileSync(s,path.join('themes',d,'theme.css'));});\"",
     "dev": "tsup --watch",
     "pretest": "node scripts/build-katex-css.mjs",
     "test": "vitest run",
@@ -40,7 +40,7 @@
     "lint": "eslint src/ tests/",
     "lint:fix": "eslint src/ tests/ --fix",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist/",
+    "clean": "node -e \"require('fs').rmSync('dist', {recursive:true,force:true})\"",
     "prepare": "husky install || true",
     "prepublishOnly": "npm run clean && npm run build",
     "postuninstall": "node -e \"const fs=require('fs'); const path=require('path'); const os=require('os'); const p=path.join(os.tmpdir(), 'md2pdf-cache'); if(fs.existsSync(p)) fs.rmSync(p, {recursive:true, force:true});\""
@@ -110,6 +110,7 @@
     "jiti": "^2.7.0",
     "js-yaml": "^5.2.1",
     "katex": "^0.16.47",
+    "mermaid": "^11.16.1",
     "mime-types": "^3.0.2",
     "ora": "^5.4.1",
     "pdf-lib": "^1.17.1",
@@ -136,7 +137,6 @@
     "eslint": "^9.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.1.0",
-    "mermaid": "^10.9.1",
     "prettier": "^3.1.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.2",

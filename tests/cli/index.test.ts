@@ -65,14 +65,12 @@ describe('CLI End-to-End Tests', () => {
     expect(result.stderr).toContain('README.md - input and output cannot be the same file');
   });
 
-  it('should successfully infer filename when output is a directory', () => {
+  it('should fail when output is a directory even with trailing slash', () => {
     const outDir = __dirname;
-    const expectedOut = path.join(outDir, 'README.pdf');
-    if (fs.existsSync(expectedOut)) fs.unlinkSync(expectedOut);
     const result = runCli(`README.md -o "${outDir}/"`);
-    expect(result.status).toBe(0);
-    expect(fs.existsSync(expectedOut)).toBe(true);
-    if (fs.existsSync(expectedOut)) fs.unlinkSync(expectedOut);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Output path');
+    expect(result.stderr).toContain('is a directory, not a file');
   });
 
   it('should cleanly skip publish: false files with exit code 0', () => {

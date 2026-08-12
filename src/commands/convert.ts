@@ -11,6 +11,7 @@ import { mergeConfig } from '../config/merge.js';
 import { jsonOut, renderCliError, EXIT } from '../cli/formatter.js';
 import type { CliOptions } from '../cli/options.js';
 import { Md2PdfError } from '../errors/index.js';
+import { detectBrowserError } from '../errors/detect.js';
 import { buildVaultIndex, sortDependencies } from '../core/vault.js';
 import { computeHash, checkCache } from '../core/cache.js';
 
@@ -34,7 +35,11 @@ import { computeHash, checkCache } from '../core/cache.js';
     inputs = Array.from(new Set(inputs));
     
     if (inputs.length === 0) {
-      console.error(pc.red('✖ No input files found matching the provided arguments.'));
+      if (options.jsonErrors) {
+        jsonOut({ success: false, error: { code: 'ERR_NO_INPUT', title: 'Missing Input', reason: 'No input files found matching the provided arguments.' } });
+      } else {
+        console.error(pc.red('✖ No input files found matching the provided arguments.'));
+      }
       process.exitCode = EXIT.USAGE_ERROR; return;
     }
 
@@ -118,10 +123,10 @@ import { computeHash, checkCache } from '../core/cache.js';
         fs.mkdirSync(options.output, { recursive: true });
       }
     } else if (!isBatch && options.output) {
+      console.log('DEBUG: options.output is', options.output, 'isBatch', isBatch);
       const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
-      const hasTrailingSlash = options.output.endsWith('/') || options.output.endsWith(path.sep);
-
-      if (outputStat?.isDirectory() && !hasTrailingSlash) {
+      console.log('DEBUG: outputStat isDirectory?', outputStat?.isDirectory());
+      if (outputStat?.isDirectory()) {
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
             `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
@@ -132,11 +137,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         }
       }
 
-      if (hasTrailingSlash || (outputStat?.isDirectory() && hasTrailingSlash)) {
-        const inferredFilename = path.basename(inputs[0]).replace(/\.md$/i, '.pdf');
-        options.output = path.join(options.output, inferredFilename);
-        cliFlags.output = options.output;
-      } else if (!path.extname(options.output)) {
+      if (!path.extname(options.output)) {
         options.output += '.pdf';
         cliFlags.output = options.output;
       }
@@ -235,7 +236,7 @@ import { computeHash, checkCache } from '../core/cache.js';
 
     const spinner: SpinnerLike = options.jsonErrors
       ? noopSpinner
-      : ora('Launching browser...').start() as unknown as SpinnerLike;
+      : ora(isBatch ? 'Starting batch conversion...' : 'Converting...').start() as unknown as SpinnerLike;
     const startTime = Date.now();
     let globalBrowser: any;
     let globalMermaidContext: any;
@@ -309,7 +310,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         }
       }
       
-      const concurrencyLimit = cliFlags.concurrency ? parseInt(cliFlags.concurrency as string) : os.cpus().length;
+      const concurrencyLimit = cliFlags.concurrency ? parseInt(cliFlags.concurrency as string) : Math.min(4, os.cpus().length);
       const results: any[] = new Array(inputs.length);
       let completedCount = 0;
 
@@ -376,7 +377,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           let rawContent = '';
           try {
             rawContent = fs.readFileSync(input, 'utf-8');
-          } catch (err: any) {
+          } catch {
              // If we can't read the file, let convert() handle it or fail here
              rawContent = '';
           }
@@ -546,7 +547,8 @@ import { computeHash, checkCache } from '../core/cache.js';
               console.error(pc.red(`✖ ${msg}`));
               (spinner as any).start();
             }
-            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: err.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            const md2Error = detectBrowserError(err, { markdownFile: input });
+            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: md2Error.code, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
           }
           
           if (!options.jsonErrors && isBatch) {
