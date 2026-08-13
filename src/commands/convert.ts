@@ -113,6 +113,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       if (outputStat && !outputStat.isDirectory()) {
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
+          return;
         } else {
           console.error(pc.red(`✖ Output path '${options.output}' is a file, but multiple inputs were provided.`));
           console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
@@ -128,6 +129,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
             `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
+          return;
         } else {
           console.error(pc.red(`✖ Output path '${options.output}' is a directory, not a file.`));
           console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
