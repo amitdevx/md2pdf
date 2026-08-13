@@ -6,52 +6,33 @@
   <a href="https://github.com/amitdevx/md2pdf/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@amitdevx/md2pdf.svg?style=flat-square" alt="License: MIT"></a>
 </p>
 <p align="center">
-  <b><a href="https://amitdevx.tech/projects/amitdevx-md2pdf">Project Page</a></b> &nbsp;·&nbsp;
-  <b><a href="https://www.npmjs.com/package/@amitdevx/md2pdf">npm</a></b> &nbsp;·&nbsp;
+  <b><a href="https://amitdevx.tech/projects/amitdevx-md2pdf">Project Page</a></b> &nbsp;&middot;&nbsp;
+  <b><a href="https://www.npmjs.com/package/@amitdevx/md2pdf">npm</a></b> &nbsp;&middot;&nbsp;
   <b><a href="https://github.com/amitdevx/md2pdf">GitHub</a></b>
 </p>
 </div>
-Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.
+
+Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, and Table of Contents generation. Available as a CLI and Node.js API.
 
 ## Overview
 
-`md2pdf` is a production-grade Markdown-to-PDF rendering engine built on the Unified ecosystem (Remark/Rehype) for robust AST processing and Playwright for headless Chromium rendering. The result is a PDF that faithfully reflects modern web standards — professional typography, precise margins, and correct pagination — without any browser installation friction for end users.
+`md2pdf` is a Markdown-to-PDF rendering engine built on the Unified ecosystem (Remark/Rehype) and Playwright. It generates PDFs with correct pagination, margins, and typography using headless Chromium.
 
 ## Features
 
-For detailed release notes and changelogs, please visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
+For detailed release notes, visit the [GitHub Releases](https://github.com/amitdevx/md2pdf/releases) page.
 
-### Available (v0.8.4)
-- **Zero-Overhead Caching**: Dramatically speeds up batch conversions (`md2pdf *.md`) by hashing content and reusing unchanged PDFs. Centralized cache ensures your workspace remains clean, and Playwright browser initialization is entirely skipped for 100% cache hits. Control it natively using `--no-cache` and `--clear-cache` flags.
-- **Flawless Parallel Mermaid Rendering**: Complete re-architecture of the Mermaid rendering engine guarantees perfect diagram output under heavy multi-file concurrency. Eliminated race conditions and layout corruptions via robust mutex locks and isolated DOM generation.
-
-### Previous Versions
-- **Plugin Infrastructure (v0.7.x):** A fully documented plugin API exposing `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. Hook into AST generation, inject custom HTML rendering logic, or modify the Playwright rendering lifecycle. See [Plugin Documentation](docs/plugins.md) and [Authoring Guide](docs/PLUGIN_AUTHORING.md).
-- **Security & Stability:** Context objects passed to plugins are deeply frozen to prevent accidental mutation, Playwright page instances are safely proxied, and async hooks enforce strict timeouts.
-- **CLI Improvements:** Improved JSON error formatting (`--json-errors`) for easier piping, enhanced verbose logging (`--verbose`), automatic output directory creation, and local browser caching to speed up initialization.
-- **Theming System (v0.6.1):** Introducing 7 professionally crafted built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to instantly transform your PDF's aesthetics. Includes printer-friendly styling for dark themes.
-- **Strict Obsidian Parity:** Flawless visual alignment with Obsidian's native exports. Features perfect Lucide SVG callout icons with exact color matching, stripped `^block-identifiers`, automatic `H1` document title injection, and minimalist tables for `obsidian-light/dark` themes.
-- **Dynamic Syntax Highlighting:** Massive parsing speedup. Shiki grammars are now dynamically detected and loaded on-the-fly, reducing compilation overhead by up to 10 seconds per file.
-- **Improved Layout Engine:** Mermaid diagrams now naturally left-align (matching standard markdown flow), and large tables gracefully span across page breaks with repeating headers.
-- **Performance & Core (v0.5.4):** 5x faster single-file conversion via persistent Chromium daemon and local base64 offline fonts. Flawless Mermaid syntax tolerance bridging complex AST diagrams. Smaller npm footprint and graceful CLI interruptions.
-- **Configuration (v0.5.0):** Advanced persistent configuration file support (`md2pdf.config.ts`, `json`, `yaml`), profiles (`--profile`), and fully typed programmatic definitions. See [Configuration Guide](docs/configuration.md).
-- **Batch Processing & Error Resilience (v0.5.1):** Process multiple files at once (`md2pdf *.md`). Intelligently continues on conversion errors, emits rich JSON failure mappings, and fully resolves Windows pathing.
-- **Obsidian Compatibility (New in v0.4.1/v0.4.2):** Native parsing and rendering for callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), highlight syntax (`==highlight==`), and YAML frontmatter.
-- **High-Fidelity Rendering:** Utilizes Chromium via Playwright for native print CSS capabilities.
-- **Math Rendering (New in v0.3.0):** Print-perfect LaTeX inline and display math via KaTeX. Full support for matrices, environments, and macros with zero-dependency embedded fonts.
-- **Unified Pipeline:** Built entirely on remark and rehype ASTs for robustness.
-- **Professional Typography:** Modular CSS system optimized for readability and print with Inter and JetBrains Mono.
-- **Syntax Highlighting:** Integrated shiki plugin for syntax highlighting across 20+ languages.
-- **Mermaid Diagrams:** Native diagram generation directly from code blocks with intrinsic SVG scaling and error reporting.
-- **Diagnostic Tooling:** Run `md2pdf doctor` and `md2pdf init` for comprehensive pipeline debugging and auto-repair.
-- **GitHub Flavored Markdown:** Natively supports GFM tables and strikethrough.
-- **Table of Contents:** Auto-generate hyperlinked TOC with depth configuration.
-- **Footnotes:** Standard GFM footnotes with bidirectional backlinks. Note: inline footnote syntax (`^[...]`) is not supported.
-- **Document Metadata:** Automatically extracts YAML frontmatter to inject native PDF metadata properties.
-- **Headers, Footers & Page Breaks:** Inject custom HTML headers/footers with dynamic page numbers and control pagination manually or automatically.
-
-### Coming Soon
-- **Live Preview:** Real-time hot-reloading preview in the browser while editing markdown.
+### Core Capabilities
+*   **Batch Processing**: Convert multiple files concurrently (`md2pdf *.md`). Uses a persistent Chromium instance for faster processing.
+*   **Incremental Cache**: Caches output to speed up batch conversions. Skips unchanged files automatically. Control caching with `--no-cache` and `--clear-cache`.
+*   **Plugin API**: Extend functionality using `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. See the [Plugin Documentation](docs/plugins.md).
+*   **Theming**: Includes 7 built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to apply.
+*   **Obsidian Parity**: Supports native callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), highlights (`==highlight==`), and YAML frontmatter.
+*   **Syntax Highlighting**: Uses Shiki for syntax highlighting across 20+ languages.
+*   **Mermaid Diagrams**: Native diagram rendering from code blocks. Safe for concurrent multi-file processing.
+*   **Math Rendering**: Supports KaTeX for inline and display LaTeX equations.
+*   **Configuration**: Supports persistent configuration files (`md2pdf.config.ts`, `json`, `yaml`) and profiles. See the [Configuration Guide](docs/configuration.md).
+*   **Diagnostics**: Use `md2pdf doctor` and `md2pdf init` for environment setup and troubleshooting.
 
 ## Installation
 
@@ -65,7 +46,7 @@ npm install @amitdevx/md2pdf
 npx md2pdf init
 ```
 
-> **Note:** For security and compliance with npm v12 `allowScripts` defaults, we no longer automatically download browser binaries during install. You **must** run `md2pdf init` after installation to fetch the required Chromium dependencies.
+> **Note:** Due to npm v12 `allowScripts` defaults, browser binaries are not downloaded automatically during install. You must run `md2pdf init` after installation to fetch the required Chromium dependencies.
 
 ## CLI Usage
 
@@ -74,11 +55,10 @@ Generate a PDF from a single Markdown file:
 md2pdf README.md
 ```
 
-Process multiple files at once (Batch Mode) using wildcards (new in v0.5.1):
+Process multiple files at once using wildcards:
 ```bash
 md2pdf "docs/*.md" --output out_dir/
 ```
-*(Batch mode intelligently reuses a single Chromium instance for 10x faster processing and sequential memory safety)*
 
 Specify a custom output path and generate a Table of Contents:
 ```bash
@@ -96,12 +76,12 @@ md2pdf input.md --h1-new-page
 ```
 
 ### Environment Diagnostics & Setup
-Initialize a new environment and download dependencies automatically:
+Initialize a new environment and download dependencies:
 ```bash
 md2pdf init
 ```
 
-Check your system health and Playwright pipeline status:
+Check system health and pipeline status:
 ```bash
 md2pdf doctor
 ```
@@ -111,11 +91,9 @@ Print advanced internal variables and stack traces if an error occurs:
 md2pdf input.md --debug
 ```
 
-> **Note:** Typography uses Inter and JetBrains Mono served from Google Fonts CDN. Internet access is required during conversion for correct typography. Offline environments will fall back to system fonts.
+## Node.js API Usage
 
-## Library Usage
-
-Embed the rendering engine directly in your Node.js applications:
+Embed the rendering engine in your Node.js applications:
 
 ```typescript
 import { convert } from '@amitdevx/md2pdf';
@@ -149,4 +127,4 @@ MIT License. See `LICENSE` for details.
 
 ## Author
 
-**Amit Divekar** — [amitdevx.tech](https://amitdevx.tech) · [Project Page](https://amitdevx.tech/projects/amitdevx-md2pdf) · [GitHub](https://github.com/amitdevx)
+**Amit Divekar** | [amitdevx.tech](https://amitdevx.tech) | [Project Page](https://amitdevx.tech/projects/amitdevx-md2pdf) | [GitHub](https://github.com/amitdevx)
