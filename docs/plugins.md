@@ -45,7 +45,7 @@ export default defineConfig({
       name: 'my-render-hook',
       hooks: {
         afterPdf: async (pdf, ctx) => {
-          console.log(`Rendered ${ctx.inputPath} — ${pdf.length} bytes`)
+          console.log(`Rendered ${ctx.inputPath} - ${pdf.length} bytes`)
           return pdf
         }
       }

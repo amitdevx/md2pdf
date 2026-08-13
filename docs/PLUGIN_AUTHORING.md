@@ -124,7 +124,7 @@ export interface RenderContext {
   frontmatter: Record<string, unknown>
   /** Final merged options for this render */
   options: ResolvedMd2PdfConfig
-  /** Logger — use instead of console.log */
+  /** Logger: use instead of console.log */
   logger: Logger
 }
 ```

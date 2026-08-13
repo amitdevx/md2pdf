@@ -1,6 +1,6 @@
-# Obsidian Compatibility Guide
+# Obsidian Compatibility
 
-The `@amitdevx/md2pdf` engine is designed to seamlessly convert Obsidian vaults into high-quality PDFs without requiring manual formatting changes. 
+The `@amitdevx/md2pdf` engine converts Obsidian vaults into PDFs without requiring manual formatting changes. 
 
 ## Supported Syntax (v0.6.0)
 

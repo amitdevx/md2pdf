@@ -1,6 +1,6 @@
-# Theming Engine
+# Themes and Styling
 
-As of `v0.6.0`, `md2pdf` includes a robust theming engine that allows you to completely transform the aesthetics of your generated PDFs. Themes seamlessly control typography, colors, table structures, and syntax highlighting.
+As of `v0.6.0`, `md2pdf` includes a theming engine to change the appearance of generated PDFs. Themes control typography, colors, table structures, and syntax highlighting.
 
 ## Built-in Themes
 

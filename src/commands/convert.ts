@@ -351,7 +351,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             try {
               const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
               await globalMermaidPage.addScriptTag({ path: scriptPath });
-            } catch (e: any) {
+            } catch {
               // Fallback
             }
           })();
@@ -424,7 +424,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           let rawContent = '';
           try {
             rawContent = fs.readFileSync(input, 'utf-8');
-          } catch (e: any) {
+          } catch {
              // If we can't read the file, let convert() handle it or fail here
              rawContent = '';
           }
@@ -446,7 +446,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                 successfulCount++;
                 continue;
               }
-            } catch (e: any) {
+            } catch {
               // Ignore cache check errors
             }
           }
@@ -499,7 +499,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                   try {
                     const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
                     await globalMermaidPage.addScriptTag({ path: scriptPath });
-                  } catch (e: any) {
+                  } catch {
                     // Fallback
                   }
                 })();
