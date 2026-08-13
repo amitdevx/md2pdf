@@ -229,6 +229,46 @@ import { computeHash, checkCache } from '../core/cache.js';
       text: string;
     }
 
+    // Fast cache check for single-file mode to skip browser warmup
+    if (!isBatch && inputs.length === 1) {
+      let output = options.output;
+      const input = inputs[0];
+      if (output) {
+        if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
+          output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
+        } else if (!output.toLowerCase().endsWith('.pdf')) {
+          output += '.pdf';
+        }
+      } else {
+        output = input.replace(/\.md$/i, '.pdf');
+      }
+      output = path.resolve(output);
+
+      const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
+      if (convertOptions.cache !== false) {
+        try {
+          const rawContent = fs.readFileSync(input, 'utf-8');
+          if (rawContent) {
+            const fileHash = computeHash(rawContent, convertOptions);
+            if (checkCache(input, fileHash, output)) {
+              if (options.jsonErrors) {
+                jsonOut({
+                  success: true,
+                  results: [{ input, output, pages: 0, timeMs: 0, warnings: [] }]
+                });
+              } else {
+                console.log(pc.green(`✔ ${path.basename(output)} (cached)`));
+              }
+              process.exitCode = EXIT.OK;
+              return;
+            }
+          }
+        } catch (e: any) {
+          console.error("FAST CACHE ERROR:", e)
+        }
+      }
+    }
+
     const noopSpinner: SpinnerLike = {
       start: () => {}, stop: () => {}, succeed: () => {},
       warn: () => {}, fail: () => {}, info: () => {}, text: ''
@@ -311,7 +351,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             try {
               const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
               await globalMermaidPage.addScriptTag({ path: scriptPath });
-            } catch {
+            } catch (e: any) {
               // Fallback
             }
           })();
@@ -360,15 +400,13 @@ import { computeHash, checkCache } from '../core/cache.js';
               fs.mkdirSync(outDir, { recursive: true });
             }
           } catch (dirErr: any) {
+            if (!isBatch) throw dirErr;
             hasErrors = true;
             failedCount++;
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
               console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
               (spinner as any).start();
-            } else if (!options.jsonErrors && !isBatch) {
-              spinner.fail(pc.red(`Cannot create output directory: ${dirErr.message}`));
-              process.exitCode = EXIT.USAGE_ERROR; return;
             }
             results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
             if (!options.jsonErrors && isBatch) {
@@ -386,7 +424,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           let rawContent = '';
           try {
             rawContent = fs.readFileSync(input, 'utf-8');
-          } catch {
+          } catch (e: any) {
              // If we can't read the file, let convert() handle it or fail here
              rawContent = '';
           }
@@ -408,7 +446,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                 successfulCount++;
                 continue;
               }
-            } catch {
+            } catch (e: any) {
               // Ignore cache check errors
             }
           }
@@ -426,6 +464,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             try {
               await globalBrowserPromise;
             } catch (err: any) {
+              if (!isBatch) throw err;
               hasErrors = true;
               failedCount++;
               results[i] = { isError: true, error: `Browser launch failed: ${err.message}`, code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
@@ -439,6 +478,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             }
             
             if (!globalBrowser) {
+              if (!isBatch) throw new Error('Browser launch failed: globalBrowser is null');
               hasErrors = true;
               failedCount++;
               results[i] = { isError: true, error: 'Browser launch failed: globalBrowser is null', code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
@@ -459,7 +499,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                   try {
                     const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
                     await globalMermaidPage.addScriptTag({ path: scriptPath });
-                  } catch {
+                  } catch (e: any) {
                     // Fallback
                   }
                 })();
@@ -535,7 +575,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'], skipReason: 'publish: false' };
               if (!options.jsonErrors) {
                 (spinner as any).stop();
-                console.log(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
+                console.error(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
                 (spinner as any).start();
               }
               if (!options.jsonErrors && isBatch) {
@@ -544,6 +584,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               }
               continue;
             }
+            if (!isBatch) throw err;
             hasErrors = true;
             failedCount++;
             // Use only the first line of the error message to avoid showing stack traces
@@ -575,14 +616,14 @@ import { computeHash, checkCache } from '../core/cache.js';
           success: !hasErrors && (successfulCount > 0 || skippedExistingCount > 0 || skippedPublishCount > 0),
           ...(skippedExistingCount + skippedPublishCount > 0 ? { skipped: skippedExistingCount + skippedPublishCount } : {}),
           results: results.map((r: any, index: number) => {
-            if (!r) return { input: inputs[index], error: 'Process aborted before conversion', code: 'ERR_ABORTED' };
+            if (!r) return { input: inputs[index], error: { message: 'Process aborted before conversion', code: 'ERR_ABORTED' } };
             return {
               input: inputs[index],
               output: r.outputPath,
               pages: r.pageCounts,
               timeMs: r.renderTimeMs,
               warnings: r.warnings,
-              ...(r.isError ? { error: r.error, code: r.code } : {}),
+              ...(r.isError ? { error: { message: r.error, code: r.code } } : {}),
               ...(r.isSkipped ? { skipped: true, skipReason: r.skipReason } : {})
             };
           })

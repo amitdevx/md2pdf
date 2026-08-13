@@ -114,3 +114,7 @@ md2pdf input.md --mermaid-timeout 15000
 ## High-Quality Vector Output
 
 Mermaid diagrams are rendered with `deviceScaleFactor: 2` (High-DPI) and injected as raw `<svg>` elements into the final PDF. This means your diagrams will remain perfectly crisp even if the reader zooms in to 400% or prints the document.
+
+## Version Parity (v10 vs v11)
+
+md2pdf includes `mermaid.min.js` v11 natively. If you previously used md2pdf versions utilizing Mermaid v10, you might notice some layout engine differences. Specifically, some structural charts (like `erDiagram` or `classDiagram`) may render slightly larger or with adjusted padding in v11. All core syntax remains 100% compatible, and diagrams will not overflow the page.

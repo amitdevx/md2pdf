@@ -76,7 +76,7 @@ describe('CLI End-to-End Tests', () => {
   it('should cleanly skip publish: false files with exit code 0', () => {
     const skipMd = path.resolve(__dirname, 'skip.md');
     fs.writeFileSync(skipMd, '---\npublish: false\n---\n# Title');
-    const result = runCli(skipMd);
+    const result = runCli(`"${skipMd}" 2>&1`);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Skipped skip.md (publish: false)');
     fs.unlinkSync(skipMd);
