@@ -57,6 +57,9 @@ import { computeHash, checkCache } from '../core/cache.js';
     
     // Add output to cliFlags so mergeConfig maps them. We'll set input individually in the loop.
     const cliFlags = { ...options, output: options.output };
+    if ((cliFlags as any).browser) {
+      process.env.MD2PDF_BROWSER = (cliFlags as any).browser;
+    }
     
     const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
       jsonOut({
@@ -66,7 +69,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       process.exit(EXIT.USAGE_ERROR);
     };
 
-    const unsupported = ['browser', 'stdin', 'stdout', 'quiet', 'input'];
+    const unsupported = ['stdin', 'stdout', 'quiet', 'input'];
     for (const flag of unsupported) {
       if ((cliFlags as any)[flag]) {
         if (options.jsonErrors) {

@@ -70,7 +70,6 @@ program
     }
     return val;
   }, 'A4')
-  .option('--browser <browser>', 'Unsupported option (future use)')
   .option('--stdin', 'Unsupported option (future use)')
   .option('--stdout', 'Unsupported option (future use)')
   .option('--quiet', 'Unsupported option (future use)')
@@ -178,17 +177,6 @@ if (process.argv.includes('--list-themes')) {
     program.outputHelp();
     process.exit(1);
   } else {
-    // We must manually parse options to get --browser if present, before execution
-    const opts = program.parseOptions(process.argv);
-    if (opts.operands.includes('doctor') === false && opts.operands.includes('init') === false) {
-      // It's the default command
-      if (opts.unknown.includes('--browser')) {
-        const idx = opts.unknown.indexOf('--browser');
-        if (opts.unknown[idx + 1]) {
-          process.env.MD2PDF_BROWSER = opts.unknown[idx + 1];
-        }
-      }
-    }
     program.parse(process.argv);
   }
 }
