@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.5] - 2026-08-14
+
+### Added
+- **Universal Chromium Discovery:** The zero-config auto-discovery system has been massively expanded. It now natively scans default system installation paths across all major OS platforms (macOS, Windows, Linux) for 38 Chromium engines.
+- **Intelligent Engine Enforcement:** Playwright's headless configuration can hang indefinitely when connecting to non-Chromium browsers via the CDP socket. md2pdf now features a fast runtime signature check that verifies the browser engine synchronously before attempting to launch it, failing gracefully instead of hanging.
+
+### Fixed
+- **Resilient Fallback Chains:** The browser fallback mechanism has been significantly fortified. Strict arbitrary timeouts have been removed to accommodate heavily loaded CI/CD runner environments that require more time to boot browsers. Invalid or stale browser cache paths are immediately evicted upon failed connections.
+- **CLI Diagnostic Consistency:** The `md2pdf doctor` and `md2pdf init` commands fully inherit the new 38-browser matrix and engine enforcement rules, making debugging browser setups more transparent.
+- **Playwright Launcher Fixes:** Fixed an issue where the `--browser` CLI flag wasn't properly mapping directly to the underlying Playwright launcher.
+- **CI Pipeline Stabilizations:** Resolved CI pipeline timeouts affecting `windows-latest` and `ubuntu-latest` environments running `md2pdf` due to artificially constrained boot timeouts.
+
+## [0.8.4] - 2026-08-13
+
+### Fixed
+- **JSON Output Formatting:** Refined `--json-errors` pipeline. All nested error objects now correctly format as `{ error: { message, code } }` instead of flattening, ensuring consistent schema compliance.
+- **Log Routing Parity:** Messages indicating files skipped via `publish: false` frontmatter are now strictly routed to `stderr` (using `console.error`) rather than `stdout`, preserving pipe-safety for file contents.
+- **Single-File Cache Optimization:** Substantially optimized the Incremental Rendering cache strategy for single-file conversions. The cache validation is now properly executed completely prior to any Playwright/Chromium instantiation, reducing "warm" cache response times to less than ~150ms.
+- **Configuration Error Exit Codes:** Strengthened exit code enforcement. Malformed YAML frontmatter failures (`ERR_CONFIG_ERROR`) now accurately surface a standard exit code `1` (`EXIT.USAGE_ERROR`), correctly replacing an anomalous return value.
+
+### Docs
+- **Mermaid Documentation:** Expanded documentation explicitly detailing expected scaling, padding, and layout engine variations users might observe upgrading to Mermaid v11.
+- **Documentation Overhaul:** Thoroughly reviewed and corrected language and formatting conventions across the entire documentation suite (`/docs` and `README.md`) to be more concise and professional.
+
+
 ## [0.8.3] - 2026-08-12
 
 ### Fixed
