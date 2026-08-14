@@ -24,7 +24,7 @@ tests/output/
 tests/diff/
 
 # Incremental render cache (added v0.8.0)
-.md2pdf-cache/
+.md2pdf/
 
 # Ignore generated PDFs globally
 *.pdf

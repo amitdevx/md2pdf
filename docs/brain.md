@@ -4723,7 +4723,7 @@ Zero-dependency terminal colors. Used for success/error/warning CLI output.
 | `.github/` | CI/CD workflows | ❌ | ❌ |
 | `.husky/` | Git hooks | ❌ | ❌ |
 | `node_modules/` | Dependencies | ❌ | ✅ |
-| `.md2pdf-cache/` | Incremental render cache (v0.8.0) | ❌ | ✅ |
+| `.md2pdf/render-cache/` | Incremental render cache (v0.8.0) | ❌ | ✅ |
 
 ---
 
@@ -4754,7 +4754,7 @@ tests/output/
 tests/diff/
 
 # Incremental render cache (v0.8.0)
-.md2pdf-cache/
+.md2pdf/render-cache/
 ```
 
 ---

@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 
 import os from 'node:os';
 
-const CACHE_DIR = path.join(os.homedir(), '.md2pdf-cache');
+const CACHE_DIR = path.join(os.homedir(), '.md2pdf', 'render-cache');
 
 interface CacheEntry {
   hash: string;
