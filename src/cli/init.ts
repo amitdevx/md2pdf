@@ -22,7 +22,20 @@ export default new Command('init')
       try {
         const browser = await getBrowser();
         await browser.close();
-        spinner.succeed('Playwright browser is ready');
+        
+        const { discoverBrowser, readCache } = await import('../pdf/browser.js');
+        const cached = readCache();
+        const discovered = discoverBrowser();
+        
+        if (process.env.MD2PDF_BROWSER) {
+          spinner.succeed(`Browser is ready (Override: ${process.env.MD2PDF_BROWSER})`);
+        } else if (cached?.executablePath) {
+          spinner.succeed(`Browser is ready (Cached: ${cached.executablePath})`);
+        } else if (discovered) {
+          spinner.succeed(`Browser is ready (System: ${discovered.name})`);
+        } else {
+          spinner.succeed('Playwright bundled browser is ready');
+        }
       } catch (err) {
         if (!isMissingExecutableError(err)) {
           spinner.fail('Browser is installed but crashed during launch');

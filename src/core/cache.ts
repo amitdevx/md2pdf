@@ -41,9 +41,15 @@ export function checkCache(inputPath: string, hash: string, outputPath: string):
   if (!fs.existsSync(cacheFile)) return false;
   try {
     const entry: CacheEntry = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
-    if (entry && entry.hash === hash && entry.output === outputPath) {
-      if (fs.existsSync(outputPath)) {
-        return true;
+    if (entry && entry.hash === hash) {
+      if (entry.output === outputPath) {
+        if (fs.existsSync(outputPath)) return true;
+      } else {
+        if (fs.existsSync(entry.output)) {
+          fs.copyFileSync(entry.output, outputPath);
+          updateCache(inputPath, hash, outputPath);
+          return true;
+        }
       }
     }
   } catch {

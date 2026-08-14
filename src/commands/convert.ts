@@ -40,7 +40,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       } else {
         console.error(pc.red('✖ No input files found matching the provided arguments.'));
       }
-      process.exitCode = EXIT.USAGE_ERROR; return;
+      process.exit(EXIT.USAGE_ERROR);
     }
 
     let resolvedConfig = {};
@@ -52,7 +52,7 @@ import { computeHash, checkCache } from '../core/cache.js';
     } catch (err: any) {
       console.error(pc.red(`\n✖ ${err.title || 'Config Error'}`));
       console.error(err.reason || err.message);
-      process.exitCode = EXIT.USAGE_ERROR; return;
+      process.exit(EXIT.USAGE_ERROR);
     }
     
     // Add output to cliFlags so mergeConfig maps them. We'll set input individually in the loop.
@@ -63,7 +63,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         success: false,
         error: { code, title, reason }
       });
-      process.exitCode = EXIT.USAGE_ERROR; return;
+      process.exit(EXIT.USAGE_ERROR);
     };
 
     const unsupported = ['browser', 'stdin', 'stdout', 'quiet', 'input'];
@@ -73,7 +73,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           emitJsonErrorAndExit('ERR_UNSUPPORTED_OPTION', 'Unsupported Option', `The --${flag} option is not currently supported.`);
         } else {
           console.error(pc.red(`error: The --${flag} option is not currently supported.`));
-          process.exitCode = EXIT.USAGE_ERROR; return;
+          process.exit(EXIT.USAGE_ERROR);
         }
       }
     }
@@ -83,7 +83,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         emitJsonErrorAndExit('ERR_VAULT_ROOT_NOT_FOUND', 'Vault Root Not Found', `--vault-root '${cliFlags.vaultRoot}' does not exist.`);
       } else {
         console.error(pc.red(`✖ --vault-root '${cliFlags.vaultRoot}' does not exist.`));
-        process.exitCode = EXIT.USAGE_ERROR; return;
+        process.exit(EXIT.USAGE_ERROR);
       }
     }
     
@@ -113,11 +113,10 @@ import { computeHash, checkCache } from '../core/cache.js';
       if (outputStat && !outputStat.isDirectory()) {
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
-          return;
         } else {
           console.error(pc.red(`✖ Output path '${options.output}' is a file, but multiple inputs were provided.`));
           console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
-          process.exitCode = EXIT.USAGE_ERROR; return;
+          process.exit(EXIT.USAGE_ERROR);
         }
       }
       if (!outputStat) {
@@ -129,11 +128,10 @@ import { computeHash, checkCache } from '../core/cache.js';
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
             `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
-          return;
         } else {
           console.error(pc.red(`✖ Output path '${options.output}' is a directory, not a file.`));
           console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
-          process.exitCode = EXIT.USAGE_ERROR; return;
+          process.exit(EXIT.USAGE_ERROR);
         }
       }
 
@@ -216,7 +214,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       if (options.jsonErrors) {
         jsonOut({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } });
       }
-      process.exitCode = hasErrors ? EXIT.USAGE_ERROR : EXIT.OK; return;
+      process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
     }
 
     interface SpinnerLike {
@@ -263,8 +261,8 @@ import { computeHash, checkCache } from '../core/cache.js';
               return;
             }
           }
-        } catch (e: any) {
-          console.error("FAST CACHE ERROR:", e)
+        } catch {
+          // Silent fallback to full render path if fast cache checks fail
         }
       }
     }
@@ -679,11 +677,12 @@ import { computeHash, checkCache } from '../core/cache.js';
           if (options.debug && err.stack) {
             console.error(pc.dim(err.stack));
           }
-          process.exitCode = EXIT.USAGE_ERROR; return;
+          process.exit(EXIT.USAGE_ERROR);
         }
       }
     } finally {
       await cleanup();
+      process.exitCode = hasErrors ? EXIT.USAGE_ERROR : EXIT.OK;
     }
 
   }

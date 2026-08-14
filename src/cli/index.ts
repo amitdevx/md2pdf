@@ -126,12 +126,13 @@ program
     }
     return n;
   })
+  .option('--browser <path>', 'Path to custom Chromium/Chrome executable (or use MD2PDF_BROWSER/CHROME_PATH)')
   .option('-f, --force', 'Force overwrite of existing PDF files')
   .addHelpText('after', `
-Categories:
   Output & Processing
     -o, --output <output>
     -f, --force
+    --browser <path>
     --concurrency <n>
     --no-cache
     --clear-cache
@@ -152,6 +153,11 @@ Categories:
     --vault-root <path>
     --resolve-links
     --attachment-folder, --max-attachment-size
+
+Exit Codes:
+  0: Success (OK)
+  1: Usage or validation error (e.g., missing file, invalid arguments)
+  2: Runtime error (e.g., missing browser, invalid configuration)
 `)
   .action(runConvert);
 
@@ -169,9 +175,20 @@ if (process.argv.includes('--list-themes')) {
   });
 } else {
   if (process.argv.length <= 2) {
-  program.outputHelp();
-  process.exit(1);
-} else {
+    program.outputHelp();
+    process.exit(1);
+  } else {
+    // We must manually parse options to get --browser if present, before execution
+    const opts = program.parseOptions(process.argv);
+    if (opts.operands.includes('doctor') === false && opts.operands.includes('init') === false) {
+      // It's the default command
+      if (opts.unknown.includes('--browser')) {
+        const idx = opts.unknown.indexOf('--browser');
+        if (opts.unknown[idx + 1]) {
+          process.env.MD2PDF_BROWSER = opts.unknown[idx + 1];
+        }
+      }
+    }
     program.parse(process.argv);
   }
 }

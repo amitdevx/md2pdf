@@ -58,7 +58,22 @@ export default new Command('doctor')
     let mdError: Md2PdfError | null = null;
 
     try {
-      const { getBrowser } = await import('../pdf/browser.js');
+      const { getBrowser, discoverBrowser, readCache } = await import('../pdf/browser.js');
+      
+      const cached = readCache();
+      if (process.env.MD2PDF_BROWSER) {
+        checks.push({ name: `CLI override browser: ${process.env.MD2PDF_BROWSER}`, status: true });
+      } else if (cached?.executablePath) {
+        checks.push({ name: `Cached browser path: ${cached.executablePath}`, status: true });
+      } else {
+        const discovered = discoverBrowser();
+        if (discovered) {
+          checks.push({ name: `Discovered local browser: ${discovered.executablePath} (${discovered.name})`, status: true });
+        } else {
+          checks.push({ name: `Fallback to Playwright bundled Chromium`, status: true });
+        }
+      }
+
       browser = await getBrowser();
       results.checks.browserInstalled = true;
       checks.push({ name: `Compatible browser found and launched`, status: true });
