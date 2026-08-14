@@ -91,6 +91,22 @@ Print advanced internal variables and stack traces if an error occurs:
 md2pdf input.md --debug
 ```
 
+### Browser Compatibility
+
+If Playwright fails to download its bundled browser, or you are running in a constrained environment like a Docker container, you can force `md2pdf` to use an existing system browser (e.g., Google Chrome or Chromium) in one of two ways:
+
+1. **CLI Flag**: `--browser /path/to/chrome`
+2. **Environment Variables**: `MD2PDF_BROWSER=/path/to/chrome` or `CHROME_PATH=/path/to/chrome`
+
+If no path is provided, `md2pdf` will attempt to automatically discover Google Chrome, Microsoft Edge, or Chromium on your host system before falling back to Playwright's browser download.
+
+### Exit Codes
+
+`md2pdf` uses standard exit codes to facilitate CI/CD integration:
+- `0`: Success (All files processed correctly).
+- `1`: Usage Error / Validation Error (e.g., missing files, invalid arguments, parsing failure).
+- `2`: Runtime Error (e.g., browser launch failed, configuration error).
+
 ## Node.js API Usage
 
 Embed the rendering engine in your Node.js applications:
