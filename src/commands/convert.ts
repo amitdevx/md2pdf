@@ -69,6 +69,17 @@ import { computeHash, checkCache } from '../core/cache.js';
       process.exit(EXIT.USAGE_ERROR);
     };
 
+    if (process.env.MD2PDF_BROWSER) {
+      if (!fs.existsSync(process.env.MD2PDF_BROWSER)) {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_INVALID_BROWSER', 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`);
+        } else {
+          console.error(pc.red(`\nError: Browser Not Found\nThe specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`));
+          process.exit(EXIT.USAGE_ERROR);
+        }
+      }
+    }
+
     const unsupported = ['stdin', 'stdout', 'quiet', 'input'];
     for (const flag of unsupported) {
       if ((cliFlags as any)[flag]) {
@@ -244,6 +255,18 @@ import { computeHash, checkCache } from '../core/cache.js';
         output = input.replace(/\.md$/i, '.pdf');
       }
       output = path.resolve(output);
+
+      const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
+      const isSensitive = sensitiveDirs.some(dir => output.startsWith(dir)) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(output);
+      if (isSensitive) {
+        if (options.jsonErrors) {
+          jsonOut({ success: false, error: { code: 'ERR_PATH_TRAVERSAL', title: 'Access Denied', reason: 'Cannot write output to protected system directory.' } });
+        } else {
+          console.error(pc.red(`\nError: Access Denied\nCannot write output to protected system directory.`));
+        }
+        process.exitCode = EXIT.USAGE_ERROR;
+        return;
+      }
 
       const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
       if (convertOptions.cache !== false) {
@@ -599,7 +622,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               (spinner as any).start();
             }
             const md2Error = detectBrowserError(err, { markdownFile: input });
-            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: md2Error.code, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: err.code || md2Error.code, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
           }
           
           if (!options.jsonErrors && isBatch) {
@@ -611,6 +634,9 @@ import { computeHash, checkCache } from '../core/cache.js';
 
       const workers = Array.from({ length: Math.min(concurrencyLimit, inputs.length) }, () => worker());
       await Promise.all(workers);
+
+      const anyErrors = results.some((r: any) => !r || r.isError);
+      if (anyErrors) hasErrors = true;
 
       if (options.jsonErrors) {
         jsonOut({
@@ -660,6 +686,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
 
     } catch (err: any) {
+      hasErrors = true;
       spinner.stop();
 
       const isMdError = err instanceof Md2PdfError || err?.name === 'Md2PdfError' || err?.code?.startsWith('ERR_');
@@ -680,12 +707,16 @@ import { computeHash, checkCache } from '../core/cache.js';
           if (options.debug && err.stack) {
             console.error(pc.dim(err.stack));
           }
-          process.exit(EXIT.USAGE_ERROR);
+          process.exitCode = EXIT.USAGE_ERROR;
         }
       }
     } finally {
       await cleanup();
-      process.exitCode = hasErrors ? EXIT.USAGE_ERROR : EXIT.OK;
+      if (hasErrors) {
+        process.exitCode = EXIT.USAGE_ERROR;
+      } else if (process.exitCode === undefined) {
+        process.exitCode = EXIT.OK;
+      }
     }
 
   }

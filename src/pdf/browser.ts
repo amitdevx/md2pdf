@@ -4,6 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+function getVersion() {
+  try {
+    return require('../../package.json').version;
+  } catch {
+    return '0.0.0';
+  }
+}
 
 function verifyChromiumEngine(executablePath: string): void {
   try {
@@ -200,7 +210,16 @@ export function getPlatformCandidates(): BrowserEntry[] {
 export function discoverBrowser(): { executablePath: string; name: string } | null {
   // CHROME_PATH / BROWSER_PATH env override
   const envPath = process.env.CHROME_PATH ?? process.env.BROWSER_PATH;
-  if (envPath && fs.existsSync(envPath)) return { executablePath: envPath, name: 'env override' };
+  if (envPath && fs.existsSync(envPath)) {
+    try {
+      const output = execSync(`"${envPath}" --version`, {
+        encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000
+      }).trim();
+      return { executablePath: envPath, name: output || 'env override' };
+    } catch {
+      return { executablePath: envPath, name: 'env override' };
+    }
+  }
 
   for (const candidate of getPlatformCandidates()) {
     if (candidate.path && fs.existsSync(candidate.path)) {
@@ -261,7 +280,7 @@ export async function getBrowser(): Promise<Browser> {
   if (found) {
     try {
       const browser = await chromium.launch({ ...launchOpts, executablePath: found.executablePath });
-      writeCache({ executablePath: found.executablePath, browserName: found.name, md2pdfVersion: process.env.npm_package_version ?? 'unknown' });
+      writeCache({ executablePath: found.executablePath, browserName: found.name, md2pdfVersion: getVersion() });
       return browser;
     } catch (e: any) {
       if (!e.message?.includes('Timeout') && !isMissingExecutableError(e)) {
@@ -275,7 +294,7 @@ export async function getBrowser(): Promise<Browser> {
   try {
     const browser = await chromium.launch(launchOpts);
     const exePath = chromium.executablePath();
-    if (exePath) writeCache({ executablePath: exePath, browserName: 'Playwright Chromium', md2pdfVersion: process.env.npm_package_version ?? 'unknown' });
+    if (exePath) writeCache({ executablePath: exePath, browserName: 'Playwright Chromium', md2pdfVersion: getVersion() });
     return browser;
   } catch (e) {
     if (!isMissingExecutableError(e)) throw e;

@@ -18,6 +18,9 @@ import path from 'node:path';
 import doctorCmd from './doctor.js';
 import initCmd from './init.js';
 import { runConvert } from '../commands/convert.js';
+import { renderCliError, jsonOut } from './formatter.js';
+import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8'));
 
@@ -25,20 +28,30 @@ const program = new Command();
 
 const isJsonErrors = process.argv.includes('--json-errors');
 program.configureOutput({
-  writeErr: (str) => {
+  writeErr: () => {
+    // We handle the error formatting in exitOverride instead to ensure boxing
     if (isJsonErrors) {
-      process.stdout.write(JSON.stringify({
-        success: false,
-        results: [{
-          input: null, output: null, error: str.trim(), code: 'ERR_INVALID_ARGUMENT'
-        }]
-      }, null, 2) + '\n');
-    } else {
-      process.stderr.write(str);
+      // Do nothing here, handled in exitOverride
     }
   }
 });
 program.showHelpAfterError('(run md2pdf --help for usage)');
+
+program.exitOverride((err) => {
+  if (isJsonErrors) {
+    jsonOut({
+      success: false,
+      results: [{
+        input: null, output: null, error: err.message, code: 'ERR_INVALID_ARGUMENT'
+      }]
+    });
+    process.exit(1);
+  } else {
+    // Use the boxed formatter for consistency
+    renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Argument', err.message), { jsonErrors: false } as any);
+    process.exit(1);
+  }
+});
 
 // Register subcommands
 program.addCommand(doctorCmd);

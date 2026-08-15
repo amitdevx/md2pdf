@@ -59,7 +59,13 @@ export default new Command('init')
       
       try {
         spinner = ora('Installing Chromium dependencies...').start();
-        execSync('npx playwright-core install chromium', { stdio: 'inherit' });
+        
+        const { createRequire } = await import('node:module');
+        const { execFileSync } = await import('node:child_process');
+        const require = createRequire(import.meta.url);
+        const pwCli = require.resolve('playwright-core/cli');
+
+        execFileSync(process.execPath, [pwCli, 'install', 'chromium'], { stdio: 'inherit' });
         
         if (process.platform === 'linux') {
           console.log(pc.cyan('\nInstalling required Linux system libraries...'));
@@ -74,12 +80,12 @@ export default new Command('init')
           if (!hasSudo) {
             console.warn(pc.yellow('[!] sudo not available - skipping system library install'));
             console.log(pc.dim('  If Playwright fails, install these manually as root:'));
-            console.log(pc.dim('  npx playwright-core install-deps chromium'));
+            console.log(pc.dim(`  ${process.execPath} ${pwCli} install-deps chromium`));
           } else {
             spinner.stop();
             console.log(pc.cyan('\n[i] Playwright requires system libraries to run Chromium headless.'));
             console.log(pc.cyan('    Requesting sudo access to install dependencies...'));
-            execSync('sudo npx playwright-core install-deps chromium', { stdio: 'inherit' });
+            execFileSync('sudo', [process.execPath, pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
             spinner.start('Finishing installation...');
           }
         }

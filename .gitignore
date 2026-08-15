@@ -13,6 +13,7 @@ test-outputs
 artifacts/
 tmp/
 .cache/
+scratch/
 *.tgz
 
 # Internal dev planning (not shipped)
@@ -56,3 +57,4 @@ test-browser.js
 serveo.txt
 stdout.json
 stderr.json
+scratch/
