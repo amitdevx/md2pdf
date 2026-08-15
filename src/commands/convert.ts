@@ -297,7 +297,6 @@ import { computeHash, checkCache } from '../core/cache.js';
       start: () => {}, stop: () => {}, succeed: () => {},
       warn: () => {}, fail: () => {}, info: () => {}, text: ''
     };
-
     const spinner: SpinnerLike = options.jsonErrors
       ? noopSpinner
       : ora(isBatch ? 'Starting batch conversion...' : 'Converting...').start() as unknown as SpinnerLike;
@@ -305,8 +304,17 @@ import { computeHash, checkCache } from '../core/cache.js';
     let globalBrowser: any;
     let globalMermaidContext: any;
     let globalMermaidPage: any;
+    let mermaidInitPromise: Promise<void> | null = null;
+    let globalBrowserPromise: Promise<any> | null = null;
 
     const cleanup = async () => {
+      if (mermaidInitPromise) {
+        await mermaidInitPromise.catch(() => {});
+      }
+      if (globalBrowserPromise) {
+        const b = await globalBrowserPromise.catch(() => null);
+        if (b) await b.close().catch(() => {});
+      }
       if (globalMermaidContext) {
         await globalMermaidContext.close().catch(() => {});
       }
@@ -332,9 +340,7 @@ import { computeHash, checkCache } from '../core/cache.js';
 
     try {
       const { getBrowser } = await import('../pdf/browser.js');
-      let mermaidInitPromise: Promise<void> | null = null;
       
-      let globalBrowserPromise: Promise<import('playwright-core').Browser> | null = null;
       let hasMermaidAnywhere = false;
       if (isBatch) {
         
@@ -633,9 +639,14 @@ import { computeHash, checkCache } from '../core/cache.js';
       };
 
       const workers = Array.from({ length: Math.min(concurrencyLimit, inputs.length) }, () => worker());
-      await Promise.all(workers);
+      const settledResults = await Promise.allSettled(workers);
 
-      const anyErrors = results.some((r: any) => !r || r.isError);
+      if (!isBatch) {
+        const rejected = settledResults.find(r => r.status === 'rejected');
+        if (rejected) throw rejected.reason;
+      }
+
+      const anyErrors = results.some((r: any) => !r || r.isError) || settledResults.some(r => r.status === 'rejected');
       if (anyErrors) hasErrors = true;
 
       if (options.jsonErrors) {
