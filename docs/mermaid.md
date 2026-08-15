@@ -118,3 +118,5 @@ Mermaid diagrams are rendered with `deviceScaleFactor: 2` (High-DPI) and injecte
 ## Version Parity (v10 vs v11)
 
 md2pdf includes `mermaid.min.js` v11 natively. If you previously used md2pdf versions utilizing Mermaid v10, you might notice some layout engine differences. Specifically, some structural charts (like `erDiagram` or `classDiagram`) may render slightly larger or with adjusted padding in v11. All core syntax remains 100% compatible, and diagrams will not overflow the page.
+
+Additionally, md2pdf actively intercepts and preprocesses Mermaid diagrams containing unescaped quote strings (`\"`) and empty parenthetical node groupings (`()`) to ensure 100% rendering parity with Obsidian's native exporter, safely circumventing fatal syntax errors commonly triggered by strict v11 parsing.

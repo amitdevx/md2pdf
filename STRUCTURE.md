@@ -3,6 +3,7 @@
 | Directory | Status | Purpose |
 |---|---|---|
 | `core/` | ✅ Active | Main `convert()` function |
+| `core/cache.ts` | ✅ Active | Incremental Rendering cache logic |
 | `cli/` | ✅ Active | CLI entry point + subcommands |
 | `commands/` | ✅ Active | CLI command handlers (extracted from cli/index.ts) |
 | `parser/` | ✅ Active | Markdown → AST → HTML pipeline |
