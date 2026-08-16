@@ -26,7 +26,8 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
         code: err.code,
       }]
     });
-    process.exit(EXIT.ENVIRONMENT_ERROR);
+    process.exitCode = EXIT.ENVIRONMENT_ERROR;
+    return;
   }
 
   const rec = getRecommendation(err);
@@ -68,5 +69,4 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
   if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
   
   process.exitCode = code;
-  process.exit(code);
 }

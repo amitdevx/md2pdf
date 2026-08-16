@@ -9,7 +9,9 @@ All notable changes to this project will be documented in this file.
 - **Restored Obsidian Mermaid Compatibility:** Reintroduced AST preprocessing steps that cleanly handle unescaped quotes (`\"`) and empty parentheses (`()`) in Mermaid v11, fixing severe syntax errors on Obsidian-exported `mindmap` and `graph` markdown nodes.
 - **Fixed Batch Execution Silent Failures:** Replaced standard `Promise.all` mapping in the worker queue with `Promise.allSettled` to elegantly catch unexpected application-level rejections (like filesystem panics) without swallowing the stack trace or crashing.
 - **Repaired Error Exit Codes (Single & Batch Mode):** Batch failures correctly force `process.exitCode = 1` rather than succeeding if intermediate errors occurred. Single file fatal errors correctly bubble to the global error formatter instead of failing silently.
-- **NPM Audit Vulnerability Patch:** Upgraded nested high-severity dependencies (`brace-expansion`, `js-yaml`, `nanoid`, `postcss`) resolving 4 major vulnerability vectors from upstream library chains.
+- **Fixed JSON Error Formatting:** Restructured the `renderCliError` logic to prevent `process.exit()` from bypassing browser cleanup protocols. Ensures filesystem errors (like `chmod 000`) correctly exit with code `2` instead of `0`.
+- **Fixed Batch JSON Error Codes:** Added strict fallback mappings to individual file results within batch failures so that unhandled internal error objects never resolve to `code: undefined`.
+- **NPM Audit Vulnerability Patch:** Upgraded nested high-severity dependencies (`brace-expansion`, `js-yaml`, `nanoid`, `postcss`, `esbuild`) resolving 5 major vulnerability vectors from upstream library chains.
 
 ## [0.8.5] - 2026-08-14
 

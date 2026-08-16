@@ -628,7 +628,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               (spinner as any).start();
             }
             const md2Error = detectBrowserError(err, { markdownFile: input });
-            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: err.code || md2Error.code, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: err?.code || md2Error?.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
           }
           
           if (!options.jsonErrors && isBatch) {
@@ -723,7 +723,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
     } finally {
       await cleanup();
-      if (hasErrors) {
+      if (hasErrors && (process.exitCode === undefined || process.exitCode === EXIT.OK)) {
         process.exitCode = EXIT.USAGE_ERROR;
       } else if (process.exitCode === undefined) {
         process.exitCode = EXIT.OK;
