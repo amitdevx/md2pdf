@@ -7,9 +7,16 @@ import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
+import { fileURLToPath } from 'node:url';
+
 function getVersion() {
   try {
-    return require('../../package.json').version;
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    let pkgPath = path.resolve(__dirname, '../../package.json');
+    if (!fs.existsSync(pkgPath)) {
+      pkgPath = path.resolve(__dirname, '../package.json');
+    }
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version;
   } catch {
     return '0.0.0';
   }
