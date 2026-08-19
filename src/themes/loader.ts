@@ -30,7 +30,14 @@ export async function loadTheme(themeNameOrPath?: string): Promise<Theme | null>
     // Treat as custom path
     const resolvedPath = path.resolve(process.cwd(), themeNameOrPath);
     if (!fs.existsSync(resolvedPath)) {
-      throw new Error(`Theme not found: ${themeNameOrPath}`);
+      let available: string[] = [];
+      try {
+        if (fs.existsSync(themesDir)) {
+          available = fs.readdirSync(themesDir).filter(f => fs.statSync(path.join(themesDir, f)).isDirectory());
+        }
+      } catch (e) {}
+      const validMsg = available.length > 0 ? `\nValid built-in themes are: ${available.join(', ')}` : '';
+      throw new Error(`Theme not found: ${themeNameOrPath}${validMsg}`);
     }
     
     if (fs.statSync(resolvedPath).isFile()) {
