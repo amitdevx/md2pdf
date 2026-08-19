@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import ora from 'ora';
 import pc from 'picocolors';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,18 +45,26 @@ export default new Command('doctor')
     };
 
     const cpus = os.cpus().length;
+    const cpuText = `${cpus} CPU${cpus === 1 ? '' : 's'}`;
     const ramGB = Math.round(os.totalmem() / 1024 / 1024 / 1024);
 
     const checks = [
       { name: `Node.js (${results.node})`, status: true },
       { name: `md2pdf (${results.md2pdf})`, status: true },
       { name: `Playwright (${results.playwright})`, status: true },
-      { name: `Hardware (${cpus} CPUs, ${ramGB}GB RAM)`, status: true },
+      { name: `Hardware (${cpuText}, ${ramGB}GB RAM)`, status: true },
     ];
 
     let browser: import('playwright-core').Browser | undefined;
     let page: import('playwright-core').Page | undefined;
     let mdError: Md2PdfError | null = null;
+    
+    let spinner: any = null;
+    if (!options.json) {
+      console.log(pc.bold('\n[i] md2pdf System Health Check\n'));
+      checks.forEach(check => console.log(`  ${pc.green('✔')} ${check.name}`));
+      spinner = ora('Discovering browser...').start();
+    }
 
     try {
       const { getBrowser, discoverBrowser, readCache } = await import('../pdf/browser.js');
@@ -74,27 +83,53 @@ export default new Command('doctor')
         }
       }
 
+      if (spinner) {
+        spinner.succeed(checks[checks.length - 1].name);
+        spinner = ora('Launching browser...').start();
+      }
+
       browser = await getBrowser();
       results.checks.browserInstalled = true;
       checks.push({ name: `Compatible browser found and launched`, status: true });
       results.checks.browserLaunch = true;
+      
+      if (spinner) {
+        spinner.succeed('Compatible browser found and launched');
+        spinner = ora('Rendering HTML...').start();
+      }
 
       page = await browser.newPage();
       await page.setContent('<h1>Test</h1>');
       results.checks.htmlRender = true;
       checks.push({ name: 'HTML render', status: true });
 
+      if (spinner) {
+        spinner.succeed('HTML rendered successfully');
+        spinner = ora('Generating PDF...').start();
+      }
+
       const pdfBuf = await page.pdf({ format: 'A4' });
       results.checks.pdfGenerate = true;
       checks.push({ name: 'PDF generate', status: true });
 
-      const tmpPath = path.resolve(process.cwd(), '.md2pdf-doctor-test.pdf');
+      if (spinner) {
+        spinner.succeed('PDF generated successfully');
+        spinner = ora('Testing filesystem...').start();
+      }
+
+      const tmpPath = path.join(os.tmpdir(), '.md2pdf-doctor-test.pdf');
       fs.writeFileSync(tmpPath, pdfBuf);
       fs.unlinkSync(tmpPath);
       results.checks.filesystem = true;
-      checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)', status: true });
+      checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: true });
+      
+      if (spinner) {
+        spinner.succeed('Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
+      }
 
     } catch (e: unknown) {
+      if (spinner) spinner.fail('Test failed');
+      
       mdError = detectBrowserError(e, { platform: process.platform });
       results.errorContext = {
         code: mdError.code,
@@ -106,7 +141,7 @@ export default new Command('doctor')
       else if (!results.checks.browserLaunch) checks.push({ name: 'Browser launch', status: false });
       else if (!results.checks.htmlRender) checks.push({ name: 'HTML render', status: false });
       else if (!results.checks.pdfGenerate) checks.push({ name: 'PDF generate', status: false });
-      else if (!results.checks.filesystem) checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)', status: false });
+      else if (!results.checks.filesystem) checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: false });
     } finally {
       if (browser) await browser.close();
     }
@@ -116,28 +151,17 @@ export default new Command('doctor')
       process.exit(mdError ? EXIT.ENVIRONMENT_ERROR : EXIT.OK);
     }
 
-    console.log(pc.bold('\n[i] md2pdf System Health Check\n'));
-
-    checks.forEach(check => {
-      if (check.status) {
-        console.log(`  ${pc.green('✔')} ${check.name}`);
-      } else {
-        console.log(`  ${pc.red('✖')} ${pc.red(check.name)}`);
-      }
-    });
-
     if (mdError) {
       const rec = getRecommendation(mdError);
-      console.log('\n' + pc.dim('────────────────────────────────────────'));
-      console.log(pc.red(`Error: ${mdError.title}`));
-      console.log(mdError.reason);
+      console.log('\n  ' + pc.red(`✖  Error: ${mdError.title}`));
+      console.log(`     ${mdError.reason}`);
       
       if (rec) {
-        console.log(pc.yellow('\nRecommendation'));
-        console.log(rec.summary);
+        console.log(pc.yellow('\n     Recommendation:'));
+        console.log(`     ${rec.summary}`);
         if (rec.commands.length > 0) {
           console.log('');
-          rec.commands.forEach((cmd: string) => console.log(`  ${pc.cyan(cmd)}`));
+          rec.commands.forEach((cmd: string) => console.log(`       ${pc.cyan(cmd)}`));
         }
       }
       console.log(pc.dim('────────────────────────────────────────\n'));
