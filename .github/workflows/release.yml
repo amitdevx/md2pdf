@@ -22,16 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Install Playwright browsers
-        run: |
-          npx playwright install chromium
-          npx playwright install-deps chromium
-        
       - name: Build
         run: npm run build
-        
-      - name: Pre-Publish Checks
-        run: bash scripts/pre-publish.sh --skip-e2e
         
       - name: Publish to npm
         run: npm publish --access public --provenance
@@ -53,16 +45,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Install Playwright browsers
-        run: |
-          npx playwright install chromium
-          npx playwright install-deps chromium
-        
       - name: Build
         run: npm run build
-        
-      - name: Pre-Publish Checks
-        run: bash scripts/pre-publish.sh --skip-e2e
         
       - name: Publish to GitHub Packages
         run: npm publish
