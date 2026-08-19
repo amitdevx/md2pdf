@@ -32,36 +32,34 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
 
   const rec = getRecommendation(err);
   
-  console.error('\n' + pc.dim('────────────────────────────────────────'));
-  console.error(pc.red(`✖ ${err.title}`));
-  console.error(err.reason);
+  console.error('\n' + pc.red(`✖  Error: ${err.title}`));
+  console.error(`\n   ${err.reason}`);
   
   if (rec) {
-    console.error(pc.yellow('\nReason'));
-    console.error(rec.summary);
+    console.error(pc.yellow('\n   Reason:'));
+    console.error(`   ${rec.summary}`);
     
     if (rec.commands.length > 0) {
-      console.error(pc.green('\nRecommendation'));
-      rec.commands.forEach(cmd => console.error(`  ${cmd}`));
+      console.error(pc.green('\n   Recommendation:'));
+      rec.commands.forEach(cmd => console.error(`     ${cmd}`));
     }
   }
-
-  console.error(pc.cyan(`\nError Code: ${err.code}`));
   
   if (options.debug) {
-    console.error(pc.dim('\n--- DEBUG DIAGNOSTICS ---'));
-    console.error(pc.dim(`Node: ${process.version} (${process.arch})`));
-    console.error(pc.dim(`OS: ${process.platform}`));
-    console.error(pc.dim(`PLAYWRIGHT_BROWSERS_PATH: ${process.env.PLAYWRIGHT_BROWSERS_PATH || 'Not set'}`));
+    console.error(pc.dim('\n   --- DEBUG DIAGNOSTICS ---'));
+    console.error(pc.dim(`   Error Code: ${err.code}`));
+    console.error(pc.dim(`   Node: ${process.version} (${process.arch})`));
+    console.error(pc.dim(`   OS: ${process.platform}`));
+    console.error(pc.dim(`   PLAYWRIGHT_BROWSERS_PATH: ${process.env.PLAYWRIGHT_BROWSERS_PATH || 'Not set'}`));
     if (err.originalError && (err.originalError as Error).stack) {
-      console.error(pc.dim((err.originalError as Error).stack!));
+      console.error(pc.dim(`   ${(err.originalError as Error).stack!}`));
     }
-    console.error(pc.dim('-------------------------'));
+    console.error(pc.dim('   -------------------------'));
   } else if (!options.verbose) {
-    console.error(pc.dim('\nRun with --verbose or --debug for more information, or try `md2pdf doctor`'));
+    console.error(pc.dim('\n   Run with --verbose or --debug for more information.'));
   }
   
-  console.error(pc.dim('────────────────────────────────────────\n'));
+  console.error('');
 
   // Exit code mapping
   let code = EXIT.ENVIRONMENT_ERROR;
