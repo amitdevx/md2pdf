@@ -104,6 +104,12 @@ export default new Command('init')
 
     console.log(pc.green('\n[v] Your environment is fully set up and ready to generate PDFs!\n'));
     
+    if (!process.stdin.isTTY) {
+      console.log(pc.yellow('Non-interactive environment — skipping config prompt.'));
+      console.log(`Try running: ${pc.cyan('md2pdf input.md')}\n`);
+      process.exit(EXIT.OK);
+    }
+
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
