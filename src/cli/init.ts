@@ -106,7 +106,7 @@ export default new Command('init')
     
     if (!process.stdin.isTTY) {
       console.log(pc.yellow('Non-interactive environment — skipping config prompt.'));
-      console.log(`Try running: ${pc.cyan('md2pdf input.md')}\n`);
+      console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
       process.exit(EXIT.OK);
     }
 
@@ -133,7 +133,7 @@ export default new Command('init')
         console.log('');
       }
       rl.close();
-      console.log(`Try running: ${pc.cyan('md2pdf input.md')}\n`);
+      console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
       process.exit(EXIT.OK);
     });
   });
