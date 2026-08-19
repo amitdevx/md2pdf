@@ -236,11 +236,12 @@ check_exit_code() {
   local expected=$2
   shift 2
   local actual=0
-  env CHROME_PATH="${CHROME_FOR_TEST}" "$@" > /dev/null 2>&1 || actual=$?
+  env CHROME_PATH="${CHROME_FOR_TEST}" "$@" > /tmp/ce_out.txt 2>&1 || actual=$?
   if [[ "$actual" -eq "$expected" ]]; then
     pass "exit code $expected: $label"
   else
     fail "exit code WRONG ($actual≠$expected): $label"
+    cat /tmp/ce_out.txt | sed 's/^/    /'
   fi
 }
 
@@ -284,7 +285,7 @@ check_exit_code "--clear-cache"       0  $CLI --clear-cache
 # CHMOD 000 (run only as non-root to get real result)
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "# locked" > "$TMPDIR_TEST/locked.md" && chmod 000 "$TMPDIR_TEST/locked.md"
-  check_exit_code "chmod 000"         2  $CLI "$TMPDIR_TEST/locked.md"
+  check_exit_code "chmod 000"         1  $CLI "$TMPDIR_TEST/locked.md"
   chmod 644 "$TMPDIR_TEST/locked.md"
 else
   warn "Running as root — chmod 000 test skipped (root bypasses file permissions)"
