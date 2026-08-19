@@ -150,6 +150,9 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
 
       if (!path.extname(options.output)) {
+        if (!options.jsonErrors) {
+          console.warn(pc.yellow(`⚠ Output path has no .pdf extension — appending`));
+        }
         options.output += '.pdf';
         cliFlags.output = options.output;
       }
@@ -435,7 +438,9 @@ import { computeHash, checkCache } from '../core/cache.js';
             failedCount++;
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
+              (spinner as any).stop();
               console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
+              if (isBatch) (spinner as any).start();
               (spinner as any).start();
             }
             results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
@@ -448,6 +453,24 @@ import { computeHash, checkCache } from '../core/cache.js';
 
           const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
           
+          // PRE-FLIGHT SIZE CHECK
+          const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+          try {
+            const stats = fs.statSync(input);
+            if (stats.size > MAX_SIZE_BYTES) {
+              const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+              throw new Md2PdfError(
+                Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
+                'File Too Large',
+                `Input markdown exceeds maximum size of 5MB (${(stats.size / 1024 / 1024).toFixed(2)}MB).`,
+                { markdownFile: input }
+              );
+            }
+          } catch (err: any) {
+            if (err instanceof Error && err.name === 'Md2PdfError') throw err;
+            // otherwise let it fail downstream
+          }
+
           // PRE-RENDER CACHE CHECK
           const useCache = convertOptions.cache !== false;
           let fileHash = '';
@@ -468,7 +491,9 @@ import { computeHash, checkCache } from '../core/cache.js';
                   completedCount++;
                   spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
                   (spinner as any).stop();
+                  (spinner as any).stop();
                   console.log(pc.green(`✔ ${path.basename(output as string)} (cached)`));
+                  if (isBatch) (spinner as any).start();
                   (spinner as any).start();
                 } else if (!options.jsonErrors && !isBatch) {
                   spinner.succeed(pc.green(`${path.basename(output as string)} (cached)`));
@@ -501,7 +526,9 @@ import { computeHash, checkCache } from '../core/cache.js';
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
                 (spinner as any).stop();
+                (spinner as any).stop();
                 console.error(pc.red(`✖ ${path.basename(input)} - Browser launch failed: ${err.message}`));
+                if (isBatch) (spinner as any).start();
                 (spinner as any).start();
               }
               continue;
@@ -539,7 +566,7 @@ import { computeHash, checkCache } from '../core/cache.js';
 
             convertOptions.sharedBrowser = globalBrowser;
             if (globalMermaidPage) {
-              convertOptions.sharedMermaidPage = globalMermaidPage;
+              // convertOptions.sharedMermaidPage = globalMermaidPage;
             }
           }
 
@@ -624,7 +651,9 @@ import { computeHash, checkCache } from '../core/cache.js';
             
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
+              (spinner as any).stop();
               console.error(pc.red(`✖ ${msg}`));
+              if (isBatch) (spinner as any).start();
               (spinner as any).start();
             }
             const md2Error = detectBrowserError(err, { markdownFile: input });
