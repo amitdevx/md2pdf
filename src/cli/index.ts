@@ -38,6 +38,9 @@ program.configureOutput({
 program.showHelpAfterError('(run md2pdf --help for usage)');
 
 program.exitOverride((err) => {
+  if (err.code === 'commander.version' || err.code === 'commander.helpDisplayed') {
+    process.exit(0);
+  }
   if (isJsonErrors) {
     jsonOut({
       success: false,
@@ -83,10 +86,6 @@ program
     }
     return val;
   }, 'A4')
-  .option('--stdin', 'Unsupported option (future use)')
-  .option('--stdout', 'Unsupported option (future use)')
-  .option('--quiet', 'Unsupported option (future use)')
-  .option('--input <input>', 'Unsupported option (future use)')
   .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in, 0)', (val) => {
     if (!/^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/.test(val)) {
       throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0`);
