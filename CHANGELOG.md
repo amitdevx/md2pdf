@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.7] - 2026-08-19
+
+- Fix: Isolated Mermaid playwright contexts per-worker to prevent crashes
+- Fix: Doctor output now uses true spinners
+- Fix: Suppress internal commander errors from bleeding
+- Fix: Theme not found errors dynamically list correct themes
+- Fix: Init command no longer suggests missing files
+
+
 ## [0.8.6] - 2026-08-15
 
 ### Fixed

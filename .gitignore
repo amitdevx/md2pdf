@@ -58,3 +58,7 @@ serveo.txt
 stdout.json
 stderr.json
 scratch/
+test_*.js
+test_*.cjs
+fix-*.js
+*.local.ts
