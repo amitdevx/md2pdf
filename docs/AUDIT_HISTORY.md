@@ -92,3 +92,10 @@ Reference this when writing fixes — check if your fix is for a recurring patte
 4. **Always run `npm pack --dry-run` and verify `assets/mermaid.min.js` is in the output before publishing.**
 5. **Always pin `playwright-core` exactly (not `^` or `~`) and verify `md2pdf init` installs the same revision.**
 6. **Any file named `test_*.js`, `fix-*.js`, or `scratch*.js` in the repo root is a bug waiting to happen. Add these patterns to `.gitignore`.**
+
+### v0.8.7 Security Audit (Pre-Publish for v0.8.8)
+
+| Bug | Description | Severity | Status |
+|-----|-------------|----------|--------|
+| VULN-1 | Remote Code Execution via `gray-matter` JS engine in frontmatter (`---js`) | Critical | Fixed v0.8.8 |
+

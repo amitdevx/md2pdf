@@ -1,6 +1,6 @@
 {
   "name": "@amitdevx/md2pdf",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "description": "Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.",
   "type": "module",
   "main": "./dist/index.js",
@@ -110,7 +110,7 @@
     "jiti": "^2.7.0",
     "js-yaml": "^5.3.0",
     "katex": "^0.16.47",
-    "mermaid": "^11.16.1",
+    "mermaid": "11.16.1",
     "mime-types": "^3.0.2",
     "ora": "^5.4.1",
     "pdf-lib": "^1.17.1",
@@ -155,6 +155,7 @@
     "esbuild@0.21.5": true
   },
   "overrides": {
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "js-yaml": "^5.3.0"
   }
 }

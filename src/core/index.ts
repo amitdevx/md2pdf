@@ -101,7 +101,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   let frontmatter: any;
   let markdown: string;
   try {
-    const parsed = matter(rawMarkdown);
+    const parsed = matter(rawMarkdown, {
+      engines: {
+        js: () => {
+          throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.');
+        },
+      },
+    });
     frontmatter = parsed.data;
     markdown = parsed.content;
   } catch (error: any) {
