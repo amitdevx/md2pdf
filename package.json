@@ -155,7 +155,6 @@
     "esbuild@0.21.5": true
   },
   "overrides": {
-    "esbuild": "^0.28.2",
-    "js-yaml": "^5.3.0"
+    "esbuild": "^0.28.2"
   }
 }
