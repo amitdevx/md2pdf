@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.8.7] - 2026-08-19
+## [0.8.8] - 2026-08-19
 
 - Fix: Isolated Mermaid playwright contexts per-worker to prevent crashes
 - Fix: Doctor output now uses true spinners

@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { describe, it, expect } from 'vitest';
 import { convert } from '../../src/core/index.js';
 
@@ -9,8 +11,6 @@ describe('convert()', () => {
 });
 
   it('should block JavaScript frontmatter (---js) for security', async () => {
-    const fs = require('fs');
-    const path = require('path');
     const input2 = path.join(__dirname, 'evil2.md');
     fs.writeFileSync(input2, '---js\nconsole.log(1)\n---\n# content');
     

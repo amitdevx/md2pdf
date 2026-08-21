@@ -210,7 +210,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
       try {
         fs.accessSync(input, fs.constants.R_OK);
-      } catch (err: any) {
+      } catch {
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Cannot read file '${input}': Permission denied.`);
         } else {
@@ -250,7 +250,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             process.exit(2);
           }
         }
-      } catch (err) {
+      } catch {
         // ignore read errors here, they are caught later
       }
 
@@ -511,7 +511,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           let rawContent = '';
           try {
             rawContent = fs.readFileSync(input, 'utf-8');
-          } catch (err: any) {
+          } catch {
             const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
             throw new Md2PdfError(
               Md2PdfErrorCode.ERR_PERMISSION_DENIED,
