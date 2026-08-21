@@ -40,6 +40,12 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
       };
 
     case Md2PdfErrorCode.ERR_PERMISSION_DENIED:
+      if (error.context && error.context.markdownFile) {
+        return {
+          summary: 'The markdown file at this path is not readable by the current user.',
+          commands: [`chmod 644 ${error.context.markdownFile}`]
+        };
+      }
       return {
         summary: 'The browser executable lacks execution permissions, or the user running md2pdf does not have access.',
         commands: [

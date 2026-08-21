@@ -66,7 +66,11 @@ import { computeHash, checkCache } from '../core/cache.js';
         success: false,
         error: { code, title, reason }
       });
-      process.exit(EXIT.USAGE_ERROR);
+      let exitCode = EXIT.USAGE_ERROR;
+      if (code === 'ERR_PERMISSION_DENIED' || code === 'ERR_FILE_TOO_LARGE') {
+        exitCode = EXIT.ENVIRONMENT_ERROR;
+      }
+      process.exit(exitCode);
     };
 
     if (process.env.MD2PDF_BROWSER) {
@@ -206,9 +210,22 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
       try {
         fs.accessSync(input, fs.constants.R_OK);
-      } catch {
-        reportError(input, 'permission denied');
-        continue;
+      } catch (err: any) {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Cannot read file '${input}': Permission denied.`);
+        } else {
+          // Pre-load the error classes since we're in a hot path
+          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+          const { renderCliError } = await import('../cli/formatter.js');
+          const error = new Md2PdfError(
+            Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+            'Permission Denied',
+            `Cannot read file '${input}': Permission denied.`,
+            { markdownFile: input }
+          );
+          renderCliError(error, options as any);
+          process.exit(2);
+        }
       }
 
       let predictedOutput = options.output;
@@ -471,9 +488,14 @@ import { computeHash, checkCache } from '../core/cache.js';
           let rawContent = '';
           try {
             rawContent = fs.readFileSync(input, 'utf-8');
-          } catch {
-             // If we can't read the file, let convert() handle it or fail here
-             rawContent = '';
+          } catch (err: any) {
+            const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+            throw new Md2PdfError(
+              Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+              'Permission Denied',
+              `Cannot read file '${input}': Permission denied.`,
+              { markdownFile: input }
+            );
           }
 
           if (useCache && rawContent) {
