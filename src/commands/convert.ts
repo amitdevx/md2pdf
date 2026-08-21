@@ -67,7 +67,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         error: { code, title, reason }
       });
       let exitCode = EXIT.USAGE_ERROR;
-      if (code === 'ERR_PERMISSION_DENIED' || code === 'ERR_FILE_TOO_LARGE') {
+      if (code === 'ERR_PERMISSION_DENIED' || code === 'ERR_FILE_TOO_LARGE' || code === 'ERR_DOCUMENT_TOO_COMPLEX') {
         exitCode = EXIT.ENVIRONMENT_ERROR;
       }
       process.exit(exitCode);
@@ -226,6 +226,32 @@ import { computeHash, checkCache } from '../core/cache.js';
           renderCliError(error, options as any);
           process.exit(2);
         }
+      }
+
+      // PRE-FLIGHT COMPLEXITY CHECK (BUG-8)
+      try {
+        const rawContent = fs.readFileSync(input, 'utf-8');
+        const maxNestingDepth = Math.max(0, ...rawContent.split('\n').map(
+          line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
+        ));
+        if (maxNestingDepth > 200) {
+          if (options.jsonErrors) {
+            emitJsonErrorAndExit('ERR_DOCUMENT_TOO_COMPLEX', 'Document Too Complex', `The document contains blockquote nesting ${maxNestingDepth} levels deep. Maximum supported depth is 200.`);
+          } else {
+            const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+            const { renderCliError } = await import('../cli/formatter.js');
+            const error = new Md2PdfError(
+              Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX,
+              'Document Too Complex',
+              `The document contains blockquote nesting ${maxNestingDepth} levels deep. Maximum supported depth is 200.`,
+              { markdownFile: input }
+            );
+            renderCliError(error, options as any);
+            process.exit(2);
+          }
+        }
+      } catch (err) {
+        // ignore read errors here, they are caught later
       }
 
       let predictedOutput = options.output;
@@ -439,6 +465,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       const worker = async () => {
         while (queue.length > 0 && !isShuttingDown) {
           const { input, i } = queue.shift()!;
+          const fileStartTime = Date.now();
           
           let output = cliFlags.output;
           if (output) {
@@ -604,16 +631,17 @@ import { computeHash, checkCache } from '../core/cache.js';
           try {
             if (options.verbose && !options.jsonErrors) {
               (spinner as any).stop();
-              console.log(pc.dim(`\n[Verbose] Starting conversion pipeline for: ${input}`));
-              console.log(pc.dim(`[Verbose] Output target: ${output}`));
+              console.log(pc.dim(`\nℹ Starting conversion pipeline for: ${input}`));
+              console.log(pc.dim(`ℹ Output target: ${output}`));
               if (isBatch) (spinner as any).start();
             }
             
             const result = await convert(convertOptions as any);
+            result.renderTimeMs = Date.now() - fileStartTime;
             
             if (options.verbose && !options.jsonErrors) {
               (spinner as any).stop();
-              console.log(pc.dim(`[Verbose] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
+              console.log(pc.dim(`ℹ Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
               if (isBatch) (spinner as any).start();
             }
             
@@ -690,17 +718,23 @@ import { computeHash, checkCache } from '../core/cache.js';
         jsonOut({
           success: !hasErrors && (successfulCount > 0 || skippedExistingCount > 0 || skippedPublishCount > 0),
           ...(skippedExistingCount + skippedPublishCount > 0 ? { skipped: skippedExistingCount + skippedPublishCount } : {}),
-          results: results.map((r: any, index: number) => {
-            if (!r) return { input: inputs[index], error: { message: 'Process aborted before conversion', code: 'ERR_ABORTED' } };
-            return {
+          results: results.map((r, index) => {
+            const out = {
               input: inputs[index],
-              output: r.outputPath,
-              pages: r.pageCounts,
-              timeMs: r.renderTimeMs,
-              warnings: r.warnings,
-              ...(r.isError ? { error: { message: r.error, code: r.code } } : {}),
-              ...(r.isSkipped ? { skipped: true, skipReason: r.skipReason } : {})
-            };
+              output: r?.outputPath || '—',
+              status: r?.isError ? 'error' : (r?.isSkipped ? 'skipped' : 'success'),
+              pages: r?.pageCounts || 0,
+              timeMs: r?.renderTimeMs || 0,
+              warnings: r?.warnings || []
+            } as any;
+            if (r?.isError) {
+              out.code = r?.code || 'ERR_UNKNOWN';
+              out.error = r?.error;
+            }
+            if (r?.isSkipped) {
+              out.skipReason = r?.skipReason;
+            }
+            return out;
           })
         });
       } else {
