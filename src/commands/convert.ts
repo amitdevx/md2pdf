@@ -184,6 +184,18 @@ import { computeHash, checkCache } from '../core/cache.js';
         continue;
       }
       const stat = fs.statSync(input);
+      
+      const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+      if (stat.size > MAX_SIZE_BYTES) {
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_FILE_TOO_LARGE', 'File Too Large', `Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`);
+        } else {
+          console.error(pc.red(`✖  Error: File Too Large`));
+          console.error(`\n   Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`);
+          process.exit(2);
+        }
+      }
+
       if (stat.isDirectory()) {
         reportError(input, 'is a directory, not a file');
         continue;
@@ -453,24 +465,6 @@ import { computeHash, checkCache } from '../core/cache.js';
 
           const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
           
-          // PRE-FLIGHT SIZE CHECK
-          const MAX_SIZE_BYTES = 5 * 1024 * 1024;
-          try {
-            const stats = fs.statSync(input);
-            if (stats.size > MAX_SIZE_BYTES) {
-              const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-              throw new Md2PdfError(
-                Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
-                'File Too Large',
-                `Input markdown exceeds maximum size of 5MB (${(stats.size / 1024 / 1024).toFixed(2)}MB).`,
-                { markdownFile: input }
-              );
-            }
-          } catch (err: any) {
-            if (err instanceof Error && err.name === 'Md2PdfError') throw err;
-            // otherwise let it fail downstream
-          }
-
           // PRE-RENDER CACHE CHECK
           const useCache = convertOptions.cache !== false;
           let fileHash = '';
