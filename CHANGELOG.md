@@ -2,13 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.8.8] - 2026-08-19
+## [0.8.8] - 2026-08-21
 
-- Fix: Isolated Mermaid playwright contexts per-worker to prevent crashes
-- Fix: Doctor output now uses true spinners
-- Fix: Suppress internal commander errors from bleeding
-- Fix: Theme not found errors dynamically list correct themes
-- Fix: Init command no longer suggests missing files
+### Security
+- Disabled gray-matter JavaScript frontmatter engine to prevent remote code execution via `---js` blocks in untrusted markdown files (VULN-1)
+- Pinned mermaid to exact version 11.16.1 to guard against compromised upstream patch releases
+
+### Fixed
+- File larger than 5MB no longer hangs for 25 seconds before exiting; the size check now fires in the pre-flight loop before the browser starts (BUG-1)
+- chmod 000 on a markdown file now shows the correct reason and recommendation instead of blaming the Playwright browser cache (BUG-3)
+- bad yaml frontmatter now exits with code 1 (usage error) instead of code 2 (BUG-5)
+- Batch progress counter no longer shows 0/N for the entire run; it increments correctly after each file completes (BUG-6)
+- Duplicate spinner lines and duplicate skip messages for publish:false files are removed; exactly one message is emitted (BUG-4, BUG-7)
+- doc too complex error now fires before cache lookup, so a previously cached complex document no longer exits 0 on warm cache (BUG-8)
+- Batch --json-errors per-file code field is no longer the em-dash placeholder; errors carry the real error code (BUG-9)
+- Verbose output prefix changed from [Verbose] bracket style to the standard info symbol to match the rest of the CLI (BUG-10)
+- renderTimeMs in batch mode now measures wall-clock time from queue pickup to completion, including browser and Mermaid initialization (BUG-11)
+- pre-publish.sh chmod 000 gate updated to expect exit code 2 to match the corrected behaviour
 
 
 ## [0.8.6] - 2026-08-15
