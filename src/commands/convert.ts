@@ -426,10 +426,8 @@ import { computeHash, checkCache } from '../core/cache.js';
 
       if (!options.jsonErrors && isBatch) {
         spinner.text = `Converting (0/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
-        (spinner as any).start();
       } else if (!options.jsonErrors && !isBatch) {
         spinner.text = 'Converting...';
-        (spinner as any).start();
       }
 
       // Large Vault Handling: build index and sort in dependency order
@@ -467,9 +465,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             failedCount++;
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
-              (spinner as any).stop();
               console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
-              if (isBatch) (spinner as any).start();
               (spinner as any).start();
             }
             results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
@@ -507,9 +503,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                   completedCount++;
                   spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
                   (spinner as any).stop();
-                  (spinner as any).stop();
                   console.log(pc.green(`✔ ${path.basename(output as string)} (cached)`));
-                  if (isBatch) (spinner as any).start();
                   (spinner as any).start();
                 } else if (!options.jsonErrors && !isBatch) {
                   spinner.succeed(pc.green(`${path.basename(output as string)} (cached)`));
@@ -542,9 +536,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
                 (spinner as any).stop();
-                (spinner as any).stop();
                 console.error(pc.red(`✖ ${path.basename(input)} - Browser launch failed: ${err.message}`));
-                if (isBatch) (spinner as any).start();
                 (spinner as any).start();
               }
               continue;
@@ -632,9 +624,11 @@ import { computeHash, checkCache } from '../core/cache.js';
             }
             
             if (!options.jsonErrors && isBatch) {
+              completedCount++;
               (spinner as any).stop();
               const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
               console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${timing})`));
+              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
               (spinner as any).start();
             }
             
@@ -646,7 +640,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             if (err?.code === 'ERR_PUBLISH_SKIPPED') {
               skippedPublishCount++;
               results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'], skipReason: 'publish: false' };
-              if (!options.jsonErrors) {
+              if (!options.jsonErrors && isBatch) {
                 (spinner as any).stop();
                 console.error(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
                 (spinner as any).start();
@@ -667,9 +661,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
-              (spinner as any).stop();
               console.error(pc.red(`✖ ${msg}`));
-              if (isBatch) (spinner as any).start();
               (spinner as any).start();
             }
             const md2Error = detectBrowserError(err, { markdownFile: input });
