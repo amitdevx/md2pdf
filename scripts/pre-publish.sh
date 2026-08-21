@@ -285,7 +285,7 @@ check_exit_code "--clear-cache"       0  $CLI --clear-cache
 # CHMOD 000 (run only as non-root to get real result)
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "# locked" > "$TMPDIR_TEST/locked.md" && chmod 000 "$TMPDIR_TEST/locked.md"
-  check_exit_code "chmod 000"         1  $CLI "$TMPDIR_TEST/locked.md"
+  check_exit_code "chmod 000"         2  $CLI "$TMPDIR_TEST/locked.md"
   chmod 644 "$TMPDIR_TEST/locked.md"
 else
   warn "Running as root — chmod 000 test skipped (root bypasses file permissions)"
