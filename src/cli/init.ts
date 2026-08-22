@@ -10,7 +10,7 @@ import { EXIT } from './formatter.js';
 export default new Command('init')
   .description('Interactive guided setup for new environments')
   .action(async () => {
-    console.log(pc.bold('\n[i] md2pdf Environment Setup\n'));
+    console.log(pc.bold('\nℹ  md2pdf Environment Setup\n'));
     
     let spinner = ora('Checking Node environment...').start();
     spinner.succeed(`Node.js ${process.version}`);
@@ -83,7 +83,7 @@ export default new Command('init')
             console.log(pc.dim(`  ${process.execPath} ${pwCli} install-deps chromium`));
           } else {
             spinner.stop();
-            console.log(pc.cyan('\n[i] Playwright requires system libraries to run Chromium headless.'));
+            console.log(pc.cyan('\nℹ  Playwright requires system libraries to run Chromium headless.'));
             console.log(pc.cyan('    Requesting sudo access to install dependencies...'));
             execFileSync('sudo', [process.execPath, pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
             spinner.start('Finishing installation...');
@@ -102,7 +102,7 @@ export default new Command('init')
       }
     }
 
-    console.log(pc.green('\n[v] Your environment is fully set up and ready to generate PDFs!\n'));
+    console.log(pc.green('\n✔  Your environment is fully set up and ready to generate PDFs!\n'));
     
     if (!process.stdin.isTTY) {
       console.log(pc.yellow('Non-interactive environment — skipping config prompt.'));
@@ -127,7 +127,7 @@ export default new Command('init')
             paper: "A4",
             toc: false
           }, null, 2));
-          console.log(pc.green('\n[v] Created .md2pdf.json\n'));
+          console.log(pc.green('\n✔  Created .md2pdf.json\n'));
         }
       } else {
         console.log('');

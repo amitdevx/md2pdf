@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.9] - 2026-08-22
+
+### Fixed
+- File >5MB no longer hangs; the size check now correctly exits before the browser starts for single-file mode — missing continue caused the file to enter the pipeline after the check fired (BUG-1)
+- Batch progress counter no longer overflows (e.g. 5/3); completedCount++ was called twice per file — once in the success path and again unconditionally at the bottom of the loop (BUG-6 regression)
+- doc too complex now exits 2 without --json-errors; process.exit was being called inside a try/catch that silently swallowed it (BUG-8)
+- Path traversal error is now rendered through the shared renderCliError formatter with correct box, error code, and run-with-verbose hint (BUG-NEW-3)
+- Browser not found error is now rendered through renderCliError for consistent output (BUG-NEW-3)
+- publish:false in single-file mode no longer shows - Converting... before the skip message; frontmatter is read before the spinner starts (BUG-NEW-4)
+- Gray-matter ---js RCE block now shows the correct recommendation (Use YAML frontmatter) instead of the generic publish:true hint (BUG-NEW-7)
+- md2pdf init now uses standard ℹ and ✔ symbols instead of home-grown [i] and [v] brackets (BUG-NEW-6)
+
 ## [0.8.8] - 2026-08-21
 
 ### Security

@@ -68,6 +68,15 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
       };
 
     case Md2PdfErrorCode.ERR_CONFIG_ERROR:
+      // Specific recommendation for the ---js engine disabled security error
+      if (error.reason?.includes('---js') || error.reason?.includes('JavaScript frontmatter')) {
+        return {
+          summary: 'JavaScript frontmatter is disabled for security.',
+          commands: [
+            "Use YAML frontmatter: replace '---js' with '---' at the top of your file."
+          ]
+        };
+      }
       return {
         summary: 'A configuration setting is preventing the conversion.',
         commands: [

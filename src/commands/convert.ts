@@ -78,7 +78,8 @@ import { computeHash, checkCache } from '../core/cache.js';
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_INVALID_BROWSER', 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`);
         } else {
-          console.error(pc.red(`\nError: Browser Not Found\nThe specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`));
+          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_MISSING, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options as any);
           process.exit(EXIT.USAGE_ERROR);
         }
       }
@@ -194,8 +195,8 @@ import { computeHash, checkCache } from '../core/cache.js';
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_FILE_TOO_LARGE', 'File Too Large', `Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`);
         } else {
-          console.error(pc.red(`✖  Error: File Too Large`));
-          console.error(`\n   Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`);
+          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_FILE_TOO_LARGE, 'File Too Large', `Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`), options as any);
           process.exit(2);
         }
       }
@@ -214,9 +215,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Cannot read file '${input}': Permission denied.`);
         } else {
-          // Pre-load the error classes since we're in a hot path
           const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-          const { renderCliError } = await import('../cli/formatter.js');
           const error = new Md2PdfError(
             Md2PdfErrorCode.ERR_PERMISSION_DENIED,
             'Permission Denied',
@@ -228,30 +227,27 @@ import { computeHash, checkCache } from '../core/cache.js';
         }
       }
 
-      // PRE-FLIGHT COMPLEXITY CHECK (BUG-8)
+      // PRE-FLIGHT COMPLEXITY CHECK — must NOT be inside a try/catch that swallows process.exit
+      let complexityViolation = false;
+      let complexityDepth = 0;
       try {
         const rawContent = fs.readFileSync(input, 'utf-8');
-        const maxNestingDepth = Math.max(0, ...rawContent.split('\n').map(
+        complexityDepth = Math.max(0, ...rawContent.split('\n').map(
           line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
         ));
-        if (maxNestingDepth > 200) {
-          if (options.jsonErrors) {
-            emitJsonErrorAndExit('ERR_DOCUMENT_TOO_COMPLEX', 'Document Too Complex', `The document contains blockquote nesting ${maxNestingDepth} levels deep. Maximum supported depth is 200.`);
-          } else {
-            const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-            const { renderCliError } = await import('../cli/formatter.js');
-            const error = new Md2PdfError(
-              Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX,
-              'Document Too Complex',
-              `The document contains blockquote nesting ${maxNestingDepth} levels deep. Maximum supported depth is 200.`,
-              { markdownFile: input }
-            );
-            renderCliError(error, options as any);
-            process.exit(2);
-          }
-        }
+        if (complexityDepth > 200) complexityViolation = true;
       } catch {
-        // ignore read errors here, they are caught later
+        // read errors are handled later in the pipeline
+      }
+      if (complexityViolation) {
+        const msg = `The document contains blockquote nesting ${complexityDepth} levels deep. Maximum supported depth is 200.`;
+        if (options.jsonErrors) {
+          emitJsonErrorAndExit('ERR_DOCUMENT_TOO_COMPLEX', 'Document Too Complex', msg);
+        } else {
+          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX, 'Document Too Complex', msg), options as any);
+          process.exit(2);
+        }
       }
 
       let predictedOutput = options.output;
@@ -319,10 +315,12 @@ import { computeHash, checkCache } from '../core/cache.js';
       if (isSensitive) {
         if (options.jsonErrors) {
           jsonOut({ success: false, error: { code: 'ERR_PATH_TRAVERSAL', title: 'Access Denied', reason: 'Cannot write output to protected system directory.' } });
+          process.exitCode = EXIT.USAGE_ERROR;
         } else {
-          console.error(pc.red(`\nError: Access Denied\nCannot write output to protected system directory.`));
+          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_PATH_TRAVERSAL, 'Access Denied', 'Cannot write output to protected system directory.'), options as any);
+          process.exitCode = EXIT.USAGE_ERROR;
         }
-        process.exitCode = EXIT.USAGE_ERROR;
         return;
       }
 
@@ -348,6 +346,23 @@ import { computeHash, checkCache } from '../core/cache.js';
         } catch {
           // Silent fallback to full render path if fast cache checks fail
         }
+      }
+    }
+
+    // BUG-NEW-4: For single-file mode, check publish:false BEFORE starting the spinner
+    // so "Converting..." never appears for files that will be skipped immediately.
+    if (!isBatch && inputs.length === 1 && !options.jsonErrors) {
+      try {
+        const rawContent = fs.readFileSync(inputs[0], 'utf-8');
+        const matter = (await import('gray-matter')).default;
+        const parsed = matter(rawContent, { engines: { js: () => { throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.'); } } });
+        if (parsed.data?.publish === false) {
+          console.info(pc.dim(`ℹ Skipped ${path.basename(inputs[0])} (publish: false)`));
+          process.exitCode = EXIT.OK;
+          return;
+        }
+      } catch {
+        // If we can't read frontmatter here, let the pipeline handle it
       }
     }
 
@@ -694,11 +709,10 @@ import { computeHash, checkCache } from '../core/cache.js';
             }
             const md2Error = detectBrowserError(err, { markdownFile: input });
             results[i] = { isError: true, error: rawMsg.split('\n')[0], code: err?.code || md2Error?.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-          }
-          
-          if (!options.jsonErrors && isBatch) {
-            completedCount++;
-            spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+            if (!options.jsonErrors && isBatch) {
+              completedCount++;
+              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+            }
           }
         }
       };
