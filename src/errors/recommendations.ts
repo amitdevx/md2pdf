@@ -67,6 +67,7 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
         ]
       };
 
+    
     case Md2PdfErrorCode.ERR_CONFIG_ERROR:
       // Specific recommendation for the ---js engine disabled security error
       if (error.reason?.includes('---js') || error.reason?.includes('JavaScript frontmatter')) {
@@ -77,10 +78,29 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
           ]
         };
       }
+      
+      if (error.reason?.includes('Invalid frontmatter YAML')) {
+        return {
+          summary: 'Your markdown file has a syntax error in its frontmatter.',
+          commands: [
+            "Check for unclosed brackets, missing quotes, or invalid YAML indentation."
+          ]
+        };
+      }
+      
+      if (error.title?.includes('publish: false')) {
+        return {
+          summary: 'A configuration setting is preventing the conversion.',
+          commands: [
+            'Remove or set `publish: true` in your frontmatter block at the top of the markdown file.'
+          ]
+        };
+      }
+
       return {
-        summary: 'A configuration setting is preventing the conversion.',
+        summary: 'Your configuration file (.md2pdf.json) contains invalid JSON or unsupported options.',
         commands: [
-          'Remove or set `publish: true` in your frontmatter block at the top of the markdown file.'
+          'Run `md2pdf --init` to generate a fresh configuration file.'
         ]
       };
 

@@ -28,7 +28,7 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
     });
     let code = EXIT.ENVIRONMENT_ERROR;
     if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
-    if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
+    if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT || err.code === Md2PdfErrorCode.ERR_INVALID_THEME) code = EXIT.USAGE_ERROR;
     
     process.exitCode = code;
     return;
@@ -59,16 +59,21 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
       console.error(pc.dim(`   ${(err.originalError as Error).stack!}`));
     }
     console.error(pc.dim('   -------------------------'));
+  
   } else if (!options.verbose) {
-    console.error(pc.dim('\n   Run with --verbose or --debug for more information.'));
+    const hasUsefulDebug = err.originalError || err.code === Md2PdfErrorCode.ERR_UNKNOWN || err.code === Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED || err.code === Md2PdfErrorCode.ERR_MISSING_DEPENDENCIES;
+    if (hasUsefulDebug) {
+      console.error(pc.dim('\n   Run with --verbose or --debug for more information.'));
+    }
   }
+
   
   console.error('');
 
   // Exit code mapping
   let code = EXIT.ENVIRONMENT_ERROR;
   if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
-  if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
+  if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT || err.code === Md2PdfErrorCode.ERR_INVALID_THEME) code = EXIT.USAGE_ERROR;
   
   process.exitCode = code;
 }
