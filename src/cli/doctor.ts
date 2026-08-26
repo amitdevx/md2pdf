@@ -74,7 +74,7 @@ export default new Command('doctor')
       }
     }
 
-    const oraOptions = { prefixText: '  ' };
+    const oraOptions = { prefixText: ' ' };
     let spinner: any = null;
     if (!options.json) {
       console.log(pc.bold('\nℹ  md2pdf System Health Check\n'));

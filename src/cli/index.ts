@@ -163,17 +163,32 @@ Exit Codes:
 `)
   .action(runConvert);
 
+
 // Early intercept for common mistakes
 const firstArg = process.argv[2];
-if (firstArg === 'help') {
+
+if (firstArg === '-v') {
+  process.argv[2] = '-V';
+} else if (firstArg === 'version' || firstArg === '--version') {
+  process.argv[2] = '-V';
+}
+
+if (firstArg && firstArg !== firstArg.toLowerCase()) {
+  const lower = firstArg.toLowerCase();
+  if (['help', 'init', 'doctor', 'clear-cache', 'list-themes'].includes(lower)) {
+    process.argv[2] = lower;
+  }
+}
+
+if (process.argv[2] === 'help') {
   program.outputHelp();
   process.exit(0);
 }
-if (firstArg === '--init') {
+if (process.argv[2] === '--init') {
   console.error("Unknown option '--init'. Did you mean: md2pdf init");
   process.exit(1);
 }
-if (firstArg === '--doctor') {
+if (process.argv[2] === '--doctor') {
   console.error("Unknown option '--doctor'. Did you mean: md2pdf doctor");
   process.exit(1);
 }

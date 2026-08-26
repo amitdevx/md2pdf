@@ -12,7 +12,7 @@ export default new Command('init')
   .action(async () => {
     console.log(pc.bold('\nℹ  md2pdf Environment Setup\n'));
     
-    const oraOptions = { prefixText: '  ' };
+    const oraOptions = { prefixText: ' ' };
     let spinner = ora({ text: 'Checking Node environment...', ...oraOptions }).start();
     spinner.succeed(`Node.js ${process.version}`);
 
