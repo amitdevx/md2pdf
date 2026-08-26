@@ -41,15 +41,9 @@ export default new Command('init')
         if (!isMissingExecutableError(err)) {
           spinner.fail('Browser is installed but crashed during launch');
           const { detectBrowserError } = await import('../errors/detect.js');
-          const { getRecommendation } = await import('../errors/recommendations.js');
           const mdError = detectBrowserError(err);
-          console.error(pc.red(`\nError: ${mdError.title}`));
-          console.error(mdError.reason);
-          const rec = getRecommendation(mdError);
-          if (rec) {
-            console.error(pc.yellow('\nRecommendation: ' + rec.summary));
-            rec.commands.forEach((c: string) => console.error(pc.cyan(`  ${c}`)));
-          }
+          const { renderCliError } = await import('./formatter.js');
+          renderCliError(mdError, { jsonErrors: false, verbose: false, debug: false } as any);
           process.exit(EXIT.ENVIRONMENT_ERROR);
         }
         throw new Error('missing');
@@ -123,15 +117,28 @@ export default new Command('init')
       output: process.stdout,
     });
 
-    rl.question(pc.cyan('Would you like to create a default .md2pdf.json config file here? (y/N) '), (ans) => {
+    rl.question(pc.cyan('Would you like to create a default .md2pdf.json config file here? (y/N) '), async (ans) => {
       if (ans.toLowerCase().startsWith('y')) {
-        fs.writeFileSync(configPath, JSON.stringify({
-          theme: "github",
-          margin: "1in",
-          paper: "A4",
-          toc: false
-        }, null, 2));
-        console.log('\n  ' + pc.green('✔') + ' Created .md2pdf.json\n');
+        try {
+          fs.writeFileSync(configPath, JSON.stringify({
+            theme: "github",
+            margin: "1in",
+            paper: "A4",
+            toc: false
+          }, null, 2));
+          console.log('\n  ' + pc.green('✔') + ' Created .md2pdf.json\n');
+        } catch (err: any) {
+          console.log('');
+          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+          const { renderCliError } = await import('./formatter.js');
+          renderCliError(new Md2PdfError(
+            Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+            'Filesystem Write Failed',
+            `Cannot write config to current directory: ${err.message}`,
+            { outputPath: process.cwd() },
+            err
+          ), { jsonErrors: false, verbose: false, debug: false } as any);
+        }
       } else {
         console.log('');
       }

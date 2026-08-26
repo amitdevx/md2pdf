@@ -6,7 +6,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { EXIT } from './formatter.js';
-import { Md2PdfError } from '../errors/index.js';
+import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import { detectBrowserError } from '../errors/detect.js';
 import { getRecommendation } from '../errors/recommendations.js';
 
@@ -62,7 +62,7 @@ export default new Command('doctor')
     
     const isRoot = process.getuid && process.getuid() === 0;
     if (isRoot) {
-      checks.push({ name: 'Warning: Running as root (sandboxing may fail)', status: true });
+      checks.push({ name: 'Warning: Running as root (Chromium requires --no-sandbox)', status: false });
     }
     
     const cacheDir = path.resolve(process.cwd(), '.md2pdf-cache');
@@ -158,14 +158,24 @@ export default new Command('doctor')
         spinner = ora({ text: 'Testing filesystem...', ...oraOptions }).start();
       }
 
-      const tmpPath = path.join(os.tmpdir(), '.md2pdf-doctor-test.pdf');
-      fs.writeFileSync(tmpPath, 'test-content');
-      fs.unlinkSync(tmpPath);
-      results.checks.filesystem = true;
-      checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: true });
-      
-      if (spinner) {
-        spinner.succeed('Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
+      const tmpPath = path.join(process.cwd(), '.md2pdf-doctor-test.pdf');
+      try {
+        fs.writeFileSync(tmpPath, 'test-content');
+        fs.unlinkSync(tmpPath);
+        results.checks.filesystem = true;
+        checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)', status: true });
+        
+        if (spinner) {
+          spinner.succeed('Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)');
+        }
+      } catch (err: any) {
+        throw new Md2PdfError(
+          Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+          'Filesystem Write Failed',
+          `Cannot write to current directory: ${err.message}`,
+          { outputPath: process.cwd() },
+          err
+        );
       }
 
 
