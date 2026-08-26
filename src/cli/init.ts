@@ -12,10 +12,11 @@ export default new Command('init')
   .action(async () => {
     console.log(pc.bold('\nℹ  md2pdf Environment Setup\n'));
     
-    let spinner = ora('Checking Node environment...').start();
+    const oraOptions = { prefixText: '  ' };
+    let spinner = ora({ text: 'Checking Node environment...', ...oraOptions }).start();
     spinner.succeed(`Node.js ${process.version}`);
 
-    spinner = ora('Checking Playwright installation...').start();
+    spinner = ora({ text: 'Checking Playwright installation...', ...oraOptions }).start();
     
     try {
       const { getBrowser, isMissingExecutableError } = await import('../pdf/browser.js');
@@ -58,7 +59,7 @@ export default new Command('init')
       console.log(pc.cyan('\nDownloading Chromium for md2pdf. This may take a minute...'));
       
       try {
-        spinner = ora('Installing Chromium dependencies...').start();
+        spinner = ora({ text: 'Installing Chromium dependencies...', ...oraOptions }).start();
         
         const { createRequire } = await import('node:module');
         const { execFileSync } = await import('node:child_process');
@@ -102,10 +103,17 @@ export default new Command('init')
       }
     }
 
-    console.log(pc.green('\n✔  Your environment is fully set up and ready to generate PDFs!\n'));
+    console.log('\n  ' + pc.green('✔') + ' Your environment is fully set up and ready to generate PDFs!\n');
     
     if (!process.stdin.isTTY) {
       console.log(pc.yellow('Non-interactive environment — skipping config prompt.'));
+      console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
+      process.exit(EXIT.OK);
+    }
+
+    
+    const configPath = path.resolve(process.cwd(), '.md2pdf.json');
+    if (fs.existsSync(configPath)) {
       console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
       process.exit(EXIT.OK);
     }
@@ -117,18 +125,13 @@ export default new Command('init')
 
     rl.question(pc.cyan('Would you like to create a default .md2pdf.json config file here? (y/N) '), (ans) => {
       if (ans.toLowerCase().startsWith('y')) {
-        const configPath = path.resolve(process.cwd(), '.md2pdf.json');
-        if (fs.existsSync(configPath)) {
-          console.warn(pc.yellow('\n[!] .md2pdf.json already exists in this directory.'));
-        } else {
-          fs.writeFileSync(configPath, JSON.stringify({
-            theme: "github",
-            margin: "1in",
-            paper: "A4",
-            toc: false
-          }, null, 2));
-          console.log(pc.green('\n✔  Created .md2pdf.json\n'));
-        }
+        fs.writeFileSync(configPath, JSON.stringify({
+          theme: "github",
+          margin: "1in",
+          paper: "A4",
+          toc: false
+        }, null, 2));
+        console.log('\n  ' + pc.green('✔') + ' Created .md2pdf.json\n');
       } else {
         console.log('');
       }
@@ -136,4 +139,5 @@ export default new Command('init')
       console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
       process.exit(EXIT.OK);
     });
+
   });

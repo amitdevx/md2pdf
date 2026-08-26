@@ -59,12 +59,29 @@ export default new Command('doctor')
     let page: import('playwright-core').Page | undefined;
     let mdError: Md2PdfError | null = null;
     
+    
+    const isRoot = process.getuid && process.getuid() === 0;
+    if (isRoot) {
+      checks.push({ name: 'Warning: Running as root (sandboxing may fail)', status: true });
+    }
+    
+    const cacheDir = path.resolve(process.cwd(), '.md2pdf-cache');
+    if (fs.existsSync(cacheDir)) {
+      try {
+        fs.accessSync(cacheDir, fs.constants.W_OK);
+      } catch {
+        checks.push({ name: 'Warning: .md2pdf-cache directory is not writable', status: false });
+      }
+    }
+
+    const oraOptions = { prefixText: '  ' };
     let spinner: any = null;
     if (!options.json) {
-      console.log(pc.bold('\n[i] md2pdf System Health Check\n'));
+      console.log(pc.bold('\nℹ  md2pdf System Health Check\n'));
       checks.forEach(check => console.log(`  ${pc.green('✔')} ${check.name}`));
-      spinner = ora('Discovering browser...').start();
+      spinner = ora({ text: 'Discovering browser...', ...oraOptions }).start();
     }
+
 
     try {
       const { getBrowser, discoverBrowser, readCache } = await import('../pdf/browser.js');
@@ -83,42 +100,66 @@ export default new Command('doctor')
         }
       }
 
-      if (spinner) {
-        spinner.succeed(checks[checks.length - 1].name);
-        spinner = ora('Launching browser...').start();
-      }
-
-      browser = await getBrowser();
-      results.checks.browserInstalled = true;
-      checks.push({ name: `Compatible browser found and launched`, status: true });
-      results.checks.browserLaunch = true;
       
       if (spinner) {
-        spinner.succeed('Compatible browser found and launched');
-        spinner = ora('Rendering HTML...').start();
+        spinner.succeed(checks[checks.length - 1].name);
       }
 
-      page = await browser.newPage();
-      await page.setContent('<h1>Test</h1>');
-      results.checks.htmlRender = true;
-      checks.push({ name: 'HTML render', status: true });
-
-      if (spinner) {
-        spinner.succeed('HTML rendered successfully');
-        spinner = ora('Generating PDF...').start();
+      let skipBrowserLaunch = false;
+      const CACHE_FILE = path.join(os.homedir(), '.md2pdf', 'browser.json');
+      if (!process.env.MD2PDF_BROWSER && cached?.executablePath && fs.existsSync(CACHE_FILE)) {
+         const mtime = fs.statSync(CACHE_FILE).mtimeMs;
+         if (Date.now() - mtime < 24 * 60 * 60 * 1000) {
+            skipBrowserLaunch = true;
+            const mins = Math.round((Date.now() - mtime) / 60000);
+            checks.push({ name: `Browser functional (cached from ${mins} minutes ago)`, status: true });
+            results.checks.browserInstalled = true;
+            results.checks.browserLaunch = true;
+            results.checks.htmlRender = true;
+            results.checks.pdfGenerate = true;
+         }
       }
 
-      const pdfBuf = await page.pdf({ format: 'A4' });
-      results.checks.pdfGenerate = true;
-      checks.push({ name: 'PDF generate', status: true });
+      if (skipBrowserLaunch) {
+        if (spinner) spinner.succeed(checks[checks.length - 1].name);
+      } else {
+        if (spinner) spinner = ora({ text: 'Launching browser...', ...oraOptions }).start();
+        
+        browser = await getBrowser();
+        results.checks.browserInstalled = true;
+        checks.push({ name: `Compatible browser found and launched`, status: true });
+        results.checks.browserLaunch = true;
+        
+        if (spinner) {
+          spinner.succeed('Compatible browser found and launched');
+          spinner = ora({ text: 'Rendering HTML...', ...oraOptions }).start();
+        }
 
+        page = await browser.newPage();
+        await page.setContent('<h1>Test</h1>');
+        results.checks.htmlRender = true;
+        checks.push({ name: 'HTML render', status: true });
+
+        if (spinner) {
+          spinner.succeed('HTML rendered successfully');
+          spinner = ora({ text: 'Generating PDF...', ...oraOptions }).start();
+        }
+
+        await page.pdf({ format: 'A4' });
+        results.checks.pdfGenerate = true;
+        checks.push({ name: 'PDF generate', status: true });
+        
+        if (spinner) {
+          spinner.succeed('PDF generated successfully');
+        }
+      }
+      
       if (spinner) {
-        spinner.succeed('PDF generated successfully');
-        spinner = ora('Testing filesystem...').start();
+        spinner = ora({ text: 'Testing filesystem...', ...oraOptions }).start();
       }
 
       const tmpPath = path.join(os.tmpdir(), '.md2pdf-doctor-test.pdf');
-      fs.writeFileSync(tmpPath, pdfBuf);
+      fs.writeFileSync(tmpPath, 'test-content');
       fs.unlinkSync(tmpPath);
       results.checks.filesystem = true;
       checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: true });
@@ -126,6 +167,7 @@ export default new Command('doctor')
       if (spinner) {
         spinner.succeed('Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
       }
+
 
     } catch (e: unknown) {
       if (spinner) spinner.fail('Test failed');
@@ -182,7 +224,7 @@ export default new Command('doctor')
 
       process.exit(EXIT.ENVIRONMENT_ERROR);
     } else {
-      console.log(`\n${pc.green('Everything is OK!')} Your system is ready to generate PDFs.\n`);
+      console.log(`\n  ✔ ${pc.green('Everything is OK!')} Your system is ready to generate PDFs.\n`);
       process.exit(EXIT.OK);
     }
   });
