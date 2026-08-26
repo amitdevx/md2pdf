@@ -742,8 +742,11 @@ import { computeHash, checkCache } from '../core/cache.js';
               warnings: r?.warnings || []
             } as any;
             if (r?.isError) {
-              out.code = r?.code || 'ERR_UNKNOWN';
-              out.error = r?.error;
+              out.error = {
+                code: r?.code || 'ERR_UNKNOWN',
+                reason: r?.error,
+                title: 'Conversion Failed'
+              };
             }
             if (r?.isSkipped) {
               out.skipReason = r?.skipReason;
