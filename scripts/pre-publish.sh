@@ -95,7 +95,7 @@ fi
 
 # 1.4 package.json version matches CHANGELOG top entry
 PKG_VERSION=$(node -e "console.log(require('./package.json').version)")
-CHANGELOG_VERSION=$(grep -m1 "^## \[" CHANGELOG.md | grep -oP '\d+\.\d+\.\d+' || echo "NOT_FOUND")
+CHANGELOG_VERSION=$(grep -m1 "^## \[" CHANGELOG.md | grep -oE '[0-9]+.[0-9]+.[0-9]+' || echo "NOT_FOUND")
 if [[ "$PKG_VERSION" == "$CHANGELOG_VERSION" ]]; then
   pass "package.json ($PKG_VERSION) matches CHANGELOG ($CHANGELOG_VERSION)"
 else
@@ -187,7 +187,7 @@ done
 PW_VERSION=$(node -e "console.log(require('./package.json').dependencies['playwright-core'])")
 info "playwright-core version: $PW_VERSION"
 # Warn if it's a loose range (^ or ~) since this caused B24
-if echo "$PW_VERSION" | grep -qP "^\^|^~"; then
+if echo "$PW_VERSION" | grep -qE "^\^|^~"; then
   warn "playwright-core uses loose semver ($PW_VERSION) — version mismatch risk (BUG: B24)"
 fi
 
@@ -236,7 +236,10 @@ check_exit_code() {
   local expected=$2
   shift 2
   local actual=0
-  env CHROME_PATH="${CHROME_FOR_TEST}" "$@" > /tmp/ce_out.txt 2>&1 || actual=$?
+  set +e
+  env CHROME_PATH="${CHROME_FOR_TEST:-}" "$@" > /tmp/ce_out.txt 2>&1
+  actual=$?
+  set -e
   if [[ "$actual" -eq "$expected" ]]; then
     pass "exit code $expected: $label"
   else
@@ -266,11 +269,24 @@ check_exit_code "same file"           1  $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDI
 check_exit_code "bad paper"           1  $CLI "$TMPDIR_TEST/basic.md" --paper A3
 check_exit_code "bad margin"          1  $CLI "$TMPDIR_TEST/basic.md" --margin 20
 check_exit_code "bad mermaid-theme"   1  $CLI "$TMPDIR_TEST/basic.md" --mermaid-theme notvalid
-check_exit_code "output is dir"       1  $CLI "$TMPDIR_TEST/basic.md" -o /tmp
-check_exit_code "output dir slash"    1  $CLI "$TMPDIR_TEST/basic.md" -o /tmp/
+check_exit_code "output is dir"       1  $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST"
+check_exit_code "output dir slash"    1  $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST"/
 check_exit_code "browser not found"   1  $CLI "$TMPDIR_TEST/basic.md" --browser /fake/browser
-check_exit_code "path traversal /etc" 1  $CLI "$TMPDIR_TEST/basic.md" -o /etc/out.pdf
-check_exit_code "path traversal /root" 1 $CLI "$TMPDIR_TEST/basic.md" -o /root/out.pdf
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+  info "Windows detected — skipping /etc traversal and chmod 000 tests (permissions operate differently)"
+else
+  check_exit_code "path traversal /etc"   1  $CLI tests/fixtures/basic.md -o /etc/out.pdf
+  check_exit_code "path traversal /root"  1  $CLI tests/fixtures/basic.md -o /root/out.pdf
+
+  # CHMOD 000 (run only as non-root to get real result)
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo "# locked" > "$TMPDIR_TEST/locked.md" && chmod 000 "$TMPDIR_TEST/locked.md"
+    check_exit_code "chmod 000"         2  $CLI "$TMPDIR_TEST/locked.md"
+    chmod 644 "$TMPDIR_TEST/locked.md"
+  else
+    warn "Running as root — chmod 000 test skipped (root bypasses file permissions)"
+  fi
+fi
 
 # RUNTIME ERRORS → must exit 2
 check_exit_code "file too large"      2  $CLI "$TMPDIR_TEST/big.md"
@@ -281,15 +297,6 @@ check_exit_code "publish false"       0  $CLI "$TMPDIR_TEST/publish-false.md"
 
 # UTILITY → must exit 0
 check_exit_code "clear-cache"         0  $CLI clear-cache
-
-# CHMOD 000 (run only as non-root to get real result)
-if [[ "$(id -u)" -ne 0 ]]; then
-  echo "# locked" > "$TMPDIR_TEST/locked.md" && chmod 000 "$TMPDIR_TEST/locked.md"
-  check_exit_code "chmod 000"         2  $CLI "$TMPDIR_TEST/locked.md"
-  chmod 644 "$TMPDIR_TEST/locked.md"
-else
-  warn "Running as root — chmod 000 test skipped (root bypasses file permissions)"
-fi
 
 # =============================================================================
 # GATE 6 — JSON-ERRORS CONTRACT
@@ -304,10 +311,10 @@ check_json() {
   local expect_code=$3
   shift 3
 
-  CHROME_PATH="${CHROME_FOR_TEST}" "$@" --json-errors > /tmp/je_gate.txt 2>/tmp/je_gate_err.txt || true
+  CHROME_PATH="${CHROME_FOR_TEST:-}" "$@" --json-errors > je_gate.txt 2>je_gate_err.txt || true
 
   local stderr_size
-  stderr_size=$(wc -c < /tmp/je_gate_err.txt)
+  stderr_size=$(wc -c < je_gate_err.txt)
   if [[ "$stderr_size" -gt 0 ]]; then
     fail "json-errors output on STDERR (should be stdout): $label"
     return
@@ -317,7 +324,7 @@ check_json() {
 import json, sys
 label, expect_success, expect_code = sys.argv[1], sys.argv[2], sys.argv[3]
 try:
-    raw = open('/tmp/je_gate.txt').read()
+    raw = open('je_gate.txt').read()
     d = json.loads(raw)
     success = str(d.get('success', '?')).lower()
     
@@ -345,19 +352,25 @@ try:
     print(f"  PASS: {label}")
 except json.JSONDecodeError as e:
     print(f"  FAIL (invalid JSON): {label} — {e}")
-    print(f"  Raw: {open('/tmp/je_gate.txt').read()[:200]}")
+    print(f"  Raw: {open('je_gate.txt').read()[:200]}")
     sys.exit(1)
 PYEOF
   if [[ $? -ne 0 ]]; then FAILURES+=("json-errors: $label"); fi
 }
 
 check_json "missing file"       "false"  "ERR_VALIDATION"         $CLI /nonexistent.md
-check_json "directory input"    "false"  "ERR_VALIDATION"         $CLI /tmp
-check_json "wrong extension"    "false"  "ERR_VALIDATION"         $CLI /tmp/test.txt
-check_json "output is dir"      "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o /tmp
-check_json "output dir slash"   "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o /tmp/
-check_json "path traversal"     "false"  "ERR_PATH_TRAVERSAL"     $CLI "$TMPDIR_TEST/basic.md" -o /etc/out.pdf
-check_json "path traversal warm" "false" "ERR_PATH_TRAVERSAL"     $CLI "$TMPDIR_TEST/basic.md" -o /etc/out.pdf
+check_json "directory input"    "false"  "ERR_VALIDATION"         $CLI "$TMPDIR_TEST"
+check_json "wrong extension"    "false"  "ERR_VALIDATION"         $CLI "$TMPDIR_TEST/test.txt"
+check_json "output is dir"      "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST"
+check_json "output dir slash"   "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST/"
+
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+  info "Windows detected — skipping /etc traversal JSON tests"
+else
+  check_json "path traversal"     "false"  "ERR_PATH_TRAVERSAL"     $CLI "$TMPDIR_TEST/basic.md" -o /etc/out.pdf
+  check_json "path traversal warm" "false" "ERR_PATH_TRAVERSAL"     $CLI "$TMPDIR_TEST/basic.md" -o /etc/out.pdf
+fi
+
 check_json "browser not found"  "false"  "ERR_INVALID_BROWSER"    $CLI "$TMPDIR_TEST/basic.md" --browser /fake
 check_json "file too large"     "false"  "ERR_FILE_TOO_LARGE"     $CLI "$TMPDIR_TEST/big.md"
 check_json "publish false"      "true"   "none"                   $CLI "$TMPDIR_TEST/publish-false.md"
@@ -428,10 +441,10 @@ pass "No banned file patterns in published package"
 if npm audit --omit=dev > /tmp/audit_out.txt 2>&1; then
   pass "npm audit: 0 vulnerabilities"
 else
-  HIGH_CRIT=$(grep -ciP "high|critical" /tmp/audit_out.txt 2>/dev/null || echo 0)
+  HIGH_CRIT=$(grep -ciE "high|critical" /tmp/audit_out.txt 2>/dev/null || echo 0)
   if [[ "$HIGH_CRIT" -gt 0 ]]; then
     fail "npm audit: high/critical vulnerabilities found"
-    grep -iP "high|critical" /tmp/audit_out.txt | head -5
+    grep -iE "high|critical" /tmp/audit_out.txt | head -5
   else
     warn "npm audit: low/moderate vulnerabilities (non-blocking)"
     tail -3 /tmp/audit_out.txt
