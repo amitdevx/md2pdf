@@ -95,7 +95,7 @@ fi
 
 # 1.4 package.json version matches CHANGELOG top entry
 PKG_VERSION=$(node -e "console.log(require('./package.json').version)")
-CHANGELOG_VERSION=$(grep -m1 "^## \[" CHANGELOG.md | grep -oE '[0-9]+.[0-9]+.[0-9]+' || echo "NOT_FOUND")
+CHANGELOG_VERSION=$(grep -m1 "^## \[" CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "NOT_FOUND")
 if [[ "$PKG_VERSION" == "$CHANGELOG_VERSION" ]]; then
   pass "package.json ($PKG_VERSION) matches CHANGELOG ($CHANGELOG_VERSION)"
 else
@@ -243,7 +243,7 @@ check_exit_code() {
   if [[ "$actual" -eq "$expected" ]]; then
     pass "exit code $expected: $label"
   else
-    fail "exit code WRONG ($actual≠$expected): $label"
+    fail "exit code WRONG ($actual != $expected): $label"
     cat /tmp/ce_out.txt | sed 's/^/    /'
   fi
 }
@@ -381,35 +381,35 @@ check_json "no args"            "false"  "ERR_NO_INPUT"           $CLI
 # =============================================================================
 section "GATE 7: Cache Ordering Invariants"
 
-if [[ -n "$CHROME_FOR_TEST" ]]; then
-  CACHE_TMP=$(mktemp -d)
+CACHE_TMP=$(mktemp -d)
 
-  # Warm the cache
-  CHROME_PATH="$CHROME_FOR_TEST" $CLI "$TMPDIR_TEST/basic.md" \
-    -o "$CACHE_TMP/warm.pdf" > /dev/null 2>&1 || true
+# Warm the cache
+CHROME_PATH="${CHROME_FOR_TEST:-}" $CLI "$TMPDIR_TEST/basic.md" \
+  -o "$CACHE_TMP/warm.pdf" > /dev/null 2>&1 || true
 
-  # Path traversal must fail even when file is cached (BUG-20 regression)
-  CHROME_PATH="$CHROME_FOR_TEST" $CLI "$TMPDIR_TEST/basic.md" \
+# Path traversal must fail even when file is cached (BUG-20 regression)
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+  info "Windows detected — skipping /etc traversal on warm cache (BUG-20 regression test)"
+else
+  CHROME_PATH="${CHROME_FOR_TEST:-}" $CLI "$TMPDIR_TEST/basic.md" \
     -o /etc/out.pdf > /dev/null 2>&1 || EXIT_TRAVERSAL=$?
   if [[ "${EXIT_TRAVERSAL:-0}" -ne 0 ]]; then
     pass "Path traversal blocked on warm cache (BUG-20 regression)"
   else
     fail "Path traversal NOT blocked on warm cache — BUG-20 regression"
   fi
-
-  # Invalid browser must fail even when file is cached (BUG-21 regression)
-  CHROME_PATH="$CHROME_FOR_TEST" $CLI "$TMPDIR_TEST/basic.md" \
-    --browser /nonexistent/browser -o "$CACHE_TMP/browser-test.pdf" > /dev/null 2>&1 || EXIT_BROWSER=$?
-  if [[ "${EXIT_BROWSER:-0}" -ne 0 ]]; then
-    pass "Invalid browser rejected on warm cache (BUG-21 regression)"
-  else
-    fail "Invalid browser NOT rejected on warm cache — BUG-21 regression"
-  fi
-
-  rm -rf "$CACHE_TMP"
-else
-  warn "No browser found — Gate 7 cache ordering tests skipped"
 fi
+
+# Invalid browser must fail even when file is cached (BUG-21 regression)
+CHROME_PATH="${CHROME_FOR_TEST:-}" $CLI "$TMPDIR_TEST/basic.md" \
+  --browser /nonexistent/browser -o "$CACHE_TMP/browser-test.pdf" > /dev/null 2>&1 || EXIT_BROWSER=$?
+if [[ "${EXIT_BROWSER:-0}" -ne 0 ]]; then
+  pass "Invalid browser rejected on warm cache (BUG-21 regression)"
+else
+  fail "Invalid browser NOT rejected on warm cache — BUG-21 regression"
+fi
+
+rm -rf "$CACHE_TMP"
 
 # =============================================================================
 # GATE 8 — NPM PACKAGE INTEGRITY
