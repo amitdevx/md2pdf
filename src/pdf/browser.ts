@@ -302,13 +302,32 @@ export async function getBrowser(): Promise<Browser> {
     return browser;
   } catch (e) {
     if (!isMissingExecutableError(e)) throw e;
-    throw new Error(
-      'No Chromium-based browser found.\n\n' +
-      'Options:\n' +
-      '  1. Install Chrome, Brave, Edge, Opera, Vivaldi, or Chromium\n' +
-      '  2. Run `md2pdf init` to download a bundled browser\n' +
-      '  3. Set CHROME_PATH=/path/to/browser in your environment\n' +
-      '  4. Use MD2PDF_BROWSER=/path/to/browser before the command'
-    );
+    
+    // ── 4. Auto-download fallback ──
+    try {
+      if (process.stdout.isTTY) {
+        console.log('\n  [md2pdf] No browser found. Auto-downloading Chromium (this may take a minute)...\n');
+      }
+      const { createRequire } = await import('node:module');
+      const { execFileSync } = await import('node:child_process');
+      const require = createRequire(import.meta.url);
+      const pwCli = require.resolve('playwright-core/cli');
+      
+      execFileSync(process.execPath, [pwCli, 'install', 'chromium'], { stdio: 'inherit' });
+      
+      const browser = await chromium.launch(launchOpts);
+      const exePath = chromium.executablePath();
+      if (exePath) writeCache({ executablePath: exePath, browserName: 'Playwright Chromium', md2pdfVersion: getVersion() });
+      return browser;
+    } catch (installErr) {
+      throw new Error(
+        'No Chromium-based browser found and auto-download failed.\n\n' +
+        'Options:\n' +
+        '  1. Install Chrome, Brave, Edge, Opera, Vivaldi, or Chromium\n' +
+        '  2. Run `md2pdf init` to try guided installation\n' +
+        '  3. Set CHROME_PATH=/path/to/browser in your environment\n' +
+        '  4. Use MD2PDF_BROWSER=/path/to/browser before the command'
+      );
+    }
   }
 }
