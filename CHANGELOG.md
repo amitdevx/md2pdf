@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.10] - 2026-08-26
+### Fixed
+- Fixed CLI subcommand and flag consistency (`--list-themes` -> `list-themes`).
+- Polished error formatting, standardizing on Title Case and boxed error messages.
+- Fixed `doctor` to cache browser launch tests for 24h.
+- Fixed `init` command prompt and spacing inconsistencies.
+- Intercepted early errors for `md2pdf help`, `--init`, and `--doctor` with better tips.
+- Fixed JSON output error codes for batch operations.
+
 ## [0.8.9] - 2026-08-22
 
 ### Fixed

@@ -59,6 +59,24 @@ program.exitOverride((err) => {
 // Register subcommands
 program.addCommand(doctorCmd);
 program.addCommand(initCmd);
+program.command('list-themes')
+  .description('List all available built-in themes')
+  .action(async () => {
+    const { getBuiltInThemes } = await import('../themes/loader.js');
+    const themes = getBuiltInThemes();
+    process.stdout.write(`Available built-in themes:\n${themes.map(t => `  - ${t}`).join('\n')}\n`);
+    process.exit(0);
+  });
+
+program.command('clear-cache')
+  .description('Clear the incremental rendering cache')
+  .action(async () => {
+    const { clearCache } = await import('../core/cache.js');
+    clearCache();
+    process.stdout.write(`Cache cleared.\n`);
+    process.exit(0);
+  });
+
 
 program
   .name('md2pdf')
@@ -114,7 +132,7 @@ program
   .option('--verbose', 'Enable verbose output')
   .option('--no-title', 'Disable automatic document title injection from frontmatter/filename')
   .option('--json-errors', 'Output errors in JSON format')
-  .option('--hide-tags', 'Hide inline Obsidian tags in PDF output')
+  .option('--no-tags', 'Hide inline Obsidian tags in PDF output')
   .option('--resolve-links', 'Attempt to visually indicate resolvable vs unresolvable wiki links')
   .option('--config <path>', 'Path to configuration file')
   .option('--profile <name>', 'Configuration profile to use')
@@ -127,9 +145,7 @@ program
     }
     return n;
   })
-  .option('--list-themes', 'List all available built-in themes and exit')
   .option('--no-cache', 'Disable incremental rendering cache')
-  .option('--clear-cache', 'Clear the incremental rendering cache and exit')
   .option('--concurrency <n>', 'Limit concurrent file processing workers', (val) => {
     const n = parseInt(val);
     if (isNaN(n) || n <= 0) {
@@ -137,58 +153,34 @@ program
     }
     return n;
   })
-  .option('--browser <path>', 'Path to custom Chromium/Chrome executable (or use MD2PDF_BROWSER/CHROME_PATH)')
+  .option('--browser <path>', 'Path to custom Chromium/Chrome executable (or use CHROME_PATH, BROWSER_PATH, or MD2PDF_BROWSER)')
   .option('-f, --force', 'Force overwrite of existing PDF files')
   .addHelpText('after', `
-  Output & Processing
-    -o, --output <output>
-    -f, --force
-    --browser <path>
-    --concurrency <n>
-    --no-cache
-    --clear-cache
-
-  Document Formatting
-    --theme <theme>
-    --paper <format>
-    --margin <margin>
-    --no-title
-
-  Features
-    --toc, --toc-depth <n>, --toc-title <title>
-    --header, --footer, --header-template, --footer-template
-    --no-math, --hr-page-break, --h1-new-page
-    --mermaid-theme, --mermaid-timeout
-
-  Obsidian Support
-    --vault-root <path>
-    --resolve-links
-    --attachment-folder, --max-attachment-size
-
 Exit Codes:
-  0: Success (OK)
-  1: Usage or validation error (e.g., missing file, invalid arguments)
-  2: Runtime error (e.g., missing browser, invalid configuration)
+  0: Success
+  1: Usage, validation, or configuration error (e.g., missing file, bad YAML)
+  2: Runtime error (e.g., missing browser, document too complex)
 `)
   .action(runConvert);
 
-if (process.argv.includes('--list-themes')) {
-  import('../themes/loader.js').then(({ getBuiltInThemes }) => {
-    const themes = getBuiltInThemes();
-    process.stdout.write(`Available built-in themes:\n${themes.map(t => `  - ${t}`).join('\n')}\n`);
-    process.exit(0);
-  });
-} else if (process.argv.includes('--clear-cache')) {
-  import('../core/cache.js').then(({ clearCache }) => {
-    clearCache();
-    process.stdout.write(`Cache cleared.\n`);
-    process.exit(0);
-  });
+// Early intercept for common mistakes
+const firstArg = process.argv[2];
+if (firstArg === 'help') {
+  program.outputHelp();
+  process.exit(0);
+}
+if (firstArg === '--init') {
+  console.error("Unknown option '--init'. Did you mean: md2pdf init");
+  process.exit(1);
+}
+if (firstArg === '--doctor') {
+  console.error("Unknown option '--doctor'. Did you mean: md2pdf doctor");
+  process.exit(1);
+}
+
+if (process.argv.length <= 2) {
+  program.outputHelp();
+  process.exit(1);
 } else {
-  if (process.argv.length <= 2) {
-    program.outputHelp();
-    process.exit(1);
-  } else {
-    program.parse(process.argv);
-  }
+  program.parse(process.argv);
 }

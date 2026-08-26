@@ -274,13 +274,13 @@ check_exit_code "path traversal /root" 1 $CLI "$TMPDIR_TEST/basic.md" -o /root/o
 
 # RUNTIME ERRORS → must exit 2
 check_exit_code "file too large"      2  $CLI "$TMPDIR_TEST/big.md"
-check_exit_code "invalid theme"       2  $CLI "$TMPDIR_TEST/basic.md" --theme notexists
+check_exit_code "invalid theme"       1  $CLI "$TMPDIR_TEST/basic.md" --theme notexists
 
 # SKIPS → must exit 0
 check_exit_code "publish false"       0  $CLI "$TMPDIR_TEST/publish-false.md"
 
 # UTILITY → must exit 0
-check_exit_code "--clear-cache"       0  $CLI --clear-cache
+check_exit_code "clear-cache"         0  $CLI clear-cache
 
 # CHMOD 000 (run only as non-root to get real result)
 if [[ "$(id -u)" -ne 0 ]]; then

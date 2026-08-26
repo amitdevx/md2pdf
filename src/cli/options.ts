@@ -18,7 +18,7 @@ export interface CliOptions {
   debug?: boolean;
   verbose?: boolean;
   jsonErrors?: boolean;
-  hideTags?: boolean;
+  tags?: boolean;
   resolveLinks?: boolean;
   vaultRoot?: string;
   attachmentFolder?: string;
