@@ -181,11 +181,11 @@ import { computeHash, checkCache } from '../core/cache.js';
 
     for (const input of inputs) {
       if (input === '-') {
-        reportError(input, 'stdin input is not supported');
+        reportError(input, 'Stdin Input Is Not Supported');
         continue;
       }
       if (!fs.existsSync(input)) {
-        reportError(input, 'file not found');
+        reportError(input, 'File Not Found');
         continue;
       }
       const stat = fs.statSync(input);
@@ -202,11 +202,11 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
 
       if (stat.isDirectory()) {
-        reportError(input, 'is a directory, not a file');
+        reportError(input, 'Is a Directory, Not a File');
         continue;
       }
       if (path.extname(input).toLowerCase() !== '.md') {
-        reportError(input, 'is not a markdown file');
+        reportError(input, 'Not a Markdown File');
         continue;
       }
       try {
@@ -252,7 +252,7 @@ import { computeHash, checkCache } from '../core/cache.js';
 
       let predictedOutput = options.output;
       if (predictedOutput && path.resolve(input) === path.resolve(predictedOutput)) {
-        reportError(input, 'input and output cannot be the same file');
+        reportError(input, 'Input and Output Cannot Be the Same File');
         continue;
       }
 
@@ -269,7 +269,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
 
       if (path.resolve(input) === path.resolve(predictedOutput)) {
-        reportError(input, 'input and output cannot be the same file');
+        reportError(input, 'Input and Output Cannot Be the Same File');
         continue;
       }
 

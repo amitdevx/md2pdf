@@ -106,7 +106,7 @@ export default new Command('doctor')
       }
 
       let skipBrowserLaunch = false;
-      const CACHE_FILE = path.join(os.homedir(), '.md2pdf', 'browser.json');
+      const CACHE_FILE = path.join(os.homedir(), '.md2pdf', 'browser-cache.json');
       if (!process.env.MD2PDF_BROWSER && cached?.executablePath && fs.existsSync(CACHE_FILE)) {
          const mtime = fs.statSync(CACHE_FILE).mtimeMs;
          if (Date.now() - mtime < 24 * 60 * 60 * 1000) {
