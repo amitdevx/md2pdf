@@ -36,3 +36,11 @@ You can anticipate an initial acknowledgment of your report within 48 hours of s
 1. **Investigation:** The maintainer will conduct a thorough investigation to validate and reproduce the reported vulnerability using the provided documentation.
 2. **Resolution & Timelines:** If the vulnerability is verified, we will commence remediation efforts and provide an estimated timeline for the deployment of a patch. If the vulnerability is declined or cannot be reproduced, a comprehensive technical rationale will be provided.
 3. **Public Disclosure:** Upon the successful development of a patch, a coordinated public disclosure will be executed simultaneously with the patch release, ensuring that the user base can update their deployments securely and promptly.
+
+## 4. Security Boundaries
+
+`md2pdf` is designed with the following strict security boundaries:
+
+- **No Remote Code Execution via Frontmatter**: Starting with v0.8.8, the JavaScript execution engine (`---js`) within `gray-matter` has been completely disabled. Untrusted markdown files cannot execute arbitrary JavaScript during the YAML parsing phase.
+- **Isolated Browser Context**: PDF rendering happens via Playwright in a heavily sandboxed headless Chromium instance. Local file access is strictly bound to relative assets unless explicitly allowed.
+- **Path Traversal Guards**: The CLI enforces strict path traversal mitigation for all batch-mode outputs to prevent malicious files from writing to system directories (e.g., `/etc/`).

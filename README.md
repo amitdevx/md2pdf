@@ -26,7 +26,7 @@ For detailed release notes, visit the [GitHub Releases](https://github.com/amitd
 *   **Batch Processing**: Convert multiple files concurrently (`md2pdf *.md`). Uses a persistent Chromium instance for faster processing.
 *   **Incremental Cache**: Caches output to speed up batch conversions. Skips unchanged files automatically. Control caching with `--no-cache` and `md2pdf clear-cache`.
 *   **Plugin API**: Extend functionality using `MarkdownPlugin`, `HtmlPlugin`, `RenderPlugin`, `ThemePlugin`, and `ExportPlugin`. See the [Plugin Documentation](docs/plugins.md).
-*   **Theming**: Includes 7 built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to apply.
+*   **Theming**: Includes 7 built-in themes (`default`, `github`, `obsidian-light`, `obsidian-dark`, `dracula`, `nord`, `academic`). Use `--theme <name>` to apply (view all with `md2pdf list-themes`).
 *   **Obsidian Parity**: Supports native callouts, wiki-links (`[[Link]]`), tags, embeds (`![[Image.png]]`), highlights (`==highlight==`), and YAML frontmatter.
 *   **Syntax Highlighting**: Uses Shiki for syntax highlighting across 20+ languages.
 *   **Mermaid Diagrams**: Native diagram rendering from code blocks. Safe for concurrent multi-file processing.

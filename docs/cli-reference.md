@@ -31,7 +31,7 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `--no-math` | boolean | false | Disable KaTeX |
 | `--mermaid-theme` | string | auto | Mermaid theme override |
 | `--resolve-links` | boolean | false | Resolve wiki link status |
-| `--no-tags` | boolean | false | Hide inline Obsidian tags in PDF output |
+| `--hide-tags` | boolean | false | Hide inline Obsidian tags in PDF output |
 | `--debug` | boolean | false | Debug diagnostics |
 | `--verbose` | boolean | false | Enable verbose execution logging |
 | `--json-errors` | boolean | false | Output errors in JSON format |
