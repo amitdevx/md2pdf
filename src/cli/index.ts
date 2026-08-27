@@ -132,7 +132,7 @@ program
   .option('--verbose', 'Enable verbose output')
   .option('--no-title', 'Disable automatic document title injection from frontmatter/filename')
   .option('--json-errors', 'Output errors in JSON format')
-  .option('--no-tags', 'Hide inline Obsidian tags in PDF output')
+  .option('--hide-tags', 'Hide inline Obsidian tags in PDF output')
   .option('--resolve-links', 'Attempt to visually indicate resolvable vs unresolvable wiki links')
   .option('--config <path>', 'Path to configuration file')
   .option('--profile <name>', 'Configuration profile to use')

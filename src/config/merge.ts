@@ -132,7 +132,7 @@ export function mergeConfig(
     },
     obsidian: {
       resolveLinks: merged.obsidian?.resolveWikiLinks ?? false,
-      showTags: cliFlags?.tags !== false,
+      showTags: !cliFlags?.hideTags,
       vaultRoot: merged.obsidian?.vaultRoot,
       attachmentFolder: merged.obsidian?.attachmentFolder,
       maxAttachmentSizeMb: merged.obsidian?.maxAttachmentSizeMb,
