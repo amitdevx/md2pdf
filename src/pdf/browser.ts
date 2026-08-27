@@ -319,6 +319,7 @@ export async function getBrowser(): Promise<Browser> {
       const exePath = chromium.executablePath();
       if (exePath) writeCache({ executablePath: exePath, browserName: 'Playwright Chromium', md2pdfVersion: getVersion() });
       return browser;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_installErr) {
       throw new Error(
         'No Chromium-based browser found and auto-download failed.\n\n' +
