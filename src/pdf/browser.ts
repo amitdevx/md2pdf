@@ -234,7 +234,8 @@ export function discoverBrowser(): { executablePath: string; name: string } | nu
 }
 
 // ─── Launch ───────────────────────────────────────────────────
-export function isMissingExecutableError(err: unknown): boolean {
+export function isMissingExecutableError(err: any): boolean {
+  if (err?.code === 'ERR_BROWSER_MISSING') return true;
   const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
   return msg.includes("executable doesn't exist") || msg.includes('not found');
 }
@@ -303,32 +304,11 @@ export async function getBrowser(): Promise<Browser> {
   } catch (e) {
     if (!isMissingExecutableError(e)) throw e;
     
-    // ── 4. Auto-download fallback ──
-    try {
-      if (process.stdout.isTTY) {
-        console.log('\n  [md2pdf] No browser found. Auto-downloading Chromium (this may take a minute)...\n');
-      }
-      const { createRequire } = await import('node:module');
-      const { execFileSync } = await import('node:child_process');
-      const require = createRequire(import.meta.url);
-      const pwCli = require.resolve('playwright-core/cli');
-      
-      execFileSync(process.execPath, [pwCli, 'install', 'chromium'], { stdio: 'inherit' });
-      
-      const browser = await chromium.launch(launchOpts);
-      const exePath = chromium.executablePath();
-      if (exePath) writeCache({ executablePath: exePath, browserName: 'Playwright Chromium', md2pdfVersion: getVersion() });
-      return browser;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_installErr) {
-      throw new Error(
-        'No Chromium-based browser found and auto-download failed.\n\n' +
-        'Options:\n' +
-        '  1. Install Chrome, Brave, Edge, Opera, Vivaldi, or Chromium\n' +
-        '  2. Run `md2pdf init` to try guided installation\n' +
-        '  3. Set CHROME_PATH=/path/to/browser in your environment\n' +
-        '  4. Use MD2PDF_BROWSER=/path/to/browser before the command'
-      );
-    }
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_BROWSER_MISSING,
+      'Browser Not Found',
+      'No Chromium-based browser found on the system.\n\nOptions:\n  1. Run `md2pdf init` to auto-install dependencies\n  2. Install Chrome, Edge, or Brave locally\n  3. Set CHROME_PATH=/path/to/browser'
+    );
   }
 }

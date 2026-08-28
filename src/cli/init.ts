@@ -50,6 +50,18 @@ export default new Command('init')
       }
     } catch {
       spinner.fail('Chromium browser missing');
+
+      const rlInit = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const ans = await new Promise<string>(resolve => {
+        rlInit.question('Would you like md2pdf to automatically download Playwright Chromium (~150MB)? (Y/n) ', resolve);
+      });
+      rlInit.close();
+
+      if (ans.toLowerCase().startsWith('n')) {
+        console.log(pc.yellow('\nSkipping browser installation. md2pdf requires a browser to convert documents.'));
+        process.exit(EXIT.ENVIRONMENT_ERROR);
+      }
+
       console.log(pc.cyan('\nDownloading Chromium for md2pdf. This may take a minute...'));
       
       try {
