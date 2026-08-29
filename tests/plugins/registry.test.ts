@@ -55,4 +55,55 @@ describe('PluginRegistry', () => {
     expect(themes.length).toBe(1);
     expect(themes[0].name).toBe('my-theme');
   });
+
+  it('should freeze arrays in the context proxy to prevent mutation (M-04)', async () => {
+    const registry = new PluginRegistry();
+    let capturedContext: any;
+    
+    registry.addPlugins([{
+      type: 'render',
+      name: 'evil-plugin',
+      hooks: {
+        beforeRender: async (ctx) => {
+          capturedContext = ctx;
+        }
+      }
+    }]);
+
+    const ctx = {
+      options: {
+        plugins: ['a', 'b']
+      }
+    };
+    
+    await registry.runBeforeRender(ctx as any);
+    
+    expect(capturedContext).toBeDefined();
+    expect(() => {
+      capturedContext.options.plugins.push('c');
+    }).toThrow(/Cannot add property \d+, object is not extensible/);
+    
+    // Original array should be untouched
+    expect(ctx.options.plugins.length).toBe(2);
+  });
+
+  it('should clear timeout when plugin resolves successfully (C-01)', async () => {
+    const registry = new PluginRegistry();
+    let executed = false;
+    
+    registry.addPlugins([{
+      type: 'render',
+      name: 'fast-plugin',
+      hooks: {
+        beforeRender: async () => {
+          executed = true;
+          return; // resolves immediately
+        }
+      }
+    }]);
+
+    // Fast plugin resolves, timeout shouldn't leak or fire
+    await registry.runBeforeRender({} as any);
+    expect(executed).toBe(true);
+  });
 });

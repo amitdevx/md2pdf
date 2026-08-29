@@ -44,11 +44,17 @@ jobs:
       run: npm run test
       shell: bash
 
+    - name: Install Playwright Browsers (for E2E)
+      run: npx playwright install chromium --with-deps
+      shell: bash
+
     - name: Test Global Install & E2E CLI
       run: |
         npm install -g .
         md2pdf --version
-        md2pdf doctor || true
+        md2pdf doctor
+        md2pdf README.md -o e2e_test_action.pdf
+        node -e "if (!require('node:fs').existsSync('e2e_test_action.pdf')) process.exit(1);"
       shell: bash
 
     - name: Pre-Publish Checks
