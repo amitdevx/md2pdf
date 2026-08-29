@@ -35,6 +35,8 @@ export interface ConvertOptions {
     h1NewPage?: boolean;
     hrAsPageBreak?: boolean;
   };
+  /** Internal optimization to prevent double-parsing of gray-matter in single-file mode */
+  __preparsed?: { data: any; content: string };
   mermaid?: {
     enabled?: boolean;
     theme?: 'default' | 'dark' | 'base' | 'neutral';

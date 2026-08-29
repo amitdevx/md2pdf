@@ -81,7 +81,7 @@ export default new Command('init')
           console.log(pc.cyan('\nInstalling required Linux system libraries...'));
           let hasSudo = false;
           try {
-            execSync('which sudo', { stdio: 'pipe' });
+            execSync('command -v sudo', { stdio: 'pipe' });
             hasSudo = true;
           } catch {
             // ignore error if sudo is missing

@@ -18,7 +18,11 @@ export function clearCache() {
 }
 
 function getCachePath(inputPath: string): string {
-  const pathHash = crypto.createHash('sha256').update(path.resolve(inputPath)).digest('hex');
+  let resolvedPath = path.resolve(inputPath);
+  if (process.platform === 'win32' || process.platform === 'darwin') {
+    resolvedPath = resolvedPath.toLowerCase();
+  }
+  const pathHash = crypto.createHash('sha256').update(resolvedPath).digest('hex');
   return path.join(CACHE_DIR, `${pathHash}.json`);
 }
 

@@ -120,6 +120,9 @@ export function getPlatformCandidates(): BrowserEntry[] {
       // User-scoped installs
       { name: 'Chrome',   path: `${home}/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` },
       { name: 'Brave',    path: `${home}/Applications/Brave Browser.app/Contents/MacOS/Brave Browser` },
+      // Homebrew
+      { name: 'Chromium', path: '/opt/homebrew/bin/chromium' },
+      { name: 'Chromium', path: '/usr/local/bin/chromium' },
     ];
   }
 

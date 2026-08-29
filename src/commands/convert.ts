@@ -361,6 +361,8 @@ import { computeHash, checkCache } from '../core/cache.js';
           process.exitCode = EXIT.OK;
           return;
         }
+        // Save the parsed matter so we don't parse it again in core
+        options = { ...options, __preparsed: { data: parsed.data, content: parsed.content } };
       } catch {
         // If we can't read frontmatter here, let the pipeline handle it
       }
@@ -404,12 +406,13 @@ import { computeHash, checkCache } from '../core/cache.js';
 
     let isShuttingDown = false;
     // Graceful Shutdown Handler for Ctrl+C
-    process.on('SIGINT', async () => {
+    const sigintHandler = async () => {
       isShuttingDown = true;
       console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
       await cleanup();
       process.exitCode = 130; return;
-    });
+    };
+    process.on('SIGINT', sigintHandler);
 
     try {
       const { getBrowser } = await import('../pdf/browser.js');
@@ -421,7 +424,12 @@ import { computeHash, checkCache } from '../core/cache.js';
         hasMermaidAnywhere = await Promise.all(inputs.map(input => {
           return new Promise<boolean>((resolve) => {
             const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
-            stream.once('data', (chunk) => { stream.destroy(); resolve((chunk as string).includes('```mermaid')); });
+            stream.on('data', (chunk) => { 
+              if ((chunk as string).includes('```mermaid')) {
+                stream.destroy(); 
+                resolve(true); 
+              }
+            });
             stream.once('error', () => resolve(false));
             stream.once('end', () => resolve(false));
           });
@@ -652,7 +660,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             
             if (!options.jsonErrors && result.warnings.length > 0) {
               (spinner as any).stop();
-              result.warnings.forEach(w => console.warn(pc.red(`⚠ ${w}`)));
+              result.warnings.forEach(w => console.warn(pc.yellow(`⚠ ${w}`)));
               if (isBatch) (spinner as any).start();
             }
             
@@ -689,7 +697,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             failedCount++;
             // Use only the first line of the error message to avoid showing stack traces
             const rawMsg = (err.reason || err.message || String(err));
-            const cleanMsg = rawMsg.split('\n')[0];
+            const cleanMsg = rawMsg.split('\n').slice(0, 3).join(' | ');
             const msg = `${path.basename(input)} - ${cleanMsg}`;
             
             if (!options.jsonErrors && isBatch) {
@@ -698,7 +706,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               (spinner as any).start();
             }
             const md2Error = detectBrowserError(err, { markdownFile: input });
-            results[i] = { isError: true, error: rawMsg.split('\n')[0], code: err?.code || md2Error?.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            results[i] = { isError: true, error: cleanMsg, code: err?.code || md2Error?.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
             if (!options.jsonErrors && isBatch) {
               completedCount++;
               spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
@@ -800,6 +808,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         }
       }
     } finally {
+      process.removeListener('SIGINT', sigintHandler);
       await cleanup();
       if (hasErrors && (process.exitCode === undefined || process.exitCode === EXIT.OK)) {
         process.exitCode = EXIT.USAGE_ERROR;

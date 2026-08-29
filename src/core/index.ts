@@ -101,15 +101,20 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   let frontmatter: any;
   let markdown: string;
   try {
-    const parsed = matter(rawMarkdown, {
-      engines: {
-        js: () => {
-          throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.');
+    if (options.__preparsed) {
+      frontmatter = options.__preparsed.data;
+      markdown = options.__preparsed.content;
+    } else {
+      const parsed = matter(rawMarkdown, {
+        engines: {
+          js: () => {
+            throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.');
+          },
         },
-      },
-    });
-    frontmatter = parsed.data;
-    markdown = parsed.content;
+      });
+      frontmatter = parsed.data;
+      markdown = parsed.content;
+    }
   } catch (error: any) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
     throw new Md2PdfError(
@@ -198,8 +203,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     prependMarkdown += `# ${frontmatter.title}\n\n`;
   }
   if (frontmatter.date) {
-    const dateStr = new Date(frontmatter.date).toLocaleDateString();
-    prependMarkdown += `*${dateStr}*\n\n`;
+    const d = new Date(frontmatter.date);
+    if (!isNaN(d.getTime())) {
+      prependMarkdown += `*${d.toLocaleDateString()}*\n\n`;
+    }
   }
   processedMarkdown = prependMarkdown + processedMarkdown;
 
@@ -302,7 +309,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       author: options.metadata?.author ?? frontmatter.author,
       subject: options.metadata?.subject ?? frontmatter.description ?? frontmatter.subject,
       keywords: allKeywords || undefined,
-      creationDate: options.metadata?.creationDate ?? (frontmatter.date ? new Date(frontmatter.date) : undefined),
+      creationDate: options.metadata?.creationDate ?? (frontmatter.date ? (isNaN(new Date(frontmatter.date).getTime()) ? undefined : new Date(frontmatter.date)) : undefined),
     };
 
     if (headerEnabled && options.header !== undefined) {

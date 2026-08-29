@@ -64,6 +64,24 @@ export default function rehypeToc(options: TocOptions = {}) {
           stack.pop();
         }
 
+        // Pad stack with empty lists if depth increases by more than 1
+        while (stack[stack.length - 1].depth < item.depth - 1) {
+          const paddingList: Element = {
+            type: 'element',
+            tagName: 'ul',
+            properties: { className: ['toc-list'] },
+            children: [],
+          };
+          const paddingListItem: Element = {
+            type: 'element',
+            tagName: 'li',
+            properties: { className: ['toc-item', 'toc-item-empty'] },
+            children: [paddingList],
+          };
+          stack[stack.length - 1].list.children.push(paddingListItem);
+          stack.push({ depth: stack[stack.length - 1].depth + 1, list: paddingList });
+        }
+
         const parentList = stack[stack.length - 1].list;
         parentList.children.push(listItem);
 

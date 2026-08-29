@@ -71,10 +71,11 @@ export async function resolveObsidianEmbeds(
           let width = '';
           let height = '';
           if (alias) {
-            if (alias.match(/^\d+$/)) {
-              width = alias;
-            } else if (alias.match(/^\d+x\d+$/)) {
-              const [w, h] = alias.split('x');
+            const trimmedAlias = alias.trim();
+            if (trimmedAlias.match(/^\d+$/)) {
+              width = trimmedAlias;
+            } else if (trimmedAlias.match(/^\d+x\d+$/)) {
+              const [w, h] = trimmedAlias.split('x');
               width = w;
               height = h;
             }
