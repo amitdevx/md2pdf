@@ -84,6 +84,9 @@ export async function parseMarkdown(
     await shikiHighlighter.loadLanguage(...(shikiLangs as any));
   }
 
+  const markdownPluginNames = options?.registry?.getMarkdownPlugins().map(p => p.name).join(',') || '';
+  const htmlPluginNames = options?.registry?.getHtmlPlugins().map(p => p.name).join(',') || '';
+
   // Cache key for the pre-shiki pipeline (no mermaid blocks — those are per-file)
   const cacheKey = JSON.stringify({
     math: options?.math,
@@ -92,9 +95,17 @@ export async function parseMarkdown(
     tocTitle: options?.tocTitle,
     pageBreaks: options?.pageBreaks,
     obsidian: options?.obsidian,
+    mdPlugins: markdownPluginNames,
+    htmlPlugins: htmlPluginNames
   });
 
   let baseProcessor = processorCache.get(cacheKey);
+
+  if (baseProcessor) {
+    // Move to end for LRU behavior
+    processorCache.delete(cacheKey);
+    processorCache.set(cacheKey, baseProcessor);
+  }
 
   if (!baseProcessor) {
     let proc: any = unified()
@@ -148,6 +159,10 @@ export async function parseMarkdown(
 
     baseProcessor = proc;
     processorCache.set(cacheKey, baseProcessor);
+    if (processorCache.size > 10) {
+      const firstKey = processorCache.keys().next().value;
+      if (firstKey) processorCache.delete(firstKey);
+    }
   }
 
   // Build the final per-file pipeline:
