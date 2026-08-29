@@ -1,5 +1,5 @@
 :root {
-  /* Fix: font was never explicitly declared for Dracula — use a modern monospace-friendly stack */
+  /* Fix: font was never explicitly declared for Dracula - use a modern monospace-friendly stack */
   --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
   --md2pdf-color-heading: #ff79c6;

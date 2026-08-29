@@ -36,7 +36,7 @@ src/
 │   ├── github/           ← GitHub theme
 │   ├── obsidian-light/   ← Obsidian Light theme
 │   └── obsidian-dark/    ← Obsidian Dark theme
-│   (dracula/, nord/, academic/ — added in v0.6.0)
+│   (dracula/, nord/, academic/ - added in v0.6.0)
 │
 ├── config/               ← Config file discovery, loading, merging, validation
 │
@@ -55,7 +55,7 @@ src/
 ## Public API (`src/index.ts`)
 
 Everything exported from `src/index.ts` is part of the public API and subject to semver.
-Everything else is internal — do not import from deep paths outside of tests.
+Everything else is internal - do not import from deep paths outside of tests.
 
 ```ts
 // Public exports (stable from v1.0.0)

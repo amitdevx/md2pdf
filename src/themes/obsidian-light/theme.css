@@ -15,7 +15,7 @@
   --md2pdf-accent-color: #7b6cd9;
   --md2pdf-accent-text: #ffffff;
   --md2pdf-table-header-bg: #eeecfb;
-  /* Fix: stripe was #f9f9fa — only 1.02:1 contrast vs white. Use a clearly visible alternate row. */
+  /* Fix: stripe was #f9f9fa - only 1.02:1 contrast vs white. Use a clearly visible alternate row. */
   --md2pdf-table-stripe-bg: #f4f2fd;
 }
 
@@ -29,7 +29,7 @@ table td {
   color: var(--md2pdf-color-text) !important;
 }
 
-/* Fix: H1-H4 were all identical #2e3338 (same as body text) — add purple accent hierarchy */
+/* Fix: H1-H4 were all identical #2e3338 (same as body text) - add purple accent hierarchy */
 h1 { color: #7b6cd9; }
 h2 { color: #6254b5; }
 h3 { color: #4c3e9e; }

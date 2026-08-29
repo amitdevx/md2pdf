@@ -278,7 +278,7 @@ export async function getBrowser(): Promise<Browser> {
       return await chromium.launch({ ...launchOpts, executablePath: cached.executablePath });
     } catch (e: any) {
       if (e.message?.includes('Timeout') || isMissingExecutableError(e)) {
-        fs.unlinkSync(CACHE_FILE); // Stale, unsupported, or removed binary — clear and rediscover
+        fs.unlinkSync(CACHE_FILE); // Stale, unsupported, or removed binary - clear and rediscover
       } else {
         throw e;
       }
@@ -296,7 +296,7 @@ export async function getBrowser(): Promise<Browser> {
       if (!e.message?.includes('Timeout') && !isMissingExecutableError(e)) {
         throw e;
       }
-      // Binary exists but won't launch or timed out (e.g., Firefox overriding a Chromium path) — fall through
+      // Binary exists but won't launch or timed out (e.g., Firefox overriding a Chromium path) - fall through
     }
   }
 

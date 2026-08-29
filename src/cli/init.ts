@@ -10,7 +10,7 @@ import { EXIT } from './formatter.js';
 export default new Command('init')
   .description('Interactive guided setup for new environments')
   .action(async () => {
-    console.log(pc.bold('\nℹ  md2pdf Environment Setup\n'));
+    console.log(pc.bold('\n[INFO]  md2pdf Environment Setup\n'));
     
     const oraOptions = { prefixText: ' ' };
     let spinner = ora({ text: 'Checking Node environment...', ...oraOptions }).start();
@@ -93,7 +93,7 @@ export default new Command('init')
             console.log(pc.dim(`  ${process.execPath} ${pwCli} install-deps chromium`));
           } else {
             spinner.stop();
-            console.log(pc.cyan('\nℹ  Playwright requires system libraries to run Chromium headless.'));
+            console.log(pc.cyan('\n[INFO]  Playwright requires system libraries to run Chromium headless.'));
             console.log(pc.cyan('    Requesting sudo access to install dependencies...'));
             execFileSync('sudo', [process.execPath, pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
             spinner.start('Finishing installation...');
@@ -112,10 +112,10 @@ export default new Command('init')
       }
     }
 
-    console.log('\n  ' + pc.green('✔') + ' Your environment is fully set up and ready to generate PDFs!\n');
+    console.log('\n  ' + pc.green('[OK]') + ' Your environment is fully set up and ready to generate PDFs!\n');
     
     if (!process.stdin.isTTY) {
-      console.log(pc.yellow('Non-interactive environment — skipping config prompt.'));
+      console.log(pc.yellow('Non-interactive environment - skipping config prompt.'));
       console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
       process.exit(EXIT.OK);
     }
@@ -141,7 +141,7 @@ export default new Command('init')
             paper: "A4",
             toc: false
           }, null, 2));
-          console.log('\n  ' + pc.green('✔') + ' Created .md2pdf.json\n');
+          console.log('\n  ' + pc.green('[OK]') + ' Created .md2pdf.json\n');
         } catch (err: any) {
           console.log('');
           const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');

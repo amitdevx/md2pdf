@@ -15,7 +15,7 @@
   --md2pdf-color-text-muted: #57606a;
   --md2pdf-accent-color: #0969da;
   --md2pdf-accent-text: #ffffff;
-  /* Fix: table header was #ffffff on a white page — use a visible blue-tinted header */
+  /* Fix: table header was #ffffff on a white page - use a visible blue-tinted header */
   --md2pdf-table-header-bg: #ddf4ff;
   --md2pdf-table-stripe-bg: #f6f8fa;
 }

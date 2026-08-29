@@ -72,7 +72,7 @@ export async function parseMarkdown(
   const validLangs = detectedLangs.filter(lang => lang in bundledLanguages);
   const shikiLangs = validLangs.length > 0 ? validLangs : ['txt'];
 
-  // Initialise the Shiki singleton once (expensive — loads grammar bundles)
+  // Initialise the Shiki singleton once (expensive - loads grammar bundles)
   if (!shikiHighlighter) {
     shikiHighlighter = await getSingletonHighlighter({
       themes: ['github-light', 'github-dark', 'dracula', 'nord'],
@@ -87,7 +87,7 @@ export async function parseMarkdown(
   const markdownPluginNames = options?.registry?.getMarkdownPlugins().map(p => p.name).join(',') || '';
   const htmlPluginNames = options?.registry?.getHtmlPlugins().map(p => p.name).join(',') || '';
 
-  // Cache key for the pre-shiki pipeline (no mermaid blocks — those are per-file)
+  // Cache key for the pre-shiki pipeline (no mermaid blocks - those are per-file)
   const cacheKey = JSON.stringify({
     math: options?.math,
     toc: options?.toc,

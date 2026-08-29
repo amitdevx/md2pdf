@@ -38,7 +38,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       if (options.jsonErrors) {
         jsonOut({ success: false, error: { code: 'ERR_NO_INPUT', title: 'Missing Input', reason: 'No input files found matching the provided arguments.' } });
       } else {
-        console.error(pc.red('✖ No input files found matching the provided arguments.'));
+        console.error(pc.red('[ERR] No input files found matching the provided arguments.'));
       }
       process.exit(EXIT.USAGE_ERROR);
     }
@@ -50,7 +50,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       resolvedConfig = result.config;
 
     } catch (err: any) {
-      console.error(pc.red(`\n✖ ${err.title || 'Config Error'}`));
+      console.error(pc.red(`\n[ERR] ${err.title || 'Config Error'}`));
       console.error(err.reason || err.message);
       process.exit(EXIT.USAGE_ERROR);
     }
@@ -85,7 +85,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
     }
 
-    const unsupported = ['stdin', 'stdout', 'quiet', 'input'];
+    const unsupported = ['stdin', 'stdout', 'input'];
     for (const flag of unsupported) {
       if ((cliFlags as any)[flag]) {
         if (options.jsonErrors) {
@@ -101,26 +101,26 @@ import { computeHash, checkCache } from '../core/cache.js';
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_VAULT_ROOT_NOT_FOUND', 'Vault Root Not Found', `--vault-root '${cliFlags.vaultRoot}' does not exist.`);
       } else {
-        console.error(pc.red(`✖ --vault-root '${cliFlags.vaultRoot}' does not exist.`));
+        console.error(pc.red(`[ERR] --vault-root '${cliFlags.vaultRoot}' does not exist.`));
         process.exit(EXIT.USAGE_ERROR);
       }
     }
     
     if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
       if (!options.jsonErrors) {
-        console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
+        console.warn(pc.yellow('[WARN]  --toc-depth / --toc-title have no effect without --toc'));
       }
     }
     
     if (cliFlags.headerTemplate && !cliFlags.header) {
       if (!options.jsonErrors) {
-        console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
+        console.warn(pc.yellow('[WARN]  --header-template has no effect without --header'));
       }
     }
 
     if (cliFlags.footerTemplate && !cliFlags.footer) {
       if (!options.jsonErrors) {
-        console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
+        console.warn(pc.yellow('[WARN]  --footer-template has no effect without --footer'));
       }
     }
 
@@ -133,7 +133,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         if (options.jsonErrors) {
           emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
         } else {
-          console.error(pc.red(`✖ Output path '${options.output}' is a file, but multiple inputs were provided.`));
+          console.error(pc.red(`[ERR] Output path '${options.output}' is a file, but multiple inputs were provided.`));
           console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
           process.exit(EXIT.USAGE_ERROR);
         }
@@ -148,7 +148,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
             `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
         } else {
-          console.error(pc.red(`✖ Output path '${options.output}' Is a Directory, Not a File.`));
+          console.error(pc.red(`[ERR] Output path '${options.output}' Is a Directory, Not a File.`));
           console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
           process.exit(EXIT.USAGE_ERROR);
         }
@@ -156,7 +156,7 @@ import { computeHash, checkCache } from '../core/cache.js';
 
       if (!path.extname(options.output)) {
         if (!options.jsonErrors) {
-          console.warn(pc.yellow(`⚠ Output path has no .pdf extension — appending`));
+          console.warn(pc.yellow(`[WARN] Output path has no .pdf extension - appending`));
         }
         options.output += '.pdf';
         cliFlags.output = options.output;
@@ -165,7 +165,7 @@ import { computeHash, checkCache } from '../core/cache.js';
     
     if (options.dryRun) {
       if (!options.jsonErrors && !options.quiet) {
-        console.log(pc.cyan(`\n🔍 Dry Run Mode: ${inputs.length} file(s) matched`));
+        console.log(pc.cyan(`\n[PREVIEW] Dry Run Mode: ${inputs.length} file(s) matched`));
       }
       for (const input of inputs) {
         let output = options.output;
@@ -196,7 +196,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       hasErrors = true;
       failedCount++;
       if (!options.jsonErrors) {
-        console.error(pc.red(`✖ ${input} - ${reason}`));
+        console.error(pc.red(`[ERR] ${input} - ${reason}`));
       }
     };
 
@@ -248,7 +248,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         }
       }
 
-      // PRE-FLIGHT COMPLEXITY CHECK — must NOT be inside a try/catch that swallows process.exit
+      // PRE-FLIGHT COMPLEXITY CHECK - must NOT be inside a try/catch that swallows process.exit
       let complexityViolation = false;
       let complexityDepth = 0;
       try {
@@ -358,7 +358,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                   results: [{ input, output, pages: 0, timeMs: 0, warnings: [] }]
                 });
               } else if (!options.quiet) {
-                console.log(pc.green(`✔ ${path.basename(output)} (cached)`));
+                console.log(pc.green(`[OK] ${path.basename(output)} (cached)`));
               }
               process.exitCode = EXIT.OK;
               return;
@@ -379,7 +379,7 @@ import { computeHash, checkCache } from '../core/cache.js';
         const parsed = matter(rawContent, { engines: { js: () => { throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.'); } } });
         if (parsed.data?.publish === false) {
           if (!options.quiet) {
-            console.info(pc.dim(`ℹ Skipped ${path.basename(inputs[0])} (publish: false)`));
+            console.info(pc.dim(`[INFO] Skipped ${path.basename(inputs[0])} (publish: false)`));
           }
           process.exitCode = EXIT.OK;
           return;
@@ -431,7 +431,7 @@ import { computeHash, checkCache } from '../core/cache.js';
     // Graceful Shutdown Handler for Ctrl+C
     const sigintHandler = async () => {
       isShuttingDown = true;
-      console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
+      console.log(pc.yellow('\n[WARN] Process interrupted by user. Cleaning up...'));
       await cleanup();
       process.exitCode = 130; return;
     };
@@ -551,7 +551,7 @@ updateSpinner();
               failedCount++;
               if (!options.jsonErrors && isBatch) {
                 (spinner as any).stop();
-                console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
+                console.error(pc.red(`[ERR] ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
                 (spinner as any).start();
               }
               results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
@@ -590,7 +590,7 @@ updateSpinner();
                   completedCount++;
 updateSpinner();
                   (spinner as any).stop();
-                  console.log(pc.green(`✔ ${path.basename(output as string)} (cached)`));
+                  console.log(pc.green(`[OK] ${path.basename(output as string)} (cached)`));
                   (spinner as any).start();
                 } else if (!options.jsonErrors && !isBatch) {
                   spinner.succeed(pc.green(`${path.basename(output as string)} (cached)`));
@@ -623,7 +623,7 @@ updateSpinner();
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
                 (spinner as any).stop();
-                console.error(pc.red(`✖ ${path.basename(input)} - Browser launch failed: ${err.message}`));
+                console.error(pc.red(`[ERR] ${path.basename(input)} - Browser launch failed: ${err.message}`));
                 (spinner as any).start();
               }
               continue;
@@ -671,7 +671,7 @@ updateSpinner();
               completedCount++;
 updateSpinner();
             } else if (!options.jsonErrors) {
-              console.warn(pc.yellow(`⚠ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
+              console.warn(pc.yellow(`[WARN] Skipped: Output file '${output}' already exists (use --force to overwrite).`));
             }
             continue;
           }
@@ -679,8 +679,8 @@ updateSpinner();
           try {
             if (options.verbose && !options.jsonErrors) {
               (spinner as any).stop();
-              console.log(pc.dim(`\nℹ Starting conversion pipeline for: ${input}`));
-              console.log(pc.dim(`ℹ Output target: ${output}`));
+              console.log(pc.dim(`\n[INFO] Starting conversion pipeline for: ${input}`));
+              console.log(pc.dim(`[INFO] Output target: ${output}`));
               if (isBatch) (spinner as any).start();
             }
             
@@ -689,13 +689,13 @@ updateSpinner();
             
             if (options.verbose && !options.jsonErrors) {
               (spinner as any).stop();
-              console.log(pc.dim(`ℹ Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
+              console.log(pc.dim(`[INFO] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
               if (isBatch) (spinner as any).start();
             }
             
             if (!options.jsonErrors && result.warnings.length > 0) {
               (spinner as any).stop();
-              result.warnings.forEach(w => console.warn(pc.yellow(`⚠ ${w}`)));
+              result.warnings.forEach(w => console.warn(pc.yellow(`[WARN] ${w}`)));
               if (isBatch) (spinner as any).start();
             }
             
@@ -703,7 +703,7 @@ updateSpinner();
               completedCount++;
               (spinner as any).stop();
               const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
-              console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${timing})`));
+              console.log(pc.green(`[OK] ${path.basename(result.outputPath)} (${timing})`));
 updateSpinner();
               (spinner as any).start();
             }
@@ -718,7 +718,7 @@ updateSpinner();
               results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'], skipReason: 'publish: false' };
               if (!options.jsonErrors && isBatch) {
                 (spinner as any).stop();
-                console.error(pc.dim(`⏭ Skipped ${path.basename(input)} (publish: false)`));
+                console.error(pc.dim(`[SKIP] Skipped ${path.basename(input)} (publish: false)`));
                 (spinner as any).start();
               }
               if (!options.jsonErrors && isBatch) {
@@ -737,7 +737,7 @@ updateSpinner();
             
             if (!options.jsonErrors && isBatch) {
               (spinner as any).stop();
-              console.error(pc.red(`✖ ${msg}`));
+              console.error(pc.red(`[ERR] ${msg}`));
               (spinner as any).start();
             }
             const md2Error = detectBrowserError(err, { markdownFile: input });
@@ -768,7 +768,7 @@ updateSpinner();
           results: results.map((r, index) => {
             const out = {
               input: inputs[index],
-              output: r?.outputPath || '—',
+              output: r?.outputPath || '-',
               status: r?.isError ? 'error' : (r?.isSkipped ? 'skipped' : 'success'),
               pages: r?.pageCounts || 0,
               timeMs: r?.renderTimeMs || 0,
@@ -793,10 +793,10 @@ updateSpinner();
           (spinner as any).stop();
           console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
           if (skippedExistingCount > 0) {
-            console.log(pc.yellow(`  ⚠ Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
+            console.log(pc.yellow(`  [WARN] Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
           }
           if (skippedPublishCount > 0) {
-            console.log(pc.yellow(`  ⚠ Skipped ${skippedPublishCount} files (publish: false)`));
+            console.log(pc.yellow(`  [WARN] Skipped ${skippedPublishCount} files (publish: false)`));
           }
         } else {
           if (hasErrors) {
@@ -833,7 +833,7 @@ updateSpinner();
           // Don't show GitHub banner for known user-level exceptions
           const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME' || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
           if (!isUserError) {
-            console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n`));
+            console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues \n`));
           }
 
           if (options.debug && err.stack) {

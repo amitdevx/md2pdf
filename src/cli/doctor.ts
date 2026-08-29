@@ -78,8 +78,8 @@ export default new Command('doctor')
     const oraOptions = { prefixText: ' ' };
     let spinner: any = null;
     if (!options.json) {
-      console.log(pc.bold('\nℹ  md2pdf System Health Check\n'));
-      checks.forEach(check => console.log(`  ${pc.green('✔')} ${check.name}`));
+      console.log(pc.bold('\n[INFO]  md2pdf System Health Check\n'));
+      checks.forEach(check => console.log(`  ${pc.green('[OK]')} ${check.name}`));
       spinner = ora({ text: 'Discovering browser...', ...oraOptions }).start();
     }
 
@@ -228,7 +228,7 @@ export default new Command('doctor')
 
     if (mdError) {
       const rec = getRecommendation(mdError);
-      console.log('\n  ' + pc.red(`✖  Error: ${mdError.title}`));
+      console.log('\n  ' + pc.red(`[ERR]  Error: ${mdError.title}`));
       console.log(`     ${mdError.reason}`);
       
       if (rec) {
@@ -257,7 +257,7 @@ export default new Command('doctor')
 
       process.exit(EXIT.ENVIRONMENT_ERROR);
     } else {
-      console.log(`\n  ✔ ${pc.green('Everything is OK!')} Your system is ready to generate PDFs.\n`);
+      console.log(`\n  [OK] ${pc.green('Everything is OK!')} Your system is ready to generate PDFs.\n`);
       process.exit(EXIT.OK);
     }
   });

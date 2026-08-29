@@ -20,13 +20,13 @@ table th {
   color: var(--md2pdf-color-text) !important;
 }
 
-/* Heading hierarchy — progressively lighter shades of Nord polar night */
+/* Heading hierarchy - progressively lighter shades of Nord polar night */
 h1 { color: #2e3440; }
 h2 { color: #3b4252; }
 h3 { color: #434c5e; }
 h4, h5, h6 { color: #4c566a; }
 
-/* Blockquote left border uses Nord frost blue — clearly visible */
+/* Blockquote left border uses Nord frost blue - clearly visible */
 blockquote {
   border-left: 4px solid #81a1c1;
 }
