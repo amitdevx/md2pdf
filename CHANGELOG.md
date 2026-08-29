@@ -2,10 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.9.0] - Unreleased
+## [0.9.0] - 2026-08-29
 
 ### Added
-- (To be added)
+- Added `-q`, `--quiet` mode to suppress standard output for scripting environments.
+- Added `--dry-run` flag to execute the conversion pipeline without writing to disk.
+- Added `-v`, `--version` flag to CLI options.
+- Added live progress percentages and ETAs to the batch conversion progress indicator.
+
+### Fixed
+- Fixed critical memory leak (timer leaks) in both the PluginRegistry and Mermaid Renderer when batch rendering large amounts of files.
+- Fixed case-sensitive cache fragmentation on Windows/macOS.
+- Enforced strict Plugin-aware processor cache hashing to prevent cross-plugin cache contamination.
+- Neutralized the `EEXIST` crash when generating massive concurrent batches against missing directories.
+- Ensured plugins are strictly sandboxed by trapping `Array.prototype.push` bypassing in deep readonly contexts.
+- Hardened path traversal security to allow harmless prefix directories (like `/etc-backups/`) while still blocking traversal attacks against system roots like `/etc/`.
+- Removed emojis and em-dashes from logging output to improve compatibility with strict terminal environments.
 
 ## [0.8.10] - 2026-08-26
 ### Fixed

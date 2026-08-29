@@ -20,6 +20,9 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | Flag | Type | Default | Description |
 |---|---|---|---|
 | `-o, --output` | string | `<input>.pdf` | Output file or directory |
+| `-v, --version` | boolean | false | Print the current version |
+| `-q, --quiet` | boolean | false | Suppress all stdout output (except errors) |
+| `--dry-run` | boolean | false | Run conversion process without writing to disk |
 | `--toc` | boolean | false | Generate Table of Contents |
 | `--toc-depth` | 1-6 | 3 | Heading depth for TOC |
 | `--paper` | A4/Letter/Legal | A4 | Page format |
@@ -40,3 +43,12 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `-f, --force` | boolean | false | Force overwrite of existing PDFs |
 | `--concurrency` | number | os.cpus() | Number of parallel workers for batch mode |
 | `--no-cache` | boolean | false | Disable incremental rendering cache |
+
+## Features
+
+### Batch Rendering
+When providing multiple markdown files (e.g. `*.md`), `md2pdf` processes files concurrently up to the `--concurrency` limit. 
+It features a live progress bar indicating:
+* Completion percentage
+* `X/Y` files completed
+* Estimated time remaining (ETA)
