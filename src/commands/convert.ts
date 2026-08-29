@@ -498,24 +498,26 @@ import { computeHash, checkCache } from '../core/cache.js';
 
           try {
             const outDir = path.dirname(output as string);
-            if (!fs.existsSync(outDir)) {
-              fs.mkdirSync(outDir, { recursive: true });
-            }
+            fs.mkdirSync(outDir, { recursive: true });
           } catch (dirErr: any) {
-            if (!isBatch) throw dirErr;
-            hasErrors = true;
-            failedCount++;
-            if (!options.jsonErrors && isBatch) {
-              (spinner as any).stop();
-              console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
-              (spinner as any).start();
+            if (dirErr.code === 'EEXIST') {
+              // Ignore existing directory
+            } else {
+              if (!isBatch) throw dirErr;
+              hasErrors = true;
+              failedCount++;
+              if (!options.jsonErrors && isBatch) {
+                (spinner as any).stop();
+                console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
+                (spinner as any).start();
+              }
+              results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+              if (!options.jsonErrors && isBatch) {
+                completedCount++;
+                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+              }
+              continue;
             }
-            results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-            if (!options.jsonErrors && isBatch) {
-              completedCount++;
-              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
-            }
-            continue;
           }
 
           const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });

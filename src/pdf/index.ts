@@ -112,6 +112,8 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     }
 
     const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    await fs.mkdir(path.dirname(options.outputPath), { recursive: true });
     await fs.writeFile(options.outputPath, pdfBuffer);
   } finally {
     if (context) {
