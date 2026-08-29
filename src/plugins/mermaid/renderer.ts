@@ -91,9 +91,10 @@ export async function renderMermaidBlocks(
     try {
       const unlock = sharedMermaidPage ? await mermaidMutex.lock() : () => {};
       try {
-        evaluatedResults = await Promise.race([
-          page.evaluate(async ({ blocks, timeout, themeVariables }) => {
-            const results = [];
+      let evaluateTimerId: ReturnType<typeof setTimeout>;
+      evaluatedResults = await Promise.race([
+        page.evaluate(async ({ blocks, timeout, themeVariables }) => {
+          const results = [];
           
           // Group blocks by theme to minimize initialize() calls and prevent CSS style accumulation
           const blocksByTheme = new Map<string, typeof blocks>();
@@ -131,8 +132,10 @@ export async function renderMermaidBlocks(
             results.push(...themeResults);
           }
           return results;
-        }, { blocks: payloads, timeout: timeoutMs, themeVariables }),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error(`page.evaluate hung for ${timeoutMs + 2000}ms`)), timeoutMs + 2000))
+        }, { blocks: payloads, timeout: timeoutMs, themeVariables }).finally(() => clearTimeout(evaluateTimerId)),
+        new Promise<any>((_, reject) => {
+          evaluateTimerId = setTimeout(() => reject(new Error(`page.evaluate hung for ${timeoutMs + 2000}ms`)), timeoutMs + 2000);
+        })
       ]);
       } finally {
         unlock();
