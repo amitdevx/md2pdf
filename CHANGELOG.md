@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - Unreleased
+
+### Added
+- (To be added)
+
 ## [0.8.10] - 2026-08-26
 ### Fixed
 - Fixed CLI subcommand and flag consistency (`--list-themes` -> `list-themes`).
