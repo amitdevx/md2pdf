@@ -48,7 +48,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   if (typeof output === 'string') {
     const resolvedOutput = path.resolve(process.cwd(), output);
     const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
-    const isSensitive = sensitiveDirs.some(dir => resolvedOutput.startsWith(dir)) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(resolvedOutput);
+    const isSensitive = sensitiveDirs.some(dir => resolvedOutput.startsWith(dir + path.sep) || resolvedOutput === dir) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(resolvedOutput);
     if (isSensitive) {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
       throw new Md2PdfError(
@@ -204,7 +204,6 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   let parsed: any;
   let html: string;
   let browser;
-  const internallyLaunchedBrowser = false;
   let title: string = '';
   
   try {
@@ -369,9 +368,6 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const { detectBrowserError } = await import('../errors/detect.js');
     throw detectBrowserError(error, { markdownFile: inputPath, outputPath });
   } finally {
-    if (browser && internallyLaunchedBrowser) {
-      await browser.close();
-    }
     await registry.teardownAll();
   }
 }

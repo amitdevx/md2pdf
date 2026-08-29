@@ -311,7 +311,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       output = path.resolve(output);
 
       const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
-      const isSensitive = sensitiveDirs.some(dir => output.startsWith(dir)) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(output);
+      const isSensitive = sensitiveDirs.some(dir => output.startsWith(dir + path.sep) || output === dir) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(output);
       if (isSensitive) {
         if (options.jsonErrors) {
           jsonOut({ success: false, error: { code: 'ERR_PATH_TRAVERSAL', title: 'Access Denied', reason: 'Cannot write output to protected system directory.' } });
@@ -596,9 +596,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             }
 
             if (hasMermaid) {
-              if (mermaidInitPromise) await mermaidInitPromise;
-              
-              if (!globalMermaidPage) {
+              if (!mermaidInitPromise) {
                 mermaidInitPromise = (async () => {
                   globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
                   globalMermaidPage = await globalMermaidContext.newPage();
@@ -612,8 +610,8 @@ import { computeHash, checkCache } from '../core/cache.js';
                     // Fallback
                   }
                 })();
-                await mermaidInitPromise;
               }
+              await mermaidInitPromise;
             }
 
             convertOptions.sharedBrowser = globalBrowser;
@@ -623,26 +621,16 @@ import { computeHash, checkCache } from '../core/cache.js';
           }
 
 
-          // For 25+ file batches without --force: skip existing files to prevent overwrite spam
-          if (fs.existsSync(output as string)) {
-            if (inputs.length >= 25 && !options.force) {
-              skippedExistingCount++;
-              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
-              if (!options.jsonErrors && isBatch) {
-                completedCount++;
-                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
-              }
-              continue;
+          if (fs.existsSync(output as string) && !options.force) {
+            skippedExistingCount++;
+            results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
+            if (!options.jsonErrors && isBatch) {
+              completedCount++;
+              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+            } else if (!options.jsonErrors) {
+              console.warn(pc.yellow(`⚠ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
             }
-            // For <25 files: show yellow warning and proceed (matches v0.7.x behavior)
-            if (!options.force && !options.jsonErrors) {
-              (spinner as any).stop();
-              console.warn(pc.yellow(`⚠ Warning: Output file '${output}' already exists and will be overwritten.`));
-              if (isBatch) {
-                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
-                (spinner as any).start();
-              }
-            }
+            continue;
           }
 
           try {

@@ -72,7 +72,9 @@ export function readCache(): BrowserCache | null {
 export function writeCache(data: BrowserCache): void {
   try {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
+    const tmpFile = CACHE_FILE + '.' + Math.random().toString(36).slice(2, 8) + '.tmp';
+    fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2));
+    fs.renameSync(tmpFile, CACHE_FILE);
   } catch { /* non-fatal */ }
 }
 
