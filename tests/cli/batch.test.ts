@@ -30,11 +30,11 @@ describe('Batch Processing (M-05, M-07)', () => {
     fs.mkdirSync(outDir);
     
     // Convert multiple files, which will all try to ensure outDir exists
-    const results = await runConvert(inputs, { output: outDir, cache: false, concurrency: "5" });
+    await runConvert(inputs, { output: outDir, cache: false, concurrency: "5" } as any);
     
-    expect(results).toBeDefined();
-    for (const r of results) {
-      expect(r?.success).toBe(true);
+    // Check that all 5 PDFs were generated
+    for (let i = 0; i < 5; i++) {
+      expect(fs.existsSync(path.join(outDir, `file${i}.pdf`))).toBe(true);
     }
   });
 
@@ -46,12 +46,13 @@ describe('Batch Processing (M-05, M-07)', () => {
     fs.writeFileSync(outPdf, 'dummy-pdf-content'); // pre-create PDF
     
     // First run without force - should SKIP
-    const resultSkip = await runConvert([md], { output: outPdf, cache: false });
-    expect(resultSkip[0].isSkipped).toBe(true);
+    await runConvert([md], { output: outPdf, cache: false } as any);
+    // Content should remain untouched
+    expect(fs.readFileSync(outPdf, 'utf-8')).toBe('dummy-pdf-content');
     
     // Second run with force - should OVERWRITE
-    const resultForce = await runConvert([md], { output: outPdf, force: true, cache: false });
-    expect(resultForce[0].success).toBe(true);
-    expect(resultForce[0].isSkipped).toBe(false);
+    await runConvert([md], { output: outPdf, force: true, cache: false } as any);
+    // Content should be replaced with PDF binary
+    expect(fs.readFileSync(outPdf, 'utf-8')).not.toBe('dummy-pdf-content');
   });
 });

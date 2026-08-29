@@ -76,7 +76,7 @@ describe('PluginRegistry', () => {
       }
     };
     
-    await registry.runBeforeRender(ctx as any);
+    await registry.executeBeforeRender('html', ctx as any);
     
     expect(capturedContext).toBeDefined();
     expect(() => {
@@ -103,7 +103,7 @@ describe('PluginRegistry', () => {
     }]);
 
     // Fast plugin resolves, timeout shouldn't leak or fire
-    await registry.runBeforeRender({} as any);
+    await registry.executeBeforeRender('html', {} as any);
     expect(executed).toBe(true);
   });
 });
