@@ -13,7 +13,9 @@ function deepMerge(target: any, source: any): any {
   if (isObject(target) && isObject(source)) {
     Object.keys(source).forEach(key => {
       if (FORBIDDEN_KEYS.has(key)) return;
-      if (isObject(source[key])) {
+      if (Array.isArray(target[key]) && Array.isArray(source[key])) {
+        output[key] = [...target[key], ...source[key]];
+      } else if (isObject(source[key])) {
         if (!(key in target)) {
           output[key] = source[key];
         } else {
