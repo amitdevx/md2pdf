@@ -38,6 +38,11 @@ function deepReadonlyProxy<T extends object>(target: T, pluginName: string): T {
   return new Proxy(target, {
     get(obj, prop) {
       const val = obj[prop as keyof T];
+      if (Array.isArray(val)) {
+        return Object.freeze([...val].map(item =>
+          typeof item === 'object' && item !== null ? deepReadonlyProxy(item, pluginName) : item
+        )) as any;
+      }
       if (typeof val === 'object' && val !== null && !(val instanceof Buffer)) {
         return deepReadonlyProxy(val as any, pluginName);
       }

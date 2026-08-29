@@ -68,7 +68,11 @@ export async function renderMermaidBlocks(
       if (cachedMermaidScriptPath === null) {
         let resolvedPath: string;
         try {
-          resolvedPath = require.resolve('mermaid/dist/mermaid.min.js');
+          const { fileURLToPath } = await import('node:url');
+          const path = await import('node:path');
+          const pkgUrl = import.meta.resolve('mermaid/package.json');
+          const pkgPath = fileURLToPath(pkgUrl);
+          resolvedPath = path.resolve(path.dirname(pkgPath), 'dist/mermaid.min.js');
         } catch {
           throw new Error('Could not find mermaid library. Ensure it is installed.');
         }

@@ -152,9 +152,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   const dir = path.dirname(inputPath);
   let processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)(?:\{width=([^}]+)\}|\s*=([\dx]+))?/g, (match, alt, fullSrc, attrWidth, kramWidth) => {
-    const parts = fullSrc.trim().split(/\s+/);
-    const src = parts[0];
-    const title = parts.slice(1).join(' ');
+    let src = fullSrc.trim();
+    let title = '';
+    const titleMatch = src.match(/\s+((['"])(.*)\2|\((.*)\))$/);
+    if (titleMatch) {
+      title = titleMatch[1];
+      src = src.slice(0, -titleMatch[0].length).trim();
+    }
     
     // Preserve local file:// URIs; Playwright securely loads them in the headless context.
     const absPath = path.resolve(dir, decodeURIComponent(src));
