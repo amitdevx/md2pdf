@@ -4,15 +4,16 @@ import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import type { RenderContext } from '../types/context.js';
 
 function executeWithTimeout<T>(promise: Promise<T> | T, timeoutMs: number, pluginName: string, hookName: string): Promise<T> {
+  let timerId: ReturnType<typeof setTimeout>;
   return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => 
-      setTimeout(() => reject(new Md2PdfError(
+    Promise.resolve(promise).finally(() => clearTimeout(timerId)),
+    new Promise<T>((_, reject) => {
+      timerId = setTimeout(() => reject(new Md2PdfError(
         Md2PdfErrorCode.ERR_PLUGIN_FAILURE,
         'Plugin Timeout',
         `Plugin "${pluginName}" timed out during ${hookName} after ${timeoutMs}ms.`
-      )), timeoutMs)
-    )
+      )), timeoutMs);
+    })
   ]);
 }
 
