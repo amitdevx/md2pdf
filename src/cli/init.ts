@@ -50,15 +50,18 @@ export default new Command('init')
       }
     } catch {
       spinner.fail('Chromium browser missing');
+      console.log(pc.yellow('\nmd2pdf requires a Chromium-based browser (Chrome, Edge, Brave, etc.) to generate PDFs.'));
+      console.log(pc.yellow('None were found on your system. You can install one manually, or let md2pdf download a local copy.'));
 
       const rlInit = readline.createInterface({ input: process.stdin, output: process.stdout });
       const ans = await new Promise<string>(resolve => {
-        rlInit.question('Would you like md2pdf to automatically download Playwright Chromium (~150MB)? (Y/n) ', resolve);
+        rlInit.question('\nWould you like md2pdf to automatically download Playwright Chromium (~150MB)? (Y/n) ', resolve);
       });
       rlInit.close();
 
       if (ans.toLowerCase().startsWith('n')) {
         console.log(pc.yellow('\nSkipping browser installation. md2pdf requires a browser to convert documents.'));
+        console.log(pc.yellow('Please install Chrome, Edge, Brave, or Chromium system-wide to proceed.'));
         process.exit(EXIT.ENVIRONMENT_ERROR);
       }
 
