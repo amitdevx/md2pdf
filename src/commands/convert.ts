@@ -138,7 +138,7 @@ import { computeHash, checkCache } from '../core/cache.js';
           process.exit(EXIT.USAGE_ERROR);
         }
       }
-      if (!outputStat) {
+      if (!outputStat && !options.dryRun) {
         fs.mkdirSync(options.output, { recursive: true });
       }
     } else if (!isBatch && options.output) {
@@ -161,6 +161,27 @@ import { computeHash, checkCache } from '../core/cache.js';
         options.output += '.pdf';
         cliFlags.output = options.output;
       }
+    }
+    
+    if (options.dryRun) {
+      if (!options.jsonErrors && !options.quiet) {
+        console.log(pc.cyan(`\n🔍 Dry Run Mode: ${inputs.length} file(s) matched`));
+      }
+      for (const input of inputs) {
+        let output = options.output;
+        if (isBatch && options.output) {
+          output = path.join(options.output, path.basename(input).replace(/\.md$/i, '.pdf'));
+        } else if (!output) {
+          output = input.replace(/\.md$/i, '.pdf');
+        }
+        if (options.jsonErrors) {
+          console.log(JSON.stringify({ type: 'dry-run', input, output: path.resolve(output) }));
+        } else if (!options.quiet) {
+          console.log(`  ${pc.gray(input)} -> ${pc.green(output)}`);
+        }
+      }
+      process.exitCode = 0;
+      return;
     }
 
     // Synchronous Validation Loop
@@ -336,7 +357,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                   success: true,
                   results: [{ input, output, pages: 0, timeMs: 0, warnings: [] }]
                 });
-              } else {
+              } else if (!options.quiet) {
                 console.log(pc.green(`✔ ${path.basename(output)} (cached)`));
               }
               process.exitCode = EXIT.OK;
@@ -357,7 +378,9 @@ import { computeHash, checkCache } from '../core/cache.js';
         const matter = (await import('gray-matter')).default;
         const parsed = matter(rawContent, { engines: { js: () => { throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.'); } } });
         if (parsed.data?.publish === false) {
-          console.info(pc.dim(`ℹ Skipped ${path.basename(inputs[0])} (publish: false)`));
+          if (!options.quiet) {
+            console.info(pc.dim(`ℹ Skipped ${path.basename(inputs[0])} (publish: false)`));
+          }
           process.exitCode = EXIT.OK;
           return;
         }
@@ -372,7 +395,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       start: () => {}, stop: () => {}, succeed: () => {},
       warn: () => {}, fail: () => {}, info: () => {}, text: ''
     };
-    const spinner: SpinnerLike = options.jsonErrors
+    const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
       ? noopSpinner
       : ora(isBatch ? 'Starting batch conversion...' : 'Converting...').start() as unknown as SpinnerLike;
     const startTime = Date.now();
@@ -472,12 +495,24 @@ import { computeHash, checkCache } from '../core/cache.js';
       const concurrencyLimit = cliFlags.concurrency ? parseInt(cliFlags.concurrency as string) : Math.min(4, os.cpus().length);
       const results: any[] = new Array(inputs.length);
       let completedCount = 0;
-
-      if (!options.jsonErrors && isBatch) {
-        spinner.text = `Converting (0/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
-      } else if (!options.jsonErrors && !isBatch) {
-        spinner.text = 'Converting...';
-      }
+      
+      const updateSpinner = () => {
+        if (!options.jsonErrors && isBatch && !options.quiet) {
+          const percent = Math.round((completedCount / inputs.length) * 100);
+          const elapsed = Date.now() - startTime;
+          const avg = completedCount > 0 ? elapsed / completedCount : 0;
+          const remainMs = avg * (inputs.length - completedCount);
+          let remainStr = '';
+          if (completedCount > 0) {
+            if (remainMs > 60000) remainStr = ` ~${Math.round(remainMs/60000)}m remaining`;
+            else remainStr = ` ~${Math.round(remainMs/1000)}s remaining`;
+          }
+updateSpinner();
+        } else if (!options.jsonErrors && !isBatch && !options.quiet) {
+          spinner.text = 'Converting...';
+        }
+      };
+      updateSpinner();
 
       // Large Vault Handling: build index and sort in dependency order
       const vaultIndex = buildVaultIndex(cliFlags.vaultRoot as string | undefined, inputs);
@@ -522,7 +557,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
-                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+updateSpinner();
               }
               continue;
             }
@@ -553,7 +588,7 @@ import { computeHash, checkCache } from '../core/cache.js';
                 results[i] = { fromCache: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
                 if (!options.jsonErrors && isBatch) {
                   completedCount++;
-                  spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+updateSpinner();
                   (spinner as any).stop();
                   console.log(pc.green(`✔ ${path.basename(output as string)} (cached)`));
                   (spinner as any).start();
@@ -634,7 +669,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
             if (!options.jsonErrors && isBatch) {
               completedCount++;
-              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+updateSpinner();
             } else if (!options.jsonErrors) {
               console.warn(pc.yellow(`⚠ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
             }
@@ -669,7 +704,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               (spinner as any).stop();
               const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
               console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${timing})`));
-              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+updateSpinner();
               (spinner as any).start();
             }
             
@@ -688,7 +723,7 @@ import { computeHash, checkCache } from '../core/cache.js';
               }
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
-                spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+updateSpinner();
               }
               continue;
             }
@@ -709,7 +744,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             results[i] = { isError: true, error: cleanMsg, code: err?.code || md2Error?.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
             if (!options.jsonErrors && isBatch) {
               completedCount++;
-              spinner.text = `Converting (${completedCount}/${inputs.length}) files (Concurrency: ${concurrencyLimit})...`;
+updateSpinner();
             }
           }
         }

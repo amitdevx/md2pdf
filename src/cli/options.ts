@@ -28,5 +28,8 @@ export interface CliOptions {
   cache?: boolean;
   concurrency?: string;
   force?: boolean;
+  dryRun?: boolean;
+  quiet?: boolean;
+  __preparsed?: any;
 }
 

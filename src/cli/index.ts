@@ -81,7 +81,7 @@ program.command('clear-cache')
 program
   .name('md2pdf')
   .description('Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.')
-  .version(pkg.version)
+  .version(pkg.version, '-v, -V, --version', 'output the current version')
   .argument('[inputs...]', 'Input markdown files (supports wildcards like *.md)')
   .option('-o, --output <output>', 'Output PDF file (or directory if multiple inputs)')
   .option('--toc', 'Generate a Table of Contents')
@@ -155,6 +155,8 @@ program
   })
   .option('--browser <path>', 'Path to custom Chromium/Chrome executable (or use CHROME_PATH, BROWSER_PATH, or MD2PDF_BROWSER)')
   .option('-f, --force', 'Force overwrite of existing PDF files')
+  .option('--dry-run', 'Preview which files would be processed without actually converting them')
+  .option('-q, --quiet', 'Suppress all output except errors')
   .addHelpText('after', `
 Exit Codes:
   0: Success

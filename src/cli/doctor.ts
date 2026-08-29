@@ -39,6 +39,7 @@ export default new Command('doctor')
         browserLaunch: false,
         htmlRender: false,
         pdfGenerate: false,
+        mermaidRender: false,
         filesystem: false
       },
       errorContext: null as any,
@@ -116,6 +117,7 @@ export default new Command('doctor')
             results.checks.browserInstalled = true;
             results.checks.browserLaunch = true;
             results.checks.htmlRender = true;
+            results.checks.mermaidRender = true;
             results.checks.pdfGenerate = true;
          }
       }
@@ -142,6 +144,27 @@ export default new Command('doctor')
 
         if (spinner) {
           spinner.succeed('HTML rendered successfully');
+          spinner = ora({ text: 'Testing Mermaid rendering...', ...oraOptions }).start();
+        }
+
+        try {
+          const { fileURLToPath } = await import('node:url');
+          const pkgUrl = import.meta.resolve('mermaid/package.json');
+          const pkgPath = fileURLToPath(pkgUrl);
+          const mermaidPath = path.resolve(path.dirname(pkgPath), 'dist/mermaid.min.js');
+          await page.setContent('<!DOCTYPE html><html><body><div class="mermaid">graph TD;\nA-->B;</div></body></html>');
+          await page.addScriptTag({ path: mermaidPath });
+          await page.evaluate(() => (window as any).mermaid.initialize({ startOnLoad: true }));
+          await page.evaluate(() => new Promise(r => setTimeout(r, 100)));
+          results.checks.mermaidRender = true;
+          checks.push({ name: 'Mermaid rendering', status: true });
+        } catch (e) {
+          checks.push({ name: 'Mermaid rendering (failed)', status: false });
+        }
+
+        if (spinner) {
+          if (results.checks.mermaidRender) spinner.succeed('Mermaid diagrams rendering correctly');
+          else spinner.fail('Mermaid diagram rendering failed');
           spinner = ora({ text: 'Generating PDF...', ...oraOptions }).start();
         }
 
