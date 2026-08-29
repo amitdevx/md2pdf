@@ -507,7 +507,7 @@ import { computeHash, checkCache } from '../core/cache.js';
             if (remainMs > 60000) remainStr = ` ~${Math.round(remainMs/60000)}m remaining`;
             else remainStr = ` ~${Math.round(remainMs/1000)}s remaining`;
           }
-updateSpinner();
+          spinner.text = `Converting (${completedCount}/${inputs.length}) files [${percent}%]${remainStr}`;
         } else if (!options.jsonErrors && !isBatch && !options.quiet) {
           spinner.text = 'Converting...';
         }
@@ -557,7 +557,7 @@ updateSpinner();
               results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
-updateSpinner();
+                updateSpinner();
               }
               continue;
             }
@@ -588,7 +588,7 @@ updateSpinner();
                 results[i] = { fromCache: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
                 if (!options.jsonErrors && isBatch) {
                   completedCount++;
-updateSpinner();
+                updateSpinner();
                   (spinner as any).stop();
                   console.log(pc.green(`[OK] ${path.basename(output as string)} (cached)`));
                   (spinner as any).start();
@@ -669,7 +669,7 @@ updateSpinner();
             results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
             if (!options.jsonErrors && isBatch) {
               completedCount++;
-updateSpinner();
+                updateSpinner();
             } else if (!options.jsonErrors) {
               console.warn(pc.yellow(`[WARN] Skipped: Output file '${output}' already exists (use --force to overwrite).`));
             }
@@ -704,7 +704,7 @@ updateSpinner();
               (spinner as any).stop();
               const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
               console.log(pc.green(`[OK] ${path.basename(result.outputPath)} (${timing})`));
-updateSpinner();
+                updateSpinner();
               (spinner as any).start();
             }
             
@@ -723,7 +723,7 @@ updateSpinner();
               }
               if (!options.jsonErrors && isBatch) {
                 completedCount++;
-updateSpinner();
+                updateSpinner();
               }
               continue;
             }
@@ -744,7 +744,7 @@ updateSpinner();
             results[i] = { isError: true, error: cleanMsg, code: err?.code || md2Error?.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
             if (!options.jsonErrors && isBatch) {
               completedCount++;
-updateSpinner();
+                updateSpinner();
             }
           }
         }
@@ -833,7 +833,7 @@ updateSpinner();
           // Don't show GitHub banner for known user-level exceptions
           const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME' || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
           if (!isUserError) {
-            console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues \n`));
+            console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n`));
           }
 
           if (options.debug && err.stack) {

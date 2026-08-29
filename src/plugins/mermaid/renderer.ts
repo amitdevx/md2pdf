@@ -1,11 +1,9 @@
 import { Browser } from 'playwright-core';
 
 import { MermaidBlock } from './detector.js';
-import { createRequire } from 'node:module';
 import { getMermaidTheme, MermaidTheme } from './theme-map.js';
 import { fontCss } from '../../assets/fonts.js';
 
-const require = createRequire(import.meta.url);
 
 export interface RenderedMermaid {
   id: string;

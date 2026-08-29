@@ -158,7 +158,7 @@ export default new Command('doctor')
           await page.evaluate(() => new Promise(r => setTimeout(r, 100)));
           results.checks.mermaidRender = true;
           checks.push({ name: 'Mermaid rendering', status: true });
-        } catch (e) {
+        } catch {
           checks.push({ name: 'Mermaid rendering (failed)', status: false });
         }
 

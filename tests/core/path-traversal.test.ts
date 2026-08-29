@@ -2,14 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { runConvert } from '../../src/commands/convert';
 
 describe('Path Traversal Security (M-01)', () => {
-  let exitMock: any;
   let jsonOutMock: any;
-  let errorMock: any;
 
   beforeEach(() => {
-    exitMock = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
+    vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
     jsonOutMock = vi.spyOn(console, 'log').mockImplementation(() => {});
-    errorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -24,7 +22,7 @@ describe('Path Traversal Security (M-01)', () => {
     // /etc-backups should not be blocked by /etc
     try {
       await runConvert(['test.md'], { output: '/etc-backups/out.pdf', jsonErrors: true });
-    } catch (e: any) {
+    } catch {
       // It might fail on reading test.md, but it shouldn't fail with ERR_PATH_TRAVERSAL
     }
     // We check that jsonOutMock wasn't called with ERR_PATH_TRAVERSAL

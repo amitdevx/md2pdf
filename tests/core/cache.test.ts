@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkCache, writeCache, clearCache, computeHash } from '../../src/core/cache';
-import fs from 'node:fs';
+import { checkCache, clearCache, computeHash } from '../../src/core/cache';
 import path from 'node:path';
 import os from 'node:os';
 
@@ -22,8 +21,8 @@ describe('Cache Module', () => {
     
     // Mock win32 platform
     Object.defineProperty(process, 'platform', { value: 'win32' });
-    const hash1 = checkCache('C:\\MyDocs\\File.md', 'hash123', 'out.pdf');
-    const hash2 = checkCache('c:\\mydocs\\file.md', 'hash123', 'out.pdf');
+    checkCache('C:\\MyDocs\\File.md', 'hash123', 'out.pdf');
+    checkCache('c:\\mydocs\\file.md', 'hash123', 'out.pdf');
     
     // Restore platform
     if (originalPlatform) {

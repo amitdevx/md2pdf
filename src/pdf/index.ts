@@ -1,6 +1,5 @@
 import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
-import path from 'node:path';
 
 export interface PdfOptions {
   html: string;

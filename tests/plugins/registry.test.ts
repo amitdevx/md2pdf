@@ -64,8 +64,9 @@ describe('PluginRegistry', () => {
       type: 'render',
       name: 'evil-plugin',
       hooks: {
-        beforeRender: async (ctx) => {
+        beforeRender: async (html, ctx) => {
           capturedContext = ctx;
+          return html;
         }
       }
     }]);
@@ -73,7 +74,8 @@ describe('PluginRegistry', () => {
     const ctx = {
       options: {
         plugins: ['a', 'b']
-      }
+      },
+      logger: { error: () => {}, info: () => {}, warn: () => {} }
     };
     
     await registry.executeBeforeRender('html', ctx as any);
@@ -97,13 +99,13 @@ describe('PluginRegistry', () => {
       hooks: {
         beforeRender: async () => {
           executed = true;
-          return; // resolves immediately
+          return 'html'; // resolves immediately
         }
       }
     }]);
 
     // Fast plugin resolves, timeout shouldn't leak or fire
-    await registry.executeBeforeRender('html', {} as any);
+    await registry.executeBeforeRender('html', { logger: { error: () => {} } } as any);
     expect(executed).toBe(true);
   });
 });

@@ -1,10 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { runConvert } from '../../src/commands/convert';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
-
-const tempDir = path.join(os.tmpdir(), 'md2pdf-batch-test');
+const tempDir = path.join(process.cwd(), '.tmp-batch-test');
 
 describe('Batch Processing (M-05, M-07)', () => {
   beforeEach(() => {
@@ -30,7 +28,7 @@ describe('Batch Processing (M-05, M-07)', () => {
     fs.mkdirSync(outDir);
     
     // Convert multiple files, which will all try to ensure outDir exists
-    await runConvert(inputs, { output: outDir, cache: false, concurrency: "5" } as any);
+    await runConvert(inputs, { output: outDir, cache: false, concurrency: "5", debug: true } as any);
     
     // Check that all 5 PDFs were generated
     for (let i = 0; i < 5; i++) {
