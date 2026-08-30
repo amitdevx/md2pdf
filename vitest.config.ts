@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     testTimeout: 120000,
-    pool: 'forks',
+    pool: 'threads',
     poolOptions: {
       forks: {
         singleFork: true

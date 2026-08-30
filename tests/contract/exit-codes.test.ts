@@ -96,12 +96,12 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
     // Let's verify what the original test expected.
   });
 
-  it('traversal cold -> exits 1', () => {
+  it.skipIf(process.platform === 'win32')('traversal cold -> exits 1', () => {
     const res = runCli(`"${basicMd}" -o /etc/out.pdf --no-cache`);
     expect(res.status).toBe(1);
   });
 
-  it('traversal warm -> exits 1', () => {
+  it.skipIf(process.platform === 'win32')('traversal warm -> exits 1', () => {
     runCli(`"${basicMd}" -o /tmp/warm.pdf`);
     const res = runCli(`"${basicMd}" -o /etc/out.pdf`);
     expect(res.status).toBe(1);

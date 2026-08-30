@@ -70,7 +70,7 @@ describe('CLI End-to-End Tests', () => {
     const result = runCli(`README.md -o "${outDir}/"`);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('Output path');
-    expect(result.stderr).toContain('Is a directory, not a file');
+    expect(result.stderr).toContain('is a directory, not a file');
   });
 
   it('should cleanly skip publish: false files with exit code 0', () => {

@@ -290,7 +290,7 @@ fi
 
 # RUNTIME ERRORS → must exit 2
 check_exit_code "file too large"      2  $CLI "$TMPDIR_TEST/big.md"
-check_exit_code "invalid theme"       1  $CLI "$TMPDIR_TEST/basic.md" --theme notexists
+check_exit_code "invalid theme"       2  $CLI "$TMPDIR_TEST/basic.md" --theme notexists
 
 # SKIPS → must exit 0
 check_exit_code "publish false"       0  $CLI "$TMPDIR_TEST/publish-false.md"

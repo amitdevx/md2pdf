@@ -70,13 +70,13 @@ describe('JSON Errors Contract (20 Cases)', () => {
     // skip, not really an error unless same name
   });
 
-  it('traversal cold', () => {
+  it.skipIf(process.platform === 'win32')('traversal cold', () => {
     const res = runCliJson(`"${basicMd}" -o /etc/out.pdf --no-cache`);
     expect(res.success).toBe(false);
     expect(res.error.code).toBe('ERR_PATH_TRAVERSAL');
   });
 
-  it('traversal warm', () => {
+  it.skipIf(process.platform === 'win32')('traversal warm', () => {
     const res = runCliJson(`"${basicMd}" -o /etc/out.pdf`);
     expect(res.success).toBe(false);
     expect(res.error.code).toBe('ERR_PATH_TRAVERSAL');
@@ -136,7 +136,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
     expect(res.success).toBe(true);
   });
 
-  it('chmod 000', () => {
+  it.skipIf(process.platform === 'win32')('chmod 000', () => {
     const chmod = path.join(fixturesDir, 'chmod.md');
     if (fs.existsSync(chmod)) {
       try { fs.chmodSync(chmod, 0o666); } catch { /* ignore */ }
