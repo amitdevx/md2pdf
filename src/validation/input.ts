@@ -38,7 +38,7 @@ export function validateInput(input: string): Md2PdfError | null {
     complexityDepth = Math.max(0, ...rawContent.split('\n').map(
       line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
     ));
-  } catch {}
+  } catch { /* ignore */ }
   
   if (complexityDepth > 200) {
     return new Md2PdfError(Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX, 'Document Too Complex', `The document contains blockquote nesting ${complexityDepth} levels deep. Maximum supported depth is 200.`, { markdownFile: input });

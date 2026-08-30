@@ -23,13 +23,13 @@ describe('CLI End-to-End Tests', () => {
   it('should fail on missing file with exit code 1', () => {
     const result = runCli('nonexistent.md');
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("nonexistent.md - File Not Found");
+    expect(result.stderr).toContain("File not found");
   });
 
   it('should fail on directory input with exit code 1', () => {
     const result = runCli(path.resolve(__dirname, '../../src'));
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Is a Directory, Not a File');
+    expect(result.stderr).toContain('Is a directory, not a file');
   });
 
   it('should fail on non-.md input with exit code 1', () => {
@@ -37,7 +37,7 @@ describe('CLI End-to-End Tests', () => {
     fs.writeFileSync(tempTxt, 'hello');
     const result = runCli(tempTxt);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Not a Markdown File');
+    expect(result.stderr).toContain('Not a markdown file');
     fs.unlinkSync(tempTxt);
   });
 
@@ -62,7 +62,7 @@ describe('CLI End-to-End Tests', () => {
   it('should fail on same input and output with exit code 1', () => {
     const result = runCli(`README.md -o README.md`);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('README.md - Input and Output Cannot Be the Same File');
+    expect(result.stderr).toContain('Input and output cannot be the same file');
   });
 
   it('should fail when output is a directory even with trailing slash', () => {
@@ -70,7 +70,7 @@ describe('CLI End-to-End Tests', () => {
     const result = runCli(`README.md -o "${outDir}/"`);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('Output path');
-    expect(result.stderr).toContain('Is a Directory, Not a File');
+    expect(result.stderr).toContain('Is a directory, not a file');
   });
 
   it('should cleanly skip publish: false files with exit code 0', () => {

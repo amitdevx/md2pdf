@@ -76,7 +76,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
       complexityDepth = Math.max(0, ...rawContent.split('\n').map(
         line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
       ));
-    } catch {}
+    } catch { /* ignore */ }
     
     if (complexityDepth > 200) {
       errors.push({

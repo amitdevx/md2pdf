@@ -62,3 +62,16 @@ test_*.js
 test_*.cjs
 fix-*.js
 *.local.ts
+
+# Temporary test fixtures
+tests/fixtures/bad*.md
+tests/fixtures/chmod.md
+tests/fixtures/complex.md
+tests/fixtures/large.md
+tests/fixtures/pub*.md
+tests/fixtures/rce.md
+tests/fixtures/temp.txt
+tests/fixtures/test.txt
+tests/cli/bad*.md
+tests/cli/skip*.md
+tests/cli/temp*.txt

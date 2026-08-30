@@ -139,7 +139,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
   it('chmod 000', () => {
     const chmod = path.join(fixturesDir, 'chmod.md');
     if (fs.existsSync(chmod)) {
-      try { fs.chmodSync(chmod, 0o666); } catch (e) {}
+      try { fs.chmodSync(chmod, 0o666); } catch { /* ignore */ }
     }
     fs.writeFileSync(chmod, '# test');
     fs.chmodSync(chmod, 0o000);
