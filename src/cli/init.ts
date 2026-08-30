@@ -14,7 +14,8 @@ export default new Command('init')
     
     const oraOptions = { prefixText: ' ' };
     let spinner = ora({ text: 'Checking Node environment...', ...oraOptions }).start();
-    spinner.succeed(`Node.js ${process.version}`);
+    spinner.stop();
+    console.log('  ' + pc.green('[OK]') + ' ' + `Node.js ${process.version}`);
 
     spinner = ora({ text: 'Checking Playwright installation...', ...oraOptions }).start();
     
@@ -29,17 +30,22 @@ export default new Command('init')
         const discovered = discoverBrowser();
         
         if (process.env.MD2PDF_BROWSER) {
-          spinner.succeed(`Browser is ready (Override: ${process.env.MD2PDF_BROWSER})`);
+          spinner.stop();
+        console.log('  ' + pc.green('[OK]') + ' ' + `Browser is ready (Override: ${process.env.MD2PDF_BROWSER})`);
         } else if (cached?.executablePath) {
-          spinner.succeed(`Browser is ready (Cached: ${cached.executablePath})`);
+          spinner.stop();
+        console.log('  ' + pc.green('[OK]') + ' ' + `Browser is ready (Cached: ${cached.executablePath})`);
         } else if (discovered) {
-          spinner.succeed(`Browser is ready (System: ${discovered.name})`);
+          spinner.stop();
+        console.log('  ' + pc.green('[OK]') + ' ' + `Browser is ready (System: ${discovered.name})`);
         } else {
-          spinner.succeed('Playwright bundled browser is ready');
+          spinner.stop();
+        console.log('  ' + pc.green('[OK]') + ' ' + 'Playwright bundled browser is ready');
         }
       } catch (err) {
         if (!isMissingExecutableError(err)) {
-          spinner.fail('Browser is installed but crashed during launch');
+          spinner.stop();
+        console.log('  ' + pc.red('[ERR]') + ' ' + 'Browser is installed but crashed during launch');
           const { detectBrowserError } = await import('../errors/detect.js');
           const mdError = detectBrowserError(err);
           const { renderCliError } = await import('./formatter.js');
@@ -49,7 +55,8 @@ export default new Command('init')
         throw new Error('missing');
       }
     } catch {
-      spinner.fail('Chromium browser missing');
+      spinner.stop();
+        console.log('  ' + pc.red('[ERR]') + ' ' + 'Chromium browser missing');
       console.log(pc.yellow('\nmd2pdf requires a Chromium-based browser (Chrome, Edge, Brave, etc.) to generate PDFs.'));
       console.log(pc.yellow('None were found on your system. You can install one manually, or let md2pdf download a local copy.'));
 
@@ -106,9 +113,11 @@ export default new Command('init')
           }
         }
         
-        spinner.succeed('Successfully installed browser dependencies!');
+        spinner.stop();
+        console.log('  ' + pc.green('[OK]') + ' ' + 'Successfully installed browser dependencies!');
       } catch (e: any) {
-        spinner.fail('Failed to install dependencies automatically.');
+        spinner.stop();
+        console.log('  ' + pc.red('[ERR]') + ' ' + 'Failed to install dependencies automatically.');
         if (e.stderr || e.stdout || e.message) {
           console.error(pc.red(`\nError details:`));
           console.error(pc.dim((e.stderr || e.stdout || e.message).toString()));
@@ -138,34 +147,36 @@ export default new Command('init')
       output: process.stdout,
     });
 
-    rl.question(pc.cyan('Would you like to create a default .md2pdf.json config file here? (y/N) '), async (ans) => {
-      if (ans.toLowerCase().startsWith('y')) {
-        try {
-          fs.writeFileSync(configPath, JSON.stringify({
-            theme: "github",
-            margin: "1in",
-            paper: "A4",
-            toc: false
-          }, null, 2));
-          console.log('\n  ' + pc.green('[OK]') + ' Created .md2pdf.json\n');
-        } catch (err: any) {
-          console.log('');
-          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-          const { renderCliError } = await import('./formatter.js');
-          renderCliError(new Md2PdfError(
-            Md2PdfErrorCode.ERR_PERMISSION_DENIED,
-            'Filesystem Write Failed',
-            `Cannot write config to current directory: ${err.message}`,
-            { outputPath: process.cwd() },
-            err
-          ), { jsonErrors: false, verbose: false, debug: false } as any);
-        }
-      } else {
-        console.log('');
-      }
-      rl.close();
-      console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
-      process.exit(EXIT.OK);
+    const ans = await new Promise<string>(resolve => {
+      rl.question(pc.cyan('Would you like to create a default .md2pdf.json config file here? (y/N) '), resolve);
     });
+    
+    if (ans.toLowerCase().startsWith('y')) {
+      try {
+        fs.writeFileSync(configPath, JSON.stringify({
+          theme: "github",
+          margin: "1in",
+          paper: "A4",
+          toc: false
+        }, null, 2));
+        console.log('\n  ' + pc.green('[OK]') + ' Created .md2pdf.json\n');
+      } catch (err: any) {
+        console.log('');
+        const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+        const { renderCliError } = await import('./formatter.js');
+        renderCliError(new Md2PdfError(
+          Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+          'Filesystem Write Failed',
+          `Cannot write config to current directory: ${err.message}`,
+          { outputPath: process.cwd() },
+          err
+        ), { jsonErrors: false, verbose: false, debug: false } as any);
+      }
+    } else {
+      console.log('');
+    }
+    rl.close();
+    console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
+    process.exit(EXIT.OK);
 
   });

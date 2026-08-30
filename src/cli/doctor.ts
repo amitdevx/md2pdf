@@ -103,7 +103,8 @@ export default new Command('doctor')
 
       
       if (spinner) {
-        spinner.succeed(checks[checks.length - 1].name);
+        spinner.stop();
+          console.log('  ' + pc.green('[OK]') + ' ' + checks[checks.length - 1].name);
       }
 
       let skipBrowserLaunch = false;
@@ -123,7 +124,8 @@ export default new Command('doctor')
       }
 
       if (skipBrowserLaunch) {
-        if (spinner) spinner.succeed(checks[checks.length - 1].name);
+        if (spinner) spinner.stop();
+          console.log('  ' + pc.green('[OK]') + ' ' + checks[checks.length - 1].name);
       } else {
         if (spinner) spinner = ora({ text: 'Launching browser...', ...oraOptions }).start();
         
@@ -133,7 +135,8 @@ export default new Command('doctor')
         results.checks.browserLaunch = true;
         
         if (spinner) {
-          spinner.succeed('Compatible browser found and launched');
+          spinner.stop();
+          console.log('  ' + pc.green('[OK]') + ' ' + 'Compatible browser found and launched');
           spinner = ora({ text: 'Rendering HTML...', ...oraOptions }).start();
         }
 
@@ -143,7 +146,8 @@ export default new Command('doctor')
         checks.push({ name: 'HTML render', status: true });
 
         if (spinner) {
-          spinner.succeed('HTML rendered successfully');
+          spinner.stop();
+          console.log('  ' + pc.green('[OK]') + ' ' + 'HTML rendered successfully');
           spinner = ora({ text: 'Testing Mermaid rendering...', ...oraOptions }).start();
         }
 
@@ -163,8 +167,12 @@ export default new Command('doctor')
         }
 
         if (spinner) {
-          if (results.checks.mermaidRender) spinner.succeed('Mermaid diagrams rendering correctly');
-          else spinner.fail('Mermaid diagram rendering failed');
+          spinner.stop();
+          if (results.checks.mermaidRender) {
+            console.log('  ' + pc.green('[OK]') + ' ' + 'Mermaid diagrams rendering correctly');
+          } else {
+            console.log('  ' + pc.red('[ERR]') + ' ' + 'Mermaid diagram rendering failed');
+          }
           spinner = ora({ text: 'Generating PDF...', ...oraOptions }).start();
         }
 
@@ -173,7 +181,8 @@ export default new Command('doctor')
         checks.push({ name: 'PDF generate', status: true });
         
         if (spinner) {
-          spinner.succeed('PDF generated successfully');
+          spinner.stop();
+          console.log('  ' + pc.green('[OK]') + ' ' + 'PDF generated successfully');
         }
       }
       
@@ -190,7 +199,8 @@ export default new Command('doctor')
         checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: true });
         
         if (spinner) {
-          spinner.succeed('Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
+          spinner.stop();
+          console.log('  ' + pc.green('[OK]') + ' ' + 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
         }
       } catch (err: any) {
         throw new Md2PdfError(
@@ -204,7 +214,8 @@ export default new Command('doctor')
 
 
     } catch (e: unknown) {
-      if (spinner) spinner.fail('Test failed');
+      if (spinner) spinner.stop();
+          console.log('  ' + pc.red('[ERR]') + ' ' + 'Test failed');
       
       mdError = detectBrowserError(e, { platform: process.platform });
       results.errorContext = {
