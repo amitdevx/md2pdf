@@ -23,7 +23,7 @@
   --md2pdf-accent-color: #990000;
   --md2pdf-accent-text: #ffffff;
 
-  /* Fix: both header AND stripe were #ffffff — zero row distinction. Use visible grays. */
+  /* Fix: both header AND stripe were #ffffff - zero row distinction. Use visible grays. */
   --md2pdf-table-header-bg: #e8e8e8;
   --md2pdf-table-stripe-bg: #f5f5f5;
 }

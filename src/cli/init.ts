@@ -53,6 +53,11 @@ export default new Command('init')
       console.log(pc.yellow('\nmd2pdf requires a Chromium-based browser (Chrome, Edge, Brave, etc.) to generate PDFs.'));
       console.log(pc.yellow('None were found on your system. You can install one manually, or let md2pdf download a local copy.'));
 
+      if (!process.stdin.isTTY) {
+        console.error(pc.red('\nNon-interactive environment detected. Run `md2pdf init` in a terminal or install Chromium manually.'));
+        process.exit(EXIT.ENVIRONMENT_ERROR);
+      }
+
       const rlInit = readline.createInterface({ input: process.stdin, output: process.stdout });
       const ans = await new Promise<string>(resolve => {
         rlInit.question('\nWould you like md2pdf to automatically download Playwright Chromium (~150MB)? (Y/n) ', resolve);
@@ -73,7 +78,8 @@ export default new Command('init')
         const { createRequire } = await import('node:module');
         const { execFileSync } = await import('node:child_process');
         const require = createRequire(import.meta.url);
-        const pwCli = require.resolve('playwright-core/cli');
+        const pwPkg = require.resolve('playwright-core/package.json');
+        const pwCli = path.join(path.dirname(pwPkg), 'cli.js');
 
         execFileSync(process.execPath, [pwCli, 'install', 'chromium'], { stdio: 'inherit' });
         

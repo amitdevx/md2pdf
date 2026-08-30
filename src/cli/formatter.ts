@@ -28,7 +28,7 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
     });
     let code = EXIT.ENVIRONMENT_ERROR;
     if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
-    if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT || err.code === Md2PdfErrorCode.ERR_INVALID_THEME) code = EXIT.USAGE_ERROR;
+    if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
     
     process.exitCode = code;
     return;
@@ -73,7 +73,7 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
   // Exit code mapping
   let code = EXIT.ENVIRONMENT_ERROR;
   if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
-  if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT || err.code === Md2PdfErrorCode.ERR_INVALID_THEME) code = EXIT.USAGE_ERROR;
+  if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
   
   process.exitCode = code;
 }

@@ -199,5 +199,7 @@ if (process.argv.length <= 2) {
   program.outputHelp();
   process.exit(1);
 } else {
-  program.parse(process.argv);
+  program.parseAsync(process.argv).finally(() => {
+    process.exit(process.exitCode || 0);
+  });
 }

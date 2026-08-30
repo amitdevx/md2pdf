@@ -181,15 +181,16 @@ export default new Command('doctor')
         spinner = ora({ text: 'Testing filesystem...', ...oraOptions }).start();
       }
 
-      const tmpPath = path.join(process.cwd(), '.md2pdf-doctor-test.pdf');
+      
+      const tmpPath = path.join(os.tmpdir(), '.md2pdf-doctor-test.pdf');
       try {
         fs.writeFileSync(tmpPath, 'test-content');
         fs.unlinkSync(tmpPath);
         results.checks.filesystem = true;
-        checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)', status: true });
+        checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: true });
         
         if (spinner) {
-          spinner.succeed('Filesystem write (tested .md2pdf-doctor-test.pdf in cwd)');
+          spinner.succeed('Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
         }
       } catch (err: any) {
         throw new Md2PdfError(
