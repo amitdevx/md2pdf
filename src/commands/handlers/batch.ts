@@ -364,10 +364,10 @@ export async function handleBatch(
       spinner.stop();
       console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
       if (skippedExistingCount > 0) {
-        console.log(pc.yellow(`  [WARN] Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
+        console.log(pc.yellow(`[WARN] Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
       }
       if (skippedPublishCount > 0) {
-        console.log(pc.yellow(`  [WARN] Skipped ${skippedPublishCount} files (publish: false)`));
+        console.log(pc.yellow(`[WARN] Skipped ${skippedPublishCount} files (publish: false)`));
       }
     }
 
@@ -383,7 +383,8 @@ export async function handleBatch(
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
       } else {
-        spinner.fail(pc.red(err.message));
+        spinner.stop();
+        console.error(pc.red('[ERR]') + ' ' + pc.red(err.message));
         const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME'
           || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
         if (!isUserError) {

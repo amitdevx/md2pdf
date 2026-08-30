@@ -8,7 +8,7 @@ export function validateInput(input: string): Md2PdfError | null {
   }
 
   if (!fs.existsSync(input)) {
-    return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'File Not Found', `${input} - File Not Found`, { markdownFile: input });
+    return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'File Not Found', 'File not found', { markdownFile: input });
   }
 
   const stat = fs.statSync(input);
@@ -19,17 +19,17 @@ export function validateInput(input: string): Md2PdfError | null {
   }
 
   if (stat.isDirectory()) {
-    return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', `${input} - Is a Directory, Not a File`, { markdownFile: input });
+    return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', 'Is a directory, not a file', { markdownFile: input });
   }
 
   if (path.extname(input).toLowerCase() !== '.md') {
-    return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', `${input} - Not a Markdown File`, { markdownFile: input });
+    return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', 'Not a markdown file', { markdownFile: input });
   }
 
   try {
     fs.accessSync(input, fs.constants.R_OK);
   } catch {
-    return new Md2PdfError(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', `Cannot read file '${input}': Permission denied.`, { markdownFile: input });
+    return new Md2PdfError(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', 'Permission denied', { markdownFile: input });
   }
 
   let complexityDepth = 0;

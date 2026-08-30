@@ -23,7 +23,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     if (!fs.existsSync(input)) {
       errors.push({
         input,
-        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'File Not Found', `${input} - File Not Found`, { markdownFile: input }),
+        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'File Not Found', 'File not found', { markdownFile: input }),
         isFatal: false
       });
       continue;
@@ -44,7 +44,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     if (stat.isDirectory()) {
       errors.push({
         input,
-        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', `${input} - Is a Directory, Not a File`, { markdownFile: input }),
+        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', 'Is a directory, not a file', { markdownFile: input }),
         isFatal: false
       });
       continue;
@@ -53,7 +53,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     if (path.extname(input).toLowerCase() !== '.md') {
       errors.push({
         input,
-        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', `${input} - Not a Markdown File`, { markdownFile: input }),
+        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', 'Not a markdown file', { markdownFile: input }),
         isFatal: false
       });
       continue;
@@ -64,7 +64,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     } catch {
       errors.push({
         input,
-        error: new Md2PdfError(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', `Cannot read file '${input}': Permission denied.`, { markdownFile: input }),
+        error: new Md2PdfError(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', 'Permission denied', { markdownFile: input }),
         isFatal: true
       });
       continue;
@@ -91,7 +91,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     if (predictedOutput && path.resolve(input) === path.resolve(predictedOutput)) {
       errors.push({
         input,
-        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', `${input} - Input and Output Cannot Be the Same File`, { markdownFile: input }),
+        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', 'Input and output cannot be the same file', { markdownFile: input }),
         isFatal: false
       });
       continue;
@@ -112,7 +112,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     if (path.resolve(input) === path.resolve(predictedOutput)) {
       errors.push({
         input,
-        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', `${input} - Input and Output Cannot Be the Same File`, { markdownFile: input }),
+        error: new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', 'Input and output cannot be the same file', { markdownFile: input }),
         isFatal: false
       });
       continue;

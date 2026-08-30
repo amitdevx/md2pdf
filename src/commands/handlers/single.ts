@@ -191,7 +191,8 @@ export async function handleSingle(
       });
     } else {
       const outDest = options.output ? ` (Saved to: ${options.output})` : '';
-      spinner.succeed(pc.green(`Successfully converted 1 file in ${((Date.now() - startTime) / 1000).toFixed(1)}s!${outDest}`));
+      spinner.stop();
+      console.log(pc.green('[OK]') + ' ' + pc.green(`Successfully converted 1 file in ${((Date.now() - startTime) / 1000).toFixed(1)}s!${outDest}`));
     }
 
     process.exitCode = EXIT.OK;
@@ -216,7 +217,8 @@ export async function handleSingle(
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
       } else {
-        spinner.fail(pc.red(err.message));
+        spinner.stop();
+        console.error(pc.red('[ERR]') + ' ' + pc.red(err.message));
         const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME'
           || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
         if (!isUserError) {
