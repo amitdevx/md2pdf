@@ -25,7 +25,6 @@ import { handleSingle } from './handlers/single.js';
 import { handleBatch } from './handlers/batch.js';
 
 export async function runConvert(inputsRaw: string[], options: CliOptions) {
-  // ── 1. Glob resolution ──────────────────────────────────────────────────
   let inputs: string[] = [];
   for (const raw of inputsRaw) {
     if (fs.existsSync(raw)) {
@@ -51,7 +50,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     process.exit(EXIT.USAGE_ERROR);
   }
 
-  // ── 2. Load config ──────────────────────────────────────────────────────
   let resolvedConfig = {};
   try {
     const result = await loadConfig(process.cwd(), options.config);
@@ -62,7 +60,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     process.exit(EXIT.USAGE_ERROR);
   }
 
-  // ── 3. Build cliFlags + early checks ───────────────────────────────────
   const cliFlags = { ...options };
   if ((cliFlags as any).browser) {
     process.env.MD2PDF_BROWSER = (cliFlags as any).browser;
@@ -110,7 +107,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     }
   }
 
-  // ── 4. Batch-mode output directory checks ───────────────────────────────
   const isBatch = inputs.length > 1;
 
   if (isBatch && options.output) {
@@ -145,7 +141,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     }
   }
 
-  // ── 5. Dry-run ──────────────────────────────────────────────────────────
   if (options.dryRun) {
     if (!options.jsonErrors && !options.quiet) {
       console.log(pc.cyan(`\n[PREVIEW] Dry Run Mode: ${inputs.length} file(s) matched`));
@@ -167,7 +162,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     return;
   }
 
-  // ── 6. Validate all inputs ──────────────────────────────────────────────
   const validationResult = validateInputFiles(inputs, isBatch, options);
   let hasErrors = false;
 
@@ -196,7 +190,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
   }
 
-  // ── 7. Route to handler ─────────────────────────────────────────────────
   if (isBatch) {
     await handleBatch(inputs, options, cliFlags, resolvedConfig);
   } else {

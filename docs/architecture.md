@@ -2,43 +2,40 @@
 
 ## End-to-End, Feature-Scalable, Stable
 
-This document outlines the architecture for the `md2pdf` package.
+This document outlines the architecture for the `md2pdf` package, which was heavily refactored in v0.9.0 to ensure modularity and stability.
 
 ### Overview
 The codebase is structured to separate concerns and ensure stability, scalability, and testability. The core conversion pipeline is designed as a sequence of explicit, named, and testable stages.
 
 ### Directory Structure
-```
+```text
 md2pdf/
 ├── src/
-│   ├── api/                     ← Public API surface
-│   ├── pipeline/                ← The conversion engine (pure functions)
-│   ├── validation/              ← ALL validation in one place
-│   ├── browser/                 ← Browser lifecycle (isolated)
 │   ├── cache/                   ← Incremental rendering cache
-│   ├── scheduler/               ← Job scheduling for batch
-│   ├── features/                ← Optional post-processing features
-│   ├── themes/                  ← Themes
-│   ├── plugins/                 ← Plugin system
+│   ├── cli/                     ← CLI layer (formatter, options, init, doctor)
+│   ├── commands/                ← CLI orchestrators
+│   │   ├── convert.ts           ← Thin orchestrator for validation and routing
+│   │   └── handlers/            ← Modular handlers (single.ts, batch.ts)
 │   ├── config/                  ← Configuration loader and merge
+│   ├── core/                    ← Core conversion logic (index, vault)
 │   ├── errors/                  ← Error system with structured payloads
-│   ├── cli/                     ← CLI layer
-│   └── assets/                  ← Static assets
+│   ├── parser/                  ← Markdown parsing and AST transformation
+│   ├── pdf/                     ← Playwright browser lifecycle and PDF gen
+│   ├── plugins/                 ← Plugin system (mermaid, obsidian, etc.)
+│   ├── renderer/                ← HTML rendering pipeline
+│   ├── themes/                  ← Themes (dracula, github, etc.)
+│   └── validation/              ← ALL CLI input/output validation
 ├── tests/
-│   ├── unit/                    ← Pure function tests
-│   ├── integration/             ← Real browser tests
-│   └── contract/                ← Black-box CLI tests
+│   ├── cli/                     ← E2E CLI tests
+│   ├── contract/                ← Strict contract tests for exit codes and JSON output
+│   ├── core/                    ← Core engine tests
+│   ├── parser/                  ← AST and highlighting tests
+│   ├── pdf/                     ← Playwright rendering tests
+│   └── plugins/                 ← Plugin-specific tests
 ```
 
-### The Pipeline
-The conversion pipeline uses explicit stages (ParseStage, TransformStage, RenderStage, etc.) passing a `PipelineContext` between them, enabling easy injection of features like watermarks or merging without complicating the core flow.
-
-### Validation Layer
-All input, output, and flag validation is centrally located in `src/validation/` and runs entirely before browser initialization.
-
-### Public API Contract
-A strict separation exists between the public API options (`ConvertOptions`) and internal CLI options (`CliOptions`). This ensures stability for library consumers while allowing the CLI to evolve freely.
+### Handlers & Validation
+All input, output, and flag validation is centrally located in `src/validation/` and runs entirely before browser initialization to prevent resource hangs. After validation, `src/commands/convert.ts` routes the execution to either `handlers/single.ts` (optimized fast-path) or `handlers/batch.ts` (concurrent worker pool with mermaid warmup).
 
 ### Error System
-Structured errors are used throughout, delivering context like the triggering file, expected conditions, hints, and documentation URLs, which empowers both programmatic usage and AI-assisted debugging.
-
+Structured errors (`Md2PdfError`) are used throughout, delivering context like the triggering file, expected conditions, hints, and documentation URLs, which empowers both programmatic usage and CLI JSON outputs.

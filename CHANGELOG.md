@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.9.0] - 2026-08-29
+## [0.9.0] - 2026-08-30
 
 ### Added
 - Added `-q`, `--quiet` mode to suppress standard output for scripting environments.
@@ -18,8 +18,9 @@ All notable changes to this project will be documented in this file.
 - Ensured plugins are strictly sandboxed by trapping `Array.prototype.push` bypassing in deep readonly contexts.
 - Hardened path traversal security to allow harmless prefix directories (like `/etc-backups/`) while still blocking traversal attacks against system roots like `/etc/`.
 - Removed emojis and em-dashes from logging output to improve compatibility with strict terminal environments.
-- Extracted core validation logic from CLI command into dedicated module.
 - Fixed process hang on non-TTY environments and edge cases throwing environment errors.
+- Refactored `convert.ts` into modular single and batch handlers (`src/commands/handlers/`) to improve maintainability and CLI stability.
+- Extracted core validation logic from CLI command into dedicated module (`src/validation/`).
 
 ## [0.8.10] - 2026-08-26
 ### Fixed

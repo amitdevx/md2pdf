@@ -78,7 +78,6 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
   process.exitCode = code;
 }
 
-// ── Spinner ────────────────────────────────────────────────────────────────
 /** Minimal interface satisfied by both ora and the noop fallback. */
 export interface SpinnerLike {
   start(): void;
@@ -96,7 +95,6 @@ export const noopSpinner: SpinnerLike = {
   warn: () => {}, fail: () => {}, info: () => {}, text: ''
 };
 
-// ── JSON fast-exit helper ──────────────────────────────────────────────────
 /**
  * Emit a structured JSON error to stdout and exit immediately.
  * Used for pre-flight errors that occur before a file is being processed.

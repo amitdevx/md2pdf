@@ -67,7 +67,6 @@ export async function handleBatch(
   try {
     const { getBrowser } = await import('../../pdf/browser.js');
 
-    // ── Fast mermaid heuristic: scan all inputs before starting browser ──
     const hasMermaidAnywhere = await Promise.all(inputs.map(input => {
       return new Promise<boolean>(resolve => {
         const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
@@ -124,7 +123,6 @@ export async function handleBatch(
     };
     updateSpinner();
 
-    // ── Vault dependency ordering ─────────────────────────────────────────
     const vaultIndex = buildVaultIndex(cliFlags.vaultRoot as string | undefined, inputs);
     inputs = sortDependencies(inputs, vaultIndex);
 
@@ -135,7 +133,6 @@ export async function handleBatch(
         const { input, i } = queue.shift()!;
         const fileStartTime = Date.now();
 
-        // ── Resolve output path for this file ───────────────────────────
         let output = cliFlags.output;
         if (output) {
           if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
@@ -149,7 +146,6 @@ export async function handleBatch(
         }
         output = path.resolve(output as string);
 
-        // ── Ensure output directory ────────────────────────────────────
         try {
           fs.mkdirSync(path.dirname(output), { recursive: true });
         } catch (dirErr: any) {
@@ -170,7 +166,6 @@ export async function handleBatch(
 
         const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
 
-        // ── Pre-render cache check ──────────────────────────────────────
         const useCache = convertOptions.cache !== false;
         let rawContent = '';
         try {
@@ -198,7 +193,6 @@ export async function handleBatch(
           } catch { /* ignore cache errors */ }
         }
 
-        // ── Browser acquisition ────────────────────────────────────────
         if (!globalBrowserPromise) {
           globalBrowserPromise = getBrowser().then(b => { globalBrowser = b; return b; });
         }
@@ -225,7 +219,6 @@ export async function handleBatch(
           continue;
         }
 
-        // ── Per-file mermaid init (lazy) ────────────────────────────────
         const hasMermaid = rawContent.includes('```mermaid');
         if (hasMermaid) {
           if (!mermaidInitPromise) {
@@ -246,7 +239,6 @@ export async function handleBatch(
 
         convertOptions.sharedBrowser = globalBrowser;
 
-        // ── Skip existing ──────────────────────────────────────────────
         if (fs.existsSync(output as string) && !options.force) {
           skippedExistingCount++;
           results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
@@ -257,7 +249,6 @@ export async function handleBatch(
           continue;
         }
 
-        // ── Conversion ─────────────────────────────────────────────────
         try {
           if (options.verbose && !options.jsonErrors) {
             spinner.stop();
@@ -346,7 +337,6 @@ export async function handleBatch(
       || settledResults.some(r => r.status === 'rejected');
     if (anyErrors) hasErrors = true;
 
-    // ── Output results ──────────────────────────────────────────────────
     if (options.jsonErrors) {
       jsonOut({
         success: !hasErrors && (successfulCount > 0 || skippedExistingCount > 0 || skippedPublishCount > 0),

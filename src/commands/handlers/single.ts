@@ -21,7 +21,6 @@ export async function handleSingle(
   cliFlags: any,
   resolvedConfig: any
 ): Promise<void> {
-  // ── Resolve output path ────────────────────────────────────────────────
   let output = cliFlags.output;
   if (output) {
     if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
@@ -36,7 +35,6 @@ export async function handleSingle(
 
   const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
 
-  // ── Fast cache check (skip browser warmup entirely if hit) ─────────────
   if (convertOptions.cache !== false) {
     try {
       const rawContent = fs.readFileSync(input, 'utf-8');
@@ -57,7 +55,6 @@ export async function handleSingle(
     }
   }
 
-  // ── Pre-check publish:false BEFORE showing spinner ─────────────────────
   if (!options.jsonErrors) {
     try {
       const rawContent = fs.readFileSync(input, 'utf-8');
