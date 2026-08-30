@@ -1,756 +1,205 @@
-import { fileURLToPath } from "node:url";
-import { convert } from '../core/index.js';
-import ora from 'ora';
-import pc from 'picocolors';
+/**
+ * convert.ts — CLI orchestrator (~100 lines)
+ *
+ * Responsibilities:
+ *   1. Resolve globs → concrete file paths
+ *   2. Load config
+ *   3. Emit early errors (no input, vault root, unsupported flags)
+ *   4. Validate all inputs via validateInputFiles()
+ *   5. Route to handleSingle() or handleBatch()
+ *
+ * The actual conversion logic lives in:
+ *   src/commands/handlers/single.ts  — single file fast-path + cache bypass
+ *   src/commands/handlers/batch.ts   — concurrent worker pool
+ */
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import fg from 'fast-glob';
+import pc from 'picocolors';
 import { loadConfig } from '../config/loader.js';
-import { mergeConfig } from '../config/merge.js';
 import { jsonOut, renderCliError, EXIT } from '../cli/formatter.js';
+import { emitJsonErrorAndExit } from './handlers/shared.js';
 import type { CliOptions } from '../cli/options.js';
-import { Md2PdfError } from '../errors/index.js';
-import { detectBrowserError } from '../errors/detect.js';
-import { buildVaultIndex, sortDependencies } from '../core/vault.js';
-import { computeHash, checkCache } from '../core/cache.js';
+import { validateInputFiles } from '../validation/index.js';
+import { handleSingle } from './handlers/single.js';
+import { handleBatch } from './handlers/batch.js';
 
-  export async function runConvert(inputsRaw: string[], options: CliOptions) {
-    // Resolve globs for Windows compatibility
-    let inputs: string[] = [];
-    for (const raw of inputsRaw) {
-      if (fs.existsSync(raw)) {
-        inputs.push(path.normalize(raw));
-        continue;
-      }
-      
-      const normalizedPattern = raw.replace(/\\/g, '/');
-      if (fg.isDynamicPattern(normalizedPattern)) {
-        const matches = await fg(normalizedPattern, { dot: true, unique: true, onlyFiles: false });
-        inputs.push(...matches.map(p => path.normalize(p)));
-      } else {
-        inputs.push(path.normalize(raw));
-      }
+export async function runConvert(inputsRaw: string[], options: CliOptions) {
+  // ── 1. Glob resolution ──────────────────────────────────────────────────
+  let inputs: string[] = [];
+  for (const raw of inputsRaw) {
+    if (fs.existsSync(raw)) {
+      inputs.push(path.normalize(raw));
+      continue;
     }
-    inputs = Array.from(new Set(inputs));
-    
-    if (inputs.length === 0) {
-      if (options.jsonErrors) {
-        jsonOut({ success: false, error: { code: 'ERR_NO_INPUT', title: 'Missing Input', reason: 'No input files found matching the provided arguments.' } });
-      } else {
-        console.error(pc.red('[ERR] No input files found matching the provided arguments.'));
-      }
+    const normalizedPattern = raw.replace(/\\/g, '/');
+    if (fg.isDynamicPattern(normalizedPattern)) {
+      const matches = await fg(normalizedPattern, { dot: true, unique: true, onlyFiles: false });
+      inputs.push(...matches.map(p => path.normalize(p)));
+    } else {
+      inputs.push(path.normalize(raw));
+    }
+  }
+  inputs = Array.from(new Set(inputs));
+
+  if (inputs.length === 0) {
+    if (options.jsonErrors) {
+      jsonOut({ success: false, error: { code: 'ERR_NO_INPUT', title: 'Missing Input', reason: 'No input files found matching the provided arguments.' } });
+    } else {
+      console.error(pc.red('[ERR] No input files found matching the provided arguments.'));
+    }
+    process.exit(EXIT.USAGE_ERROR);
+  }
+
+  // ── 2. Load config ──────────────────────────────────────────────────────
+  let resolvedConfig = {};
+  try {
+    const result = await loadConfig(process.cwd(), options.config);
+    resolvedConfig = result.config;
+  } catch (err: any) {
+    console.error(pc.red(`\n[ERR] ${err.title || 'Config Error'}`));
+    console.error(err.reason || err.message);
+    process.exit(EXIT.USAGE_ERROR);
+  }
+
+  // ── 3. Build cliFlags + early checks ───────────────────────────────────
+  const cliFlags = { ...options };
+  if ((cliFlags as any).browser) {
+    process.env.MD2PDF_BROWSER = (cliFlags as any).browser;
+  }
+
+  if (process.env.MD2PDF_BROWSER && !fs.existsSync(process.env.MD2PDF_BROWSER)) {
+    if (options.jsonErrors) {
+      emitJsonErrorAndExit('ERR_INVALID_BROWSER', 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`);
+    } else {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_MISSING, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options as any);
       process.exit(EXIT.USAGE_ERROR);
     }
+  }
 
-    let resolvedConfig = {};
-
-    try {
-      const result = await loadConfig(process.cwd(), options.config);
-      resolvedConfig = result.config;
-
-    } catch (err: any) {
-      console.error(pc.red(`\n[ERR] ${err.title || 'Config Error'}`));
-      console.error(err.reason || err.message);
-      process.exit(EXIT.USAGE_ERROR);
-    }
-    
-    // Add output to cliFlags so mergeConfig maps them. We'll set input individually in the loop.
-    const cliFlags = { ...options, output: options.output };
-    if ((cliFlags as any).browser) {
-      process.env.MD2PDF_BROWSER = (cliFlags as any).browser;
-    }
-    
-    const emitJsonErrorAndExit = (code: string, title: string, reason: string) => {
-      jsonOut({
-        success: false,
-        error: { code, title, reason }
-      });
-      let exitCode = EXIT.USAGE_ERROR;
-      if (code === 'ERR_PERMISSION_DENIED' || code === 'ERR_FILE_TOO_LARGE' || code === 'ERR_DOCUMENT_TOO_COMPLEX') {
-        exitCode = EXIT.ENVIRONMENT_ERROR;
-      }
-      process.exit(exitCode);
-    };
-
-    if (process.env.MD2PDF_BROWSER) {
-      if (!fs.existsSync(process.env.MD2PDF_BROWSER)) {
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_INVALID_BROWSER', 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`);
-        } else {
-          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_MISSING, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options as any);
-          process.exit(EXIT.USAGE_ERROR);
-        }
-      }
-    }
-
-    const unsupported = ['stdin', 'stdout', 'input'];
-    for (const flag of unsupported) {
-      if ((cliFlags as any)[flag]) {
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_UNSUPPORTED_OPTION', 'Unsupported Option', `The --${flag} option is not currently supported.`);
-        } else {
-          console.error(pc.red(`error: The --${flag} option is not currently supported.`));
-          process.exit(EXIT.USAGE_ERROR);
-        }
-      }
-    }
-    
-    if (cliFlags.vaultRoot && !fs.existsSync(cliFlags.vaultRoot)) {
+  for (const flag of ['stdin', 'stdout', 'input']) {
+    if ((cliFlags as any)[flag]) {
       if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_VAULT_ROOT_NOT_FOUND', 'Vault Root Not Found', `--vault-root '${cliFlags.vaultRoot}' does not exist.`);
+        emitJsonErrorAndExit('ERR_UNSUPPORTED_OPTION', 'Unsupported Option', `The --${flag} option is not currently supported.`);
       } else {
-        console.error(pc.red(`[ERR] --vault-root '${cliFlags.vaultRoot}' does not exist.`));
+        console.error(pc.red(`error: The --${flag} option is not currently supported.`));
         process.exit(EXIT.USAGE_ERROR);
       }
     }
-    
-    if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
-      if (!options.jsonErrors) {
-        console.warn(pc.yellow('[WARN]  --toc-depth / --toc-title have no effect without --toc'));
-      }
-    }
-    
-    if (cliFlags.headerTemplate && !cliFlags.header) {
-      if (!options.jsonErrors) {
-        console.warn(pc.yellow('[WARN]  --header-template has no effect without --header'));
-      }
-    }
-
-    if (cliFlags.footerTemplate && !cliFlags.footer) {
-      if (!options.jsonErrors) {
-        console.warn(pc.yellow('[WARN]  --footer-template has no effect without --footer'));
-      }
-    }
-
-    const isBatch = inputs.length > 1;
-
-    if (isBatch && options.output) {
-      // If multiple inputs, --output must be a directory
-      const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
-      if (outputStat && !outputStat.isDirectory()) {
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
-        } else {
-          console.error(pc.red(`[ERR] Output path '${options.output}' is a file, but multiple inputs were provided.`));
-          console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
-          process.exit(EXIT.USAGE_ERROR);
-        }
-      }
-      if (!outputStat && !options.dryRun) {
-        fs.mkdirSync(options.output, { recursive: true });
-      }
-    } else if (!isBatch && options.output) {
-      const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
-      if (outputStat?.isDirectory()) {
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory',
-            `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
-        } else {
-          console.error(pc.red(`[ERR] Output path '${options.output}' Is a Directory, Not a File.`));
-          console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
-          process.exit(EXIT.USAGE_ERROR);
-        }
-      }
-
-      if (!path.extname(options.output)) {
-        if (!options.jsonErrors) {
-          console.warn(pc.yellow(`[WARN] Output path has no .pdf extension - appending`));
-        }
-        options.output += '.pdf';
-        cliFlags.output = options.output;
-      }
-    }
-    
-    if (options.dryRun) {
-      if (!options.jsonErrors && !options.quiet) {
-        console.log(pc.cyan(`\n[PREVIEW] Dry Run Mode: ${inputs.length} file(s) matched`));
-      }
-      for (const input of inputs) {
-        let output = options.output;
-        if (isBatch && options.output) {
-          output = path.join(options.output, path.basename(input).replace(/\.md$/i, '.pdf'));
-        } else if (!output) {
-          output = input.replace(/\.md$/i, '.pdf');
-        }
-        if (options.jsonErrors) {
-          console.log(JSON.stringify({ type: 'dry-run', input, output: path.resolve(output) }));
-        } else if (!options.quiet) {
-          console.log(`  ${pc.gray(input)} -> ${pc.green(output)}`);
-        }
-      }
-      process.exitCode = 0;
-      return;
-    }
-
-    const { validateInputFiles } = await import('../validation/index.js');
-    const validationResult = validateInputFiles(inputs, isBatch, options);
-    let hasErrors = false;
-    let successfulCount = 0;
-    let failedCount = 0;
-    let skippedExistingCount = 0;
-    let skippedPublishCount = 0;
-
-    for (const err of validationResult.errors) {
-      hasErrors = true;
-      failedCount++;
-      if (err.isFatal) {
-        if (options.jsonErrors) {
-          jsonOut({ success: false, error: { code: err.error.code as string, title: err.error.title || 'Error', reason: err.error.reason || err.error.message } });
-        } else {
-          const { Md2PdfError } = await import('../errors/index.js');
-          renderCliError(err.error, options as any);
-        }
-        process.exitCode = err.error.code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
-        process.exit(process.exitCode);
-      } else {
-        if (!options.jsonErrors) {
-          console.error(pc.red(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`));
-        }
-      }
-    }
-
-    inputs = validationResult.validInputs;
-    if (inputs.length === 0) {
-      if (options.jsonErrors) {
-        jsonOut({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } });
-      }
-      process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
-    }
-
-    interface SpinnerLike {
-      start(): void;
-      stop(): void;
-      succeed(text?: string): void;
-      warn(text?: string): void;
-      fail(text?: string): void;
-      info(text?: string): void;
-      text: string;
-    }
-
-    // Fast cache check for single-file mode to skip browser warmup
-    if (!isBatch && inputs.length === 1) {
-      let output = options.output;
-      const input = inputs[0];
-      if (output) {
-        if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
-          output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-        } else if (!output.toLowerCase().endsWith('.pdf')) {
-          output += '.pdf';
-        }
-      } else {
-        output = input.replace(/\.md$/i, '.pdf');
-      }
-      output = path.resolve(output);
-
-
-
-      const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
-      if (convertOptions.cache !== false) {
-        try {
-          const rawContent = fs.readFileSync(input, 'utf-8');
-          if (rawContent) {
-            const fileHash = computeHash(rawContent, convertOptions);
-            if (checkCache(input, fileHash, output)) {
-              if (options.jsonErrors) {
-                jsonOut({
-                  success: true,
-                  results: [{ input, output, pages: 0, timeMs: 0, warnings: [] }]
-                });
-              } else if (!options.quiet) {
-                console.log(pc.green(`[OK] ${path.basename(output)} (cached)`));
-              }
-              process.exitCode = EXIT.OK;
-              return;
-            }
-          }
-        } catch {
-          // Silent fallback to full render path if fast cache checks fail
-        }
-      }
-    }
-
-    // BUG-NEW-4: For single-file mode, check publish:false BEFORE starting the spinner
-    // so "Converting..." never appears for files that will be skipped immediately.
-    if (!isBatch && inputs.length === 1 && !options.jsonErrors) {
-      try {
-        const rawContent = fs.readFileSync(inputs[0], 'utf-8');
-        const matter = (await import('gray-matter')).default;
-        const parsed = matter(rawContent, { engines: { js: () => { throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.'); } } });
-        if (parsed.data?.publish === false) {
-          if (!options.quiet) {
-            console.info(pc.dim(`[INFO] Skipped ${path.basename(inputs[0])} (publish: false)`));
-          }
-          process.exitCode = EXIT.OK;
-          return;
-        }
-        // Save the parsed matter so we don't parse it again in core
-        options = { ...options, __preparsed: { data: parsed.data, content: parsed.content } };
-      } catch {
-        // If we can't read frontmatter here, let the pipeline handle it
-      }
-    }
-
-    const noopSpinner: SpinnerLike = {
-      start: () => {}, stop: () => {}, succeed: () => {},
-      warn: () => {}, fail: () => {}, info: () => {}, text: ''
-    };
-    const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
-      ? noopSpinner
-      : ora(isBatch ? 'Starting batch conversion...' : 'Converting...').start() as unknown as SpinnerLike;
-    const startTime = Date.now();
-    let globalBrowser: any;
-    let globalMermaidContext: any;
-    let globalMermaidPage: any;
-    let mermaidInitPromise: Promise<void> | null = null;
-    let globalBrowserPromise: Promise<any> | null = null;
-
-    const cleanup = async () => {
-      if (mermaidInitPromise) {
-        await mermaidInitPromise.catch(() => {});
-      }
-      if (globalBrowserPromise) {
-        const b = await globalBrowserPromise.catch(() => null);
-        if (b) await b.close().catch(() => {});
-      }
-      if (globalMermaidContext) {
-        await globalMermaidContext.close().catch(() => {});
-      }
-      if (globalBrowser) {
-        await globalBrowser.close().catch(() => {});
-      }
-      try {
-        const { forceClose } = await import('../pdf/daemon.js');
-        await forceClose();
-      } catch {
-        // Ignore failure to close the daemon
-      }
-    };
-
-    let isShuttingDown = false;
-    // Graceful Shutdown Handler for Ctrl+C
-    const sigintHandler = async () => {
-      isShuttingDown = true;
-      console.log(pc.yellow('\n[WARN] Process interrupted by user. Cleaning up...'));
-      await cleanup();
-      process.exitCode = 130; return;
-    };
-    process.on('SIGINT', sigintHandler);
-
-    try {
-      const { getBrowser } = await import('../pdf/browser.js');
-      
-      let hasMermaidAnywhere = false;
-      if (isBatch) {
-        
-        // Fast heuristic check across all inputs to start Mermaid warmup early
-        hasMermaidAnywhere = await Promise.all(inputs.map(input => {
-          return new Promise<boolean>((resolve) => {
-            const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
-            stream.on('data', (chunk) => { 
-              if ((chunk as string).includes('```mermaid')) {
-                stream.destroy(); 
-                resolve(true); 
-              }
-            });
-            stream.once('error', () => resolve(false));
-            stream.once('end', () => resolve(false));
-          });
-        })).then(results => results.some(r => r));
-
-        if (hasMermaidAnywhere) {
-          if (!globalBrowserPromise) {
-            globalBrowserPromise = getBrowser().then(async (b) => {
-              globalBrowser = b;
-              return b;
-            });
-          }
-          mermaidInitPromise = (async () => {
-            await globalBrowserPromise;
-            if (!globalBrowser) throw new Error("Failed to initialize browser for Mermaid warmup");
-            globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
-            globalMermaidPage = await globalMermaidContext.newPage();
-            const { fontCss } = await import('../assets/fonts.js');
-            await globalMermaidPage.setContent(`<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    ${fontCss}
-    body { font-family: 'Inter', sans-serif; }
-  </style>
-</head>
-<body></body>
-</html>`);
-            await globalMermaidPage.evaluate(() => document.fonts.ready);
-            try {
-              const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
-              await globalMermaidPage.addScriptTag({ path: scriptPath });
-            } catch {
-              // Fallback
-            }
-          })();
-        }
-      }
-      
-      const concurrencyLimit = cliFlags.concurrency ? parseInt(cliFlags.concurrency as string) : Math.min(4, os.cpus().length);
-      const results: any[] = new Array(inputs.length);
-      let completedCount = 0;
-      
-      const updateSpinner = () => {
-        if (!options.jsonErrors && isBatch && !options.quiet) {
-          const percent = Math.round((completedCount / inputs.length) * 100);
-          const elapsed = Date.now() - startTime;
-          const avg = completedCount > 0 ? elapsed / completedCount : 0;
-          const remainMs = avg * (inputs.length - completedCount);
-          let remainStr = '';
-          if (completedCount > 0) {
-            if (remainMs > 60000) remainStr = ` ~${Math.round(remainMs/60000)}m remaining`;
-            else remainStr = ` ~${Math.round(remainMs/1000)}s remaining`;
-          }
-          spinner.text = `Converting (${completedCount}/${inputs.length}) files [${percent}%]${remainStr}`;
-        } else if (!options.jsonErrors && !isBatch && !options.quiet) {
-          spinner.text = 'Converting...';
-        }
-      };
-      updateSpinner();
-
-      // Large Vault Handling: build index and sort in dependency order
-      const vaultIndex = buildVaultIndex(cliFlags.vaultRoot as string | undefined, inputs);
-      inputs = sortDependencies(inputs, vaultIndex);
-
-      const queue = inputs.map((input, i) => ({ input, i }));
-
-      const worker = async () => {
-        while (queue.length > 0 && !isShuttingDown) {
-          const { input, i } = queue.shift()!;
-          const fileStartTime = Date.now();
-          
-          let output = cliFlags.output;
-          if (output) {
-            if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
-              output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-            } else if (isBatch) {
-              output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-            } else if (!output.toLowerCase().endsWith('.pdf')) {
-              output += '.pdf';
-            }
-          } else {
-            output = input.replace(/\.md$/i, '.pdf');
-          }
-          output = path.resolve(output as string);
-
-          try {
-            const outDir = path.dirname(output as string);
-            fs.mkdirSync(outDir, { recursive: true });
-          } catch (dirErr: any) {
-            if (dirErr.code === 'EEXIST') {
-              // Ignore existing directory
-            } else {
-              if (!isBatch) throw dirErr;
-              hasErrors = true;
-              failedCount++;
-              if (!options.jsonErrors && isBatch) {
-                (spinner as any).stop();
-                console.error(pc.red(`[ERR] ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
-                (spinner as any).start();
-              }
-              results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-              if (!options.jsonErrors && isBatch) {
-                completedCount++;
-                updateSpinner();
-              }
-              continue;
-            }
-          }
-
-          const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
-          
-          // PRE-RENDER CACHE CHECK
-          const useCache = convertOptions.cache !== false;
-          let fileHash = '';
-          let rawContent = '';
-          try {
-            rawContent = fs.readFileSync(input, 'utf-8');
-          } catch {
-            const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-            throw new Md2PdfError(
-              Md2PdfErrorCode.ERR_PERMISSION_DENIED,
-              'Permission Denied',
-              `Cannot read file '${input}': Permission denied.`,
-              { markdownFile: input }
-            );
-          }
-
-          if (useCache && rawContent) {
-            try {
-              fileHash = computeHash(rawContent, convertOptions);
-              if (checkCache(input, fileHash, output as string)) {
-                results[i] = { fromCache: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-                if (!options.jsonErrors && isBatch) {
-                  completedCount++;
-                updateSpinner();
-                  (spinner as any).stop();
-                  console.log(pc.green(`[OK] ${path.basename(output as string)} (cached)`));
-                  (spinner as any).start();
-                } else if (!options.jsonErrors && !isBatch) {
-                  spinner.succeed(pc.green(`${path.basename(output as string)} (cached)`));
-                }
-                successfulCount++;
-                continue;
-              }
-            } catch {
-              // Ignore cache check errors
-            }
-          }
-
-          // Not cached. Check if it has mermaid.
-          const hasMermaid = rawContent.includes('```mermaid');
-
-          if (isBatch) {
-            if (!globalBrowserPromise) {
-              globalBrowserPromise = getBrowser().then(async (b) => {
-                globalBrowser = b;
-                return b;
-              });
-            }
-            try {
-              await globalBrowserPromise;
-            } catch (err: any) {
-              if (!isBatch) throw err;
-              hasErrors = true;
-              failedCount++;
-              results[i] = { isError: true, error: `Browser launch failed: ${err.message}`, code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-              if (!options.jsonErrors && isBatch) {
-                completedCount++;
-                (spinner as any).stop();
-                console.error(pc.red(`[ERR] ${path.basename(input)} - Browser launch failed: ${err.message}`));
-                (spinner as any).start();
-              }
-              continue;
-            }
-            
-            if (!globalBrowser) {
-              if (!isBatch) throw new Error('Browser launch failed: globalBrowser is null');
-              hasErrors = true;
-              failedCount++;
-              results[i] = { isError: true, error: 'Browser launch failed: globalBrowser is null', code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-              if (!options.jsonErrors && isBatch) completedCount++;
-              continue;
-            }
-
-            if (hasMermaid) {
-              if (!mermaidInitPromise) {
-                mermaidInitPromise = (async () => {
-                  globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
-                  globalMermaidPage = await globalMermaidContext.newPage();
-                  const { fontCss } = await import('../assets/fonts.js');
-                  await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
-                  await globalMermaidPage.evaluate(() => document.fonts.ready);
-                  try {
-                    const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
-                    await globalMermaidPage.addScriptTag({ path: scriptPath });
-                  } catch {
-                    // Fallback
-                  }
-                })();
-              }
-              await mermaidInitPromise;
-            }
-
-            convertOptions.sharedBrowser = globalBrowser;
-            if (globalMermaidPage) {
-              // convertOptions.sharedMermaidPage = globalMermaidPage;
-            }
-          }
-
-
-          if (fs.existsSync(output as string) && !options.force) {
-            skippedExistingCount++;
-            results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
-            if (!options.jsonErrors && isBatch) {
-              completedCount++;
-                updateSpinner();
-            } else if (!options.jsonErrors) {
-              console.warn(pc.yellow(`[WARN] Skipped: Output file '${output}' already exists (use --force to overwrite).`));
-            }
-            continue;
-          }
-
-          try {
-            if (options.verbose && !options.jsonErrors) {
-              (spinner as any).stop();
-              console.log(pc.dim(`\n[INFO] Starting conversion pipeline for: ${input}`));
-              console.log(pc.dim(`[INFO] Output target: ${output}`));
-              if (isBatch) (spinner as any).start();
-            }
-            
-            const result = await convert(convertOptions as any);
-            result.renderTimeMs = Date.now() - fileStartTime;
-            
-            if (options.verbose && !options.jsonErrors) {
-              (spinner as any).stop();
-              console.log(pc.dim(`[INFO] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
-              if (isBatch) (spinner as any).start();
-            }
-            
-            if (!options.jsonErrors && result.warnings.length > 0) {
-              (spinner as any).stop();
-              result.warnings.forEach(w => console.warn(pc.yellow(`[WARN] ${w}`)));
-              if (isBatch) (spinner as any).start();
-            }
-            
-            if (!options.jsonErrors && isBatch) {
-              completedCount++;
-              (spinner as any).stop();
-              const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
-              console.log(pc.green(`[OK] ${path.basename(result.outputPath)} (${timing})`));
-                updateSpinner();
-              (spinner as any).start();
-            }
-            
-            successfulCount++;
-            results[i] = result;
-          } catch (err: any) {
-            if (isShuttingDown) break;
-            
-            if (err?.code === 'ERR_PUBLISH_SKIPPED') {
-              skippedPublishCount++;
-              results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'], skipReason: 'publish: false' };
-              if (!options.jsonErrors && isBatch) {
-                (spinner as any).stop();
-                console.error(pc.dim(`[SKIP] Skipped ${path.basename(input)} (publish: false)`));
-                (spinner as any).start();
-              }
-              if (!options.jsonErrors && isBatch) {
-                completedCount++;
-                updateSpinner();
-              }
-              continue;
-            }
-            if (!isBatch) throw err;
-            hasErrors = true;
-            failedCount++;
-            // Use only the first line of the error message to avoid showing stack traces
-            const rawMsg = (err.reason || err.message || String(err));
-            const cleanMsg = rawMsg.split('\n').slice(0, 3).join(' | ');
-            const msg = `${path.basename(input)} - ${cleanMsg}`;
-            
-            if (!options.jsonErrors && isBatch) {
-              (spinner as any).stop();
-              console.error(pc.red(`[ERR] ${msg}`));
-              (spinner as any).start();
-            }
-            const md2Error = detectBrowserError(err, { markdownFile: input });
-            results[i] = { isError: true, error: cleanMsg, code: err?.code || md2Error?.code || 'ERR_UNKNOWN', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-            if (!options.jsonErrors && isBatch) {
-              completedCount++;
-                updateSpinner();
-            }
-          }
-        }
-      };
-
-      const workers = Array.from({ length: Math.min(concurrencyLimit, inputs.length) }, () => worker());
-      const settledResults = await Promise.allSettled(workers);
-
-      if (!isBatch) {
-        const rejected = settledResults.find(r => r.status === 'rejected');
-        if (rejected) throw rejected.reason;
-      }
-
-      const anyErrors = results.some((r: any) => !r || r.isError) || settledResults.some(r => r.status === 'rejected');
-      if (anyErrors) hasErrors = true;
-
-      if (options.jsonErrors) {
-        jsonOut({
-          success: !hasErrors && (successfulCount > 0 || skippedExistingCount > 0 || skippedPublishCount > 0),
-          ...(skippedExistingCount + skippedPublishCount > 0 ? { skipped: skippedExistingCount + skippedPublishCount } : {}),
-          results: results.map((r, index) => {
-            const out = {
-              input: inputs[index],
-              output: r?.outputPath || '-',
-              status: r?.isError ? 'error' : (r?.isSkipped ? 'skipped' : 'success'),
-              pages: r?.pageCounts || 0,
-              timeMs: r?.renderTimeMs || 0,
-              warnings: r?.warnings || []
-            } as any;
-            if (r?.isError) {
-              out.error = {
-                code: r?.code || 'ERR_UNKNOWN',
-                reason: r?.error,
-                title: 'Conversion Failed'
-              };
-            }
-            if (r?.isSkipped) {
-              out.skipReason = r?.skipReason;
-            }
-            return out;
-          })
-        });
-      } else {
-        const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        if (isBatch) {
-          (spinner as any).stop();
-          console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
-          if (skippedExistingCount > 0) {
-            console.log(pc.yellow(`  [WARN] Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
-          }
-          if (skippedPublishCount > 0) {
-            console.log(pc.yellow(`  [WARN] Skipped ${skippedPublishCount} files (publish: false)`));
-          }
-        } else {
-          if (hasErrors) {
-            const res = results[0] as any;
-            const errMsg = res?.isError ? res.error.split('\n')[0] : `Failed in ${totalTime}s`;
-            const errStr = res?.isError ? `${path.basename(inputs[0])} - ${errMsg}` : errMsg;
-            spinner.fail(pc.red(errStr));
-          } else if (results[0]?.isSkipped) {
-            spinner.info(pc.yellow(`Skipped ${path.basename(inputs[0])} (${results[0].skipReason})`));
-          } else {
-            const outDest = options.output ? ` (Saved to: ${options.output})` : '';
-            spinner.succeed(pc.green(`Successfully converted ${inputs.length} file${inputs.length > 1 ? 's' : ''} in ${totalTime}s!${outDest}`));
-          }
-        }
-      }
-      
-      if (hasErrors) {
-        process.exitCode = EXIT.USAGE_ERROR;
-      }
-
-    } catch (err: any) {
-      hasErrors = true;
-      spinner.stop();
-
-      const isMdError = err instanceof Md2PdfError || err?.name === 'Md2PdfError' || err?.code?.startsWith('ERR_');
-      if (isMdError) {
-        renderCliError(err, options);
-      } else {
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
-        } else {
-          spinner.fail(pc.red(err.message));
-
-          // Don't show GitHub banner for known user-level exceptions
-          const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME' || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
-          if (!isUserError) {
-            console.error(pc.yellow(`\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n`));
-          }
-
-          if (options.debug && err.stack) {
-            console.error(pc.dim(err.stack));
-          }
-          process.exitCode = EXIT.USAGE_ERROR;
-        }
-      }
-    } finally {
-      process.removeListener('SIGINT', sigintHandler);
-      await cleanup();
-      if (hasErrors && (process.exitCode === undefined || process.exitCode === EXIT.OK)) {
-        process.exitCode = EXIT.USAGE_ERROR;
-      } else if (process.exitCode === undefined) {
-        process.exitCode = EXIT.OK;
-      }
-    }
-
   }
+
+  if (cliFlags.vaultRoot && !fs.existsSync(cliFlags.vaultRoot)) {
+    if (options.jsonErrors) {
+      emitJsonErrorAndExit('ERR_VAULT_ROOT_NOT_FOUND', 'Vault Root Not Found', `--vault-root '${cliFlags.vaultRoot}' does not exist.`);
+    } else {
+      console.error(pc.red(`[ERR] --vault-root '${cliFlags.vaultRoot}' does not exist.`));
+      process.exit(EXIT.USAGE_ERROR);
+    }
+  }
+
+  if (!options.jsonErrors) {
+    if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
+      console.warn(pc.yellow('[WARN]  --toc-depth / --toc-title have no effect without --toc'));
+    }
+    if (cliFlags.headerTemplate && !cliFlags.header) {
+      console.warn(pc.yellow('[WARN]  --header-template has no effect without --header'));
+    }
+    if (cliFlags.footerTemplate && !cliFlags.footer) {
+      console.warn(pc.yellow('[WARN]  --footer-template has no effect without --footer'));
+    }
+  }
+
+  // ── 4. Batch-mode output directory checks ───────────────────────────────
+  const isBatch = inputs.length > 1;
+
+  if (isBatch && options.output) {
+    const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
+    if (outputStat && !outputStat.isDirectory()) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
+      } else {
+        console.error(pc.red(`[ERR] Output path '${options.output}' is a file, but multiple inputs were provided.`));
+        console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
+        process.exit(EXIT.USAGE_ERROR);
+      }
+    }
+    if (!outputStat && !options.dryRun) {
+      fs.mkdirSync(options.output, { recursive: true });
+    }
+  } else if (!isBatch && options.output) {
+    const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
+    if (outputStat?.isDirectory()) {
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory', `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
+      } else {
+        console.error(pc.red(`[ERR] Output path '${options.output}' Is a Directory, Not a File.`));
+        console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
+        process.exit(EXIT.USAGE_ERROR);
+      }
+    }
+    if (!path.extname(options.output)) {
+      if (!options.jsonErrors) console.warn(pc.yellow(`[WARN] Output path has no .pdf extension - appending`));
+      options.output += '.pdf';
+      (cliFlags as any).output = options.output;
+    }
+  }
+
+  // ── 5. Dry-run ──────────────────────────────────────────────────────────
+  if (options.dryRun) {
+    if (!options.jsonErrors && !options.quiet) {
+      console.log(pc.cyan(`\n[PREVIEW] Dry Run Mode: ${inputs.length} file(s) matched`));
+    }
+    for (const input of inputs) {
+      let out = options.output;
+      if (isBatch && options.output) {
+        out = path.join(options.output, path.basename(input).replace(/\.md$/i, '.pdf'));
+      } else if (!out) {
+        out = input.replace(/\.md$/i, '.pdf');
+      }
+      if (options.jsonErrors) {
+        console.log(JSON.stringify({ type: 'dry-run', input, output: path.resolve(out) }));
+      } else if (!options.quiet) {
+        console.log(`  ${pc.gray(input)} -> ${pc.green(out)}`);
+      }
+    }
+    process.exitCode = 0;
+    return;
+  }
+
+  // ── 6. Validate all inputs ──────────────────────────────────────────────
+  const validationResult = validateInputFiles(inputs, isBatch, options);
+  let hasErrors = false;
+
+  for (const err of validationResult.errors) {
+    hasErrors = true;
+    if (err.isFatal) {
+      if (options.jsonErrors) {
+        jsonOut({ success: false, error: { code: err.error.code as string, title: err.error.title || 'Error', reason: err.error.reason || err.error.message } });
+      } else {
+        renderCliError(err.error, options as any);
+      }
+      process.exitCode = err.error.code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
+      process.exit(process.exitCode);
+    } else {
+      if (!options.jsonErrors) {
+        console.error(pc.red(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`));
+      }
+    }
+  }
+
+  inputs = validationResult.validInputs;
+  if (inputs.length === 0) {
+    if (options.jsonErrors) {
+      jsonOut({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } });
+    }
+    process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
+  }
+
+  // ── 7. Route to handler ─────────────────────────────────────────────────
+  if (isBatch) {
+    await handleBatch(inputs, options, cliFlags, resolvedConfig);
+  } else {
+    await handleSingle(inputs[0], options, cliFlags, resolvedConfig);
+  }
+}

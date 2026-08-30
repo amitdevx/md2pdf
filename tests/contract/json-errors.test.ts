@@ -131,7 +131,8 @@ describe('JSON Errors Contract (20 Cases)', () => {
   });
 
   it('success', () => {
-    const res = runCliJson(`"${basicMd}" -o /tmp/success2.pdf`);
+    // Use --force so a stale file from a prior run never causes a silent skip
+    const res = runCliJson(`"${basicMd}" -o /tmp/success2.pdf --force`);
     expect(res.success).toBe(true);
   });
 
