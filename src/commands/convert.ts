@@ -129,7 +129,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory', `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
       } else {
-        console.error(pc.red(`[ERR] Output path '${options.output}' Is a Directory, Not a File.`));
+        console.error(pc.red(`[ERR] Output path '${options.output}' is a directory, not a file.`));
         console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
         process.exit(EXIT.USAGE_ERROR);
       }
