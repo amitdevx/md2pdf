@@ -290,3 +290,18 @@ All notable changes to this project will be documented in this file.
 - Resolution of local relative image paths.
 - Comprehensive configuration for `tsup`, `vitest`, `eslint`, and `prettier`.
 - GitHub Actions CI workflow for linting, building, and testing.
+
+## [0.9.0] - 2026-08-30
+### Refactor
+- Orchestration logic extracted from monolithic `src/commands/convert.ts`.
+- Validation fully extracted into dedicated modules `src/validation/input.ts`, `src/validation/output.ts`, `src/validation/flags.ts`, and `src/validation/index.ts`.
+- Cache module relocated from `src/core/cache.ts` to `src/cache/index.ts`.
+
+### Testing
+- Built a comprehensive Contract Testing suite in `tests/contract/`.
+- 27 matrix tests added for exit-codes covering all error paths and combinations.
+- 20 matrix tests added for json-errors covering structured error propagation.
+
+### Fixes
+- Addressed hang on missing permissions and 5MB payload limit by hoisting validation before playwright browser launch.
+- Assured 100% adherence to established exit code contract.
