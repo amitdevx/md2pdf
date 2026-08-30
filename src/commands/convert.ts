@@ -184,121 +184,34 @@ import { computeHash, checkCache } from '../core/cache.js';
       return;
     }
 
-    // Synchronous Validation Loop
+    const { validateInputFiles } = await import('../validation/index.js');
+    const validationResult = validateInputFiles(inputs, isBatch, options);
     let hasErrors = false;
     let successfulCount = 0;
     let failedCount = 0;
     let skippedExistingCount = 0;
     let skippedPublishCount = 0;
-    const validInputs: string[] = [];
 
-    const reportError = (input: string, reason: string) => {
+    for (const err of validationResult.errors) {
       hasErrors = true;
       failedCount++;
-      if (!options.jsonErrors) {
-        console.error(pc.red(`[ERR] ${input} - ${reason}`));
-      }
-    };
-
-    for (const input of inputs) {
-      if (input === '-') {
-        reportError(input, 'Stdin Input Is Not Supported');
-        continue;
-      }
-      if (!fs.existsSync(input)) {
-        reportError(input, 'File Not Found');
-        continue;
-      }
-      const stat = fs.statSync(input);
-      
-      const MAX_SIZE_BYTES = 5 * 1024 * 1024;
-      if (stat.size > MAX_SIZE_BYTES) {
+      if (err.isFatal) {
         if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_FILE_TOO_LARGE', 'File Too Large', `Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`);
+          jsonOut({ success: false, error: { code: err.error.code as string, title: err.error.title || 'Error', reason: err.error.reason || err.error.message } });
         } else {
-          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_FILE_TOO_LARGE, 'File Too Large', `Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`), options as any);
-          process.exit(2);
+          const { Md2PdfError } = await import('../errors/index.js');
+          renderCliError(err.error, options as any);
         }
-      }
-
-      if (stat.isDirectory()) {
-        reportError(input, 'Is a Directory, Not a File');
-        continue;
-      }
-      if (path.extname(input).toLowerCase() !== '.md') {
-        reportError(input, 'Not a Markdown File');
-        continue;
-      }
-      try {
-        fs.accessSync(input, fs.constants.R_OK);
-      } catch {
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_PERMISSION_DENIED', 'Permission Denied', `Cannot read file '${input}': Permission denied.`);
-        } else {
-          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-          const error = new Md2PdfError(
-            Md2PdfErrorCode.ERR_PERMISSION_DENIED,
-            'Permission Denied',
-            `Cannot read file '${input}': Permission denied.`,
-            { markdownFile: input }
-          );
-          renderCliError(error, options as any);
-          process.exit(2);
-        }
-      }
-
-      // PRE-FLIGHT COMPLEXITY CHECK - must NOT be inside a try/catch that swallows process.exit
-      let complexityViolation = false;
-      let complexityDepth = 0;
-      try {
-        const rawContent = fs.readFileSync(input, 'utf-8');
-        complexityDepth = Math.max(0, ...rawContent.split('\n').map(
-          line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
-        ));
-        if (complexityDepth > 200) complexityViolation = true;
-      } catch {
-        // read errors are handled later in the pipeline
-      }
-      if (complexityViolation) {
-        const msg = `The document contains blockquote nesting ${complexityDepth} levels deep. Maximum supported depth is 200.`;
-        if (options.jsonErrors) {
-          emitJsonErrorAndExit('ERR_DOCUMENT_TOO_COMPLEX', 'Document Too Complex', msg);
-        } else {
-          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX, 'Document Too Complex', msg), options as any);
-          process.exit(2);
-        }
-      }
-
-      let predictedOutput = options.output;
-      if (predictedOutput && path.resolve(input) === path.resolve(predictedOutput)) {
-        reportError(input, 'Input and Output Cannot Be the Same File');
-        continue;
-      }
-
-      if (predictedOutput) {
-        if (fs.existsSync(predictedOutput) && fs.statSync(predictedOutput).isDirectory()) {
-          predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
-        } else if (isBatch) {
-          predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
-        } else if (!predictedOutput.toLowerCase().endsWith('.pdf')) {
-          predictedOutput += '.pdf';
-        }
+        process.exitCode = err.error.code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
+        process.exit(process.exitCode);
       } else {
-        predictedOutput = input.replace(/\.md$/i, '.pdf');
+        if (!options.jsonErrors) {
+          console.error(pc.red(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`));
+        }
       }
-
-      if (path.resolve(input) === path.resolve(predictedOutput)) {
-        reportError(input, 'Input and Output Cannot Be the Same File');
-        continue;
-      }
-
-      
-      validInputs.push(input);
     }
-    
-    inputs = validInputs;
+
+    inputs = validationResult.validInputs;
     if (inputs.length === 0) {
       if (options.jsonErrors) {
         jsonOut({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } });
@@ -331,19 +244,7 @@ import { computeHash, checkCache } from '../core/cache.js';
       }
       output = path.resolve(output);
 
-      const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
-      const isSensitive = sensitiveDirs.some(dir => output.startsWith(dir + path.sep) || output === dir) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(output);
-      if (isSensitive) {
-        if (options.jsonErrors) {
-          jsonOut({ success: false, error: { code: 'ERR_PATH_TRAVERSAL', title: 'Access Denied', reason: 'Cannot write output to protected system directory.' } });
-          process.exitCode = EXIT.USAGE_ERROR;
-        } else {
-          const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-          renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_PATH_TRAVERSAL, 'Access Denied', 'Cannot write output to protected system directory.'), options as any);
-          process.exitCode = EXIT.USAGE_ERROR;
-        }
-        return;
-      }
+
 
       const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
       if (convertOptions.cache !== false) {
