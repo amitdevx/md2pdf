@@ -10,11 +10,10 @@ import ora from 'ora';
 import pc from 'picocolors';
 import { convert } from '../../core/index.js';
 import { mergeConfig } from '../../config/merge.js';
-import { EXIT, jsonOut, renderCliError } from '../../cli/formatter.js';
+import { EXIT, jsonOut, renderCliError, SpinnerLike, noopSpinner, emitJsonErrorAndExit } from '../../cli/formatter.js';
 import { Md2PdfError } from '../../errors/index.js';
 import { detectBrowserError } from '../../errors/detect.js';
-import { computeHash, checkCache } from '../../core/cache.js';
-import { SpinnerLike, noopSpinner, emitJsonErrorAndExit } from './shared.js';
+import { computeHash, checkCache } from '../../cache/index.js';
 
 export async function handleSingle(
   input: string,

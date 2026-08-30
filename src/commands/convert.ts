@@ -17,8 +17,8 @@ import path from 'node:path';
 import fg from 'fast-glob';
 import pc from 'picocolors';
 import { loadConfig } from '../config/loader.js';
-import { jsonOut, renderCliError, EXIT } from '../cli/formatter.js';
-import { emitJsonErrorAndExit } from './handlers/shared.js';
+import { jsonOut, renderCliError, EXIT, emitJsonErrorAndExit } from '../cli/formatter.js';
+
 import type { CliOptions } from '../cli/options.js';
 import { validateInputFiles } from '../validation/index.js';
 import { handleSingle } from './handlers/single.js';
