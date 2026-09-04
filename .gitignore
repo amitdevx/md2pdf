@@ -75,3 +75,5 @@ tests/fixtures/test.txt
 tests/cli/bad*.md
 tests/cli/skip*.md
 tests/cli/temp*.txt
+tests/fixtures-exit-codes/
+tests/fixtures-json-errors/

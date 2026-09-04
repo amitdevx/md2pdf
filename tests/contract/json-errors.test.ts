@@ -4,7 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 const cliPath = path.resolve(__dirname, '../../dist/cli/index.js');
-const fixturesDir = path.resolve(__dirname, '../fixtures');
+const fixturesDir = path.resolve(__dirname, '../fixtures-json-errors');
 
 function runCliJson(args: string): any {
   try {
@@ -155,7 +155,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
   });
   it('file too large', () => {
     const largeMd = path.join(fixturesDir, 'large.md');
-    fs.writeFileSync(largeMd, 'a'.repeat(6 * 1024 * 1024));
+    fs.writeFileSync(largeMd, 'a'.repeat(31 * 1024 * 1024));
     const res = runCliJson(`"${largeMd}"`);
     expect(res.success).toBe(false);
     expect(res.error.code).toBe('ERR_FILE_TOO_LARGE');

@@ -5,6 +5,7 @@
   `echo "# Hello" | md2pdf --stdin -o out.pdf`
 - Stdin is size-guarded at 30MB (same limit as files); excess is aborted
   without a hang.
+- O(1) memory optimization for complexity depth validation: avoids call stack overflows and hangs when validating 30MB files by streaming string characters instead of splitting into massive arrays.
 
 ### Changed
 - Maximum input file size raised from 5MB to 30MB. The old 5MB limit was

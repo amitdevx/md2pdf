@@ -4,7 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 const cliPath = path.resolve(__dirname, '../../dist/cli/index.js');
-const fixturesDir = path.resolve(__dirname, '../fixtures');
+const fixturesDir = path.resolve(__dirname, '../fixtures-exit-codes');
 
 function runCli(args: string): { status: number; stdout: string; stderr: string } {
   try {
@@ -113,10 +113,10 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
     expect(res.status).toBe(1);
   });
 
-  it('file >5MB -> exits 2', () => {
+  it('file >30MB -> exits 2', () => {
     const large = path.join(fixturesDir, 'large.md');
     if (!fs.existsSync(large)) {
-      fs.writeFileSync(large, 'a'.repeat(6 * 1024 * 1024));
+      fs.writeFileSync(large, 'a'.repeat(31 * 1024 * 1024));
     }
     const res = runCli(`"${large}"`);
     expect(res.status).toBe(2);

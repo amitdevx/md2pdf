@@ -35,9 +35,22 @@ export function validateInput(input: string): Md2PdfError | null {
   let complexityDepth = 0;
   try {
     const rawContent = fs.readFileSync(input, 'utf-8');
-    complexityDepth = Math.max(0, ...rawContent.split('\n').map(
-      line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
-    ));
+    let pos = 0;
+    while (pos < rawContent.length) {
+      let nextNewline = rawContent.indexOf('\n', pos);
+      if (nextNewline === -1) nextNewline = rawContent.length;
+      
+      let depth = 0;
+      let i = pos;
+      while (i < nextNewline) {
+        const char = rawContent[i];
+        if (char === '>') depth++;
+        else if (char !== ' ' && char !== '\t') break;
+        i++;
+      }
+      if (depth > complexityDepth) complexityDepth = depth;
+      pos = nextNewline + 1;
+    }
   } catch { /* ignore */ }
   
   if (complexityDepth > 200) {
