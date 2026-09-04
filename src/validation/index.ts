@@ -33,7 +33,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
         input,
         error: inputErr,
         // Match the previous isFatal logic for backward compatibility in tests
-        isFatal: inputErr.code === Md2PdfErrorCode.ERR_PERMISSION_DENIED || inputErr.code === Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX
+        isFatal: inputErr.code === Md2PdfErrorCode.ERR_PERMISSION_DENIED || inputErr.code === Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX || inputErr.code === Md2PdfErrorCode.ERR_FILE_TOO_LARGE
       });
       continue;
     }

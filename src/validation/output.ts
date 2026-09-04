@@ -31,7 +31,14 @@ export function validateOutput(input: string, outputOption: string | undefined, 
 
   const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
   const outputAbs = path.resolve(process.cwd(), predictedOutput);
-  const isSensitive = sensitiveDirs.some(dir => outputAbs.startsWith(dir + path.sep) || outputAbs === dir) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(outputAbs);
+  const normalizedRaw = predictedOutput.replace(/\\/g, '/');
+  
+  const isSensitive = sensitiveDirs.some(dir => 
+    outputAbs.startsWith(dir + path.sep) || 
+    outputAbs === dir || 
+    normalizedRaw.startsWith(dir + '/') || 
+    normalizedRaw === dir
+  ) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(outputAbs);
   
   if (isSensitive) {
     return new Md2PdfError(Md2PdfErrorCode.ERR_PATH_TRAVERSAL, 'Access Denied', 'Cannot write output to protected system directory.', { markdownFile: input, outputPath: outputAbs });
