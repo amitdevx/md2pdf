@@ -43,6 +43,7 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `-f, --force` | boolean | false | Force overwrite of existing PDFs |
 | `--concurrency` | number | os.cpus() | Number of parallel workers for batch mode |
 | `--no-cache` | boolean | false | Disable incremental rendering cache |
+| `--stdin` | boolean | false | Read input markdown from standard input (stdin) |
 
 ## Features
 
@@ -52,3 +53,8 @@ It features a live progress bar indicating:
 * Completion percentage
 * `X/Y` files completed
 * Estimated time remaining (ETA)
+
+## Limits
+
+- **File Size**: Input markdown files (and piped `stdin`) are limited to **30MB**. This prevents V8 out-of-memory errors and hanging during AST parsing. If this limit is exceeded, an `ERR_FILE_TOO_LARGE` error will be emitted.
+- **Complexity**: Blockquote nesting (`>>>>`) is limited to a depth of **200**. Exceeding this triggers an `ERR_DOCUMENT_TOO_COMPLEX` error to prevent excessive recursion limits.

@@ -43,6 +43,13 @@ md2pdf document.md --toc --toc-depth 3
 md2pdf document.md --header --footer
 ```
 
+### Pipe from Standard Input (stdin)
+You can pipe markdown directly into `md2pdf` without saving to a file first using the `--stdin` flag.
+```bash
+echo "# Hello World" | md2pdf --stdin -o output.pdf
+cat some-file.md | md2pdf --stdin
+```
+
 ## Programmatic API Usage
 
 If you're building a Node.js application, you can use the `convert` API directly.
