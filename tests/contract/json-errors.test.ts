@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -20,6 +20,12 @@ function runCliJson(args: string): any {
 }
 
 describe('JSON Errors Contract (20 Cases)', () => {
+  afterAll(() => {
+    const toDelete = ['bad-yaml.md', 'bad.md', 'chmod.md', 'complex.md', 'large.md', 'pub-false.md', 'pub.md', 'rce.md', 'test.txt', 'temp.txt', 'temp_skip.md', 'bad_yaml.md', 'basic.pdf', 'bad-yaml.pdf', 'bad.pdf', 'pub-false.pdf', 'pub.pdf', 'complex.pdf', 'rce.pdf', 'large.pdf', 'test.pdf'];
+    for (const file of toDelete) {
+      try { fs.unlinkSync(path.join(fixturesDir, file)); } catch { /* ignore */ }
+    }
+  });
   let basicMd = '';
 
   beforeAll(() => {
@@ -33,13 +39,13 @@ describe('JSON Errors Contract (20 Cases)', () => {
   it('missing file', () => {
     const res = runCliJson('nonexistent.md');
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_VALIDATION');
+    expect(res.error.code).toBe('ERR_INVALID_INPUT');
   });
 
   it('directory input', () => {
     const res = runCliJson(`"${fixturesDir}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_VALIDATION');
+    expect(res.error.code).toBe('ERR_INVALID_INPUT');
   });
 
   it('wrong extension', () => {
@@ -47,7 +53,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
     if (!fs.existsSync(txt)) fs.writeFileSync(txt, 'test');
     const res = runCliJson(`"${txt}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_VALIDATION');
+    expect(res.error.code).toBe('ERR_INVALID_INPUT');
   });
 
   it('publish false', () => {
@@ -146,5 +152,12 @@ describe('JSON Errors Contract (20 Cases)', () => {
     const res = runCliJson(`"${chmod}"`);
     expect(res.success).toBe(false);
     expect(res.error.code).toBe('ERR_PERMISSION_DENIED');
+  });
+  it('file too large', () => {
+    const largeMd = path.join(fixturesDir, 'large.md');
+    fs.writeFileSync(largeMd, 'a'.repeat(6 * 1024 * 1024));
+    const res = runCliJson(`"${largeMd}"`);
+    expect(res.success).toBe(false);
+    expect(res.error.code).toBe('ERR_FILE_TOO_LARGE');
   });
 });

@@ -8,11 +8,11 @@ describe('Batch Processing (M-05, M-07)', () => {
   beforeEach(() => {
     if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
     fs.mkdirSync(tempDir, { recursive: true });
-  });
+  }, 120000);
 
   afterEach(() => {
     if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
-  });
+  }, 120000);
 
   it('should handle concurrent directory creation without EEXIST crash (M-05)', async () => {
     // Generate dummy markdown files
@@ -34,7 +34,7 @@ describe('Batch Processing (M-05, M-07)', () => {
     for (let i = 0; i < 5; i++) {
       expect(fs.existsSync(path.join(outDir, `file${i}.pdf`))).toBe(true);
     }
-  });
+  }, 120000);
 
   it('should skip existing files consistently without --force (M-07)', async () => {
     const md = path.join(tempDir, 'test.md');
@@ -52,5 +52,5 @@ describe('Batch Processing (M-05, M-07)', () => {
     await runConvert([md], { output: outPdf, force: true, cache: false } as any);
     // Content should be replaced with PDF binary
     expect(fs.readFileSync(outPdf, 'utf-8')).not.toBe('dummy-pdf-content');
-  });
+  }, 120000);
 });

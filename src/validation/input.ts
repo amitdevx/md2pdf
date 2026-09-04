@@ -4,7 +4,7 @@ import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 
 export function validateInput(input: string): Md2PdfError | null {
   if (input === '-') {
-    return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', 'Stdin Input Is Not Supported', { markdownFile: input });
+    return null; // Valid stdin!
   }
 
   if (!fs.existsSync(input)) {

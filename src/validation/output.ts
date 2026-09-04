@@ -7,14 +7,14 @@ export function predictOutputPath(input: string, outputOption: string | undefine
 
   if (predictedOutput) {
     if (fs.existsSync(predictedOutput) && fs.statSync(predictedOutput).isDirectory()) {
-      predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
+      predictedOutput = path.join(predictedOutput, input === '-' ? 'output.pdf' : path.basename(input).replace(/\.md$/i, '.pdf'));
     } else if (isBatch) {
-      predictedOutput = path.join(predictedOutput, path.basename(input).replace(/\.md$/i, '.pdf'));
+      predictedOutput = path.join(predictedOutput, input === '-' ? 'output.pdf' : path.basename(input).replace(/\.md$/i, '.pdf'));
     } else if (!predictedOutput.toLowerCase().endsWith('.pdf')) {
       predictedOutput += '.pdf';
     }
   } else {
-    predictedOutput = input.replace(/\.md$/i, '.pdf');
+    predictedOutput = input === '-' ? 'output.pdf' : input.replace(/\.md$/i, '.pdf');
   }
 
   return predictedOutput;

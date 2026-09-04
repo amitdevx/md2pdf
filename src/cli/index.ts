@@ -81,7 +81,7 @@ program.command('clear-cache')
 program
   .name('md2pdf')
   .description('Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.')
-  .version(pkg.version, '-v, -V, --version', 'output the current version')
+  .version(pkg.version, '-V, --version', 'output the current version')
   .argument('[inputs...]', 'Input markdown files (supports wildcards like *.md)')
   .option('-o, --output <output>', 'Output PDF file (or directory if multiple inputs)')
   .option('--toc', 'Generate a Table of Contents')
@@ -130,6 +130,7 @@ program
   .option('--no-math', 'Disable KaTeX math rendering for LaTeX equations')
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
+  .option('--stdin', 'Read markdown from stdin instead of files')
   .option('--no-title', 'Disable automatic document title injection from frontmatter/filename')
   .option('--json-errors', 'Output errors in JSON format')
   .option('--hide-tags', 'Hide inline Obsidian tags in PDF output')
@@ -169,9 +170,7 @@ Exit Codes:
 // Early intercept for common mistakes
 const firstArg = process.argv[2];
 
-if (firstArg === '-v') {
-  process.argv[2] = '-V';
-} else if (firstArg === 'version' || firstArg === '--version') {
+  if (firstArg === 'version' || firstArg === '--version') {
   process.argv[2] = '-V';
 }
 

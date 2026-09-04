@@ -10,12 +10,12 @@ import { EXIT } from './formatter.js';
 export default new Command('init')
   .description('Interactive guided setup for new environments')
   .action(async () => {
-    console.log(pc.bold('\n[INFO]  md2pdf Environment Setup\n'));
+    console.log(pc.bold('\nℹ  md2pdf Environment Setup\n'));
     
     const oraOptions = { prefixText: ' ' };
     let spinner = ora({ text: 'Checking Node environment...', ...oraOptions }).start();
     spinner.stop();
-    console.log('  ' + pc.green('[OK]') + ' ' + `Node.js ${process.version}`);
+    console.log('  ' + pc.green('✔') + ' ' + `Node.js ${process.version}`);
 
     spinner = ora({ text: 'Checking Playwright installation...', ...oraOptions }).start();
     
@@ -31,21 +31,21 @@ export default new Command('init')
         
         if (process.env.MD2PDF_BROWSER) {
           spinner.stop();
-        console.log('  ' + pc.green('[OK]') + ' ' + `Browser is ready (Override: ${process.env.MD2PDF_BROWSER})`);
+        console.log('  ' + pc.green('✔') + ' ' + `Browser is ready (Override: ${process.env.MD2PDF_BROWSER})`);
         } else if (cached?.executablePath) {
           spinner.stop();
-        console.log('  ' + pc.green('[OK]') + ' ' + `Browser is ready (Cached: ${cached.executablePath})`);
+        console.log('  ' + pc.green('✔') + ' ' + `Browser is ready (Cached: ${cached.executablePath})`);
         } else if (discovered) {
           spinner.stop();
-        console.log('  ' + pc.green('[OK]') + ' ' + `Browser is ready (System: ${discovered.name})`);
+        console.log('  ' + pc.green('✔') + ' ' + `Browser is ready (System: ${discovered.name})`);
         } else {
           spinner.stop();
-        console.log('  ' + pc.green('[OK]') + ' ' + 'Playwright bundled browser is ready');
+        console.log('  ' + pc.green('✔') + ' ' + 'Playwright bundled browser is ready');
         }
       } catch (err) {
         if (!isMissingExecutableError(err)) {
           spinner.stop();
-        console.log('  ' + pc.red('[ERR]') + ' ' + 'Browser is installed but crashed during launch');
+        console.log('  ' + pc.red('✖') + ' ' + 'Browser is installed but crashed during launch');
           const { detectBrowserError } = await import('../errors/detect.js');
           const mdError = detectBrowserError(err);
           const { renderCliError } = await import('./formatter.js');
@@ -56,7 +56,7 @@ export default new Command('init')
       }
     } catch {
       spinner.stop();
-        console.log('  ' + pc.red('[ERR]') + ' ' + 'Chromium browser missing');
+        console.log('  ' + pc.red('✖') + ' ' + 'Chromium browser missing');
       console.log(pc.yellow('\nmd2pdf requires a Chromium-based browser (Chrome, Edge, Brave, etc.) to generate PDFs.'));
       console.log(pc.yellow('None were found on your system. You can install one manually, or let md2pdf download a local copy.'));
 
@@ -106,7 +106,7 @@ export default new Command('init')
             console.log(pc.dim(`  ${process.execPath} ${pwCli} install-deps chromium`));
           } else {
             spinner.stop();
-            console.log(pc.cyan('\n[INFO]  Playwright requires system libraries to run Chromium headless.'));
+            console.log(pc.cyan('\nℹ  Playwright requires system libraries to run Chromium headless.'));
             console.log(pc.cyan('    Requesting sudo access to install dependencies...'));
             execFileSync('sudo', [process.execPath, pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
             spinner.start('Finishing installation...');
@@ -114,10 +114,10 @@ export default new Command('init')
         }
         
         spinner.stop();
-        console.log('  ' + pc.green('[OK]') + ' ' + 'Successfully installed browser dependencies!');
+        console.log('  ' + pc.green('✔') + ' ' + 'Successfully installed browser dependencies!');
       } catch (e: any) {
         spinner.stop();
-        console.log('  ' + pc.red('[ERR]') + ' ' + 'Failed to install dependencies automatically.');
+        console.log('  ' + pc.red('✖') + ' ' + 'Failed to install dependencies automatically.');
         if (e.stderr || e.stdout || e.message) {
           console.error(pc.red(`\nError details:`));
           console.error(pc.dim((e.stderr || e.stdout || e.message).toString()));
@@ -127,10 +127,10 @@ export default new Command('init')
       }
     }
 
-    console.log('\n  ' + pc.green('[OK]') + ' Your environment is fully set up and ready to generate PDFs!\n');
+    console.log('\n  ' + pc.green('✔') + ' Your environment is fully set up and ready to generate PDFs!\n');
     
     if (!process.stdin.isTTY) {
-      console.log(pc.yellow('Non-interactive environment - skipping config prompt.'));
+      console.log(pc.yellow('Non-interactive environment. Skipping config prompt.'));
       console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
       process.exit(EXIT.OK);
     }
@@ -159,7 +159,7 @@ export default new Command('init')
           paper: "A4",
           toc: false
         }, null, 2));
-        console.log('\n  ' + pc.green('[OK]') + ' Created .md2pdf.json\n');
+        console.log('\n  ' + pc.green('✔') + ' Created .md2pdf.json\n');
       } catch (err: any) {
         console.log('');
         const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');

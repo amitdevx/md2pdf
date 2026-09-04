@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -20,6 +20,12 @@ function runCli(args: string): { status: number; stdout: string; stderr: string 
 }
 
 describe('CLI End-to-End Tests', () => {
+  afterAll(() => {
+    const toDelete = ['bad-yaml.md', 'bad.md', 'chmod.md', 'complex.md', 'large.md', 'pub-false.md', 'pub.md', 'rce.md', 'test.txt', 'temp.txt', 'temp_skip.md', 'bad_yaml.md', 'basic.pdf', 'bad-yaml.pdf', 'bad.pdf', 'pub-false.pdf', 'pub.pdf', 'complex.pdf', 'rce.pdf', 'large.pdf', 'test.pdf'];
+    for (const file of toDelete) {
+      try { fs.unlinkSync(path.join(fixturesDir, file)); } catch { /* ignore */ }
+    }
+  });
   it('should fail on missing file with exit code 1', () => {
     const result = runCli('nonexistent.md');
     expect(result.status).toBe(1);

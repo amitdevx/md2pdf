@@ -59,43 +59,53 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     }
   }
 
-  const inputPath = path.resolve(process.cwd(), input);
-  let rawMarkdown;
-  try {
-    const stats = await fs.stat(inputPath);
-    // 5MB limit to prevent V8 OOM during unified/AST parsing
-    const MAX_SIZE_BYTES = 5 * 1024 * 1024;
-    if (stats.size > MAX_SIZE_BYTES) {
+  const inputPath = input === '-' ? '-' : path.resolve(process.cwd(), input);
+  let rawMarkdown = '';
+  if (input === '-') {
+    rawMarkdown = await new Promise<string>((resolve, reject) => {
+      let data = '';
+      process.stdin.setEncoding('utf-8');
+      process.stdin.on('data', chunk => data += chunk);
+      process.stdin.on('end', () => resolve(data));
+      process.stdin.on('error', reject);
+    });
+  } else {
+    try {
+      const stats = await fs.stat(inputPath);
+      // 5MB limit to prevent V8 OOM during unified/AST parsing
+      const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+      if (stats.size > MAX_SIZE_BYTES) {
+        const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+        throw new Md2PdfError(
+          Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
+          'File Too Large',
+          `Input markdown exceeds maximum size of 5MB (${(stats.size / 1024 / 1024).toFixed(2)}MB).`,
+          { markdownFile: inputPath }
+        );
+      }
+      if (stats.mode !== undefined && (stats.mode & 0o777) === 0) {
+        const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+        throw new Md2PdfError(
+          Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+          'Permission Denied',
+          `CORE-ERR Cannot read file '${inputPath}': Permission denied (mode 000).`,
+          { markdownFile: inputPath }
+        );
+      }
+      rawMarkdown = await fs.readFile(inputPath, 'utf-8');
+    } catch (error: any) {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-      throw new Md2PdfError(
-        Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
-        'File Too Large',
-        `Input markdown exceeds maximum size of 5MB (${(stats.size / 1024 / 1024).toFixed(2)}MB).`,
-        { markdownFile: inputPath }
-      );
+      if (error.code === 'EACCES' || error.message.includes('Permission denied')) {
+        throw new Md2PdfError(
+          Md2PdfErrorCode.ERR_PERMISSION_DENIED,
+          'Permission Denied',
+          `CORE-ERR Cannot read file '${inputPath}': Permission denied.`,
+          { markdownFile: inputPath },
+          error
+        );
+      }
+      throw error;
     }
-    if (stats.mode !== undefined && (stats.mode & 0o777) === 0) {
-      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-      throw new Md2PdfError(
-        Md2PdfErrorCode.ERR_PERMISSION_DENIED,
-        'Permission Denied',
-        `Cannot read file '${inputPath}': Permission denied (mode 000).`,
-        { markdownFile: inputPath }
-      );
-    }
-    rawMarkdown = await fs.readFile(inputPath, 'utf-8');
-  } catch (error: any) {
-    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-    if (error.code === 'EACCES' || error.message.includes('Permission denied')) {
-      throw new Md2PdfError(
-        Md2PdfErrorCode.ERR_PERMISSION_DENIED,
-        'Permission Denied',
-        `Cannot read file '${inputPath}': Permission denied.`,
-        { markdownFile: inputPath },
-        error
-      );
-    }
-    throw error;
   }
 
   let frontmatter: any;
@@ -251,7 +261,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       shikiTheme: theme?.shikiTheme,
     });
 
-    title = options.metadata?.title || frontmatter.title || path.basename(input, path.extname(input));
+    title = options.metadata?.title || frontmatter.title || (input === '-' ? 'Untitled Document' : path.basename(input, path.extname(input)));
     
     let finalHtml = parsed.html;
     if (options.title !== false && !/<h1\b[^>]*>/i.test(finalHtml)) {

@@ -1,3 +1,11 @@
+## [0.9.1]
+
+## Bug Fixes
+* Fixed issue where batch failures exited with 0 instead of 1.
+* Fixed issue where `--json-errors` failed to output anything for large files.
+* Fixed CLI icon formatting to use standard unicode checkmarks and crosses.
+* Fixed doctor command browser caching logic.
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

@@ -26,26 +26,30 @@ import { handleBatch } from './handlers/batch.js';
 
 export async function runConvert(inputsRaw: string[], options: CliOptions) {
   let inputs: string[] = [];
-  for (const raw of inputsRaw) {
-    if (fs.existsSync(raw)) {
-      inputs.push(path.normalize(raw));
-      continue;
+  if (options.stdin) {
+    inputs = ['-'];
+  } else {
+    for (const raw of inputsRaw) {
+      if (fs.existsSync(raw)) {
+        inputs.push(path.normalize(raw));
+        continue;
+      }
+      const normalizedPattern = raw.replace(/\\/g, '/');
+      if (fg.isDynamicPattern(normalizedPattern)) {
+        const matches = await fg(normalizedPattern, { dot: true, unique: true, onlyFiles: false });
+        inputs.push(...matches.map(p => path.normalize(p)));
+      } else {
+        inputs.push(path.normalize(raw));
+      }
     }
-    const normalizedPattern = raw.replace(/\\/g, '/');
-    if (fg.isDynamicPattern(normalizedPattern)) {
-      const matches = await fg(normalizedPattern, { dot: true, unique: true, onlyFiles: false });
-      inputs.push(...matches.map(p => path.normalize(p)));
-    } else {
-      inputs.push(path.normalize(raw));
-    }
+    inputs = Array.from(new Set(inputs));
   }
-  inputs = Array.from(new Set(inputs));
 
   if (inputs.length === 0) {
     if (options.jsonErrors) {
       jsonOut({ success: false, error: { code: 'ERR_NO_INPUT', title: 'Missing Input', reason: 'No input files found matching the provided arguments.' } });
     } else {
-      console.error(pc.red('[ERR] No input files found matching the provided arguments.'));
+      console.error(pc.red('✖ No input files found matching the provided arguments.'));
     }
     process.exit(EXIT.USAGE_ERROR);
   }
@@ -55,7 +59,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     const result = await loadConfig(process.cwd(), options.config);
     resolvedConfig = result.config;
   } catch (err: any) {
-    console.error(pc.red(`\n[ERR] ${err.title || 'Config Error'}`));
+    console.error(pc.red(`\n✖ ${err.title || 'Config Error'}`));
     console.error(err.reason || err.message);
     process.exit(EXIT.USAGE_ERROR);
   }
@@ -75,7 +79,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     }
   }
 
-  for (const flag of ['stdin', 'stdout', 'input']) {
+  for (const flag of ['stdout', 'input']) {
     if ((cliFlags as any)[flag]) {
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_UNSUPPORTED_OPTION', 'Unsupported Option', `The --${flag} option is not currently supported.`);
@@ -90,20 +94,20 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     if (options.jsonErrors) {
       emitJsonErrorAndExit('ERR_VAULT_ROOT_NOT_FOUND', 'Vault Root Not Found', `--vault-root '${cliFlags.vaultRoot}' does not exist.`);
     } else {
-      console.error(pc.red(`[ERR] --vault-root '${cliFlags.vaultRoot}' does not exist.`));
+      console.error(pc.red(`✖ --vault-root '${cliFlags.vaultRoot}' does not exist.`));
       process.exit(EXIT.USAGE_ERROR);
     }
   }
 
   if (!options.jsonErrors) {
     if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
-      console.warn(pc.yellow('[WARN]  --toc-depth / --toc-title have no effect without --toc'));
+      console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
     }
     if (cliFlags.headerTemplate && !cliFlags.header) {
-      console.warn(pc.yellow('[WARN]  --header-template has no effect without --header'));
+      console.warn(pc.yellow('⚠  --header-template has no effect without --header'));
     }
     if (cliFlags.footerTemplate && !cliFlags.footer) {
-      console.warn(pc.yellow('[WARN]  --footer-template has no effect without --footer'));
+      console.warn(pc.yellow('⚠  --footer-template has no effect without --footer'));
     }
   }
 
@@ -115,7 +119,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
       } else {
-        console.error(pc.red(`[ERR] Output path '${options.output}' is a file, but multiple inputs were provided.`));
+        console.error(pc.red(`✖ Output path '${options.output}' is a file, but multiple inputs were provided.`));
         console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
         process.exit(EXIT.USAGE_ERROR);
       }
@@ -129,13 +133,13 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory', `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
       } else {
-        console.error(pc.red(`[ERR] Output path '${options.output}' is a directory, not a file.`));
+        console.error(pc.red(`✖ Output path '${options.output}' is a directory, not a file.`));
         console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
         process.exit(EXIT.USAGE_ERROR);
       }
     }
     if (!path.extname(options.output)) {
-      if (!options.jsonErrors) console.warn(pc.yellow(`[WARN] Output path has no .pdf extension - appending`));
+      if (!options.jsonErrors) console.warn(pc.yellow(`⚠ Output path has no .pdf extension - appending`));
       options.output += '.pdf';
       (cliFlags as any).output = options.output;
     }
@@ -163,10 +167,10 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
   }
 
   const validationResult = validateInputFiles(inputs, isBatch, options);
-  let hasErrors = false;
+  
 
   for (const err of validationResult.errors) {
-    hasErrors = true;
+    
     if (err.isFatal) {
       if (options.jsonErrors) {
         jsonOut({ success: false, error: { code: err.error.code as string, title: err.error.title || 'Error', reason: err.error.reason || err.error.message } });
@@ -175,24 +179,13 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       }
       process.exitCode = err.error.code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
       process.exit(process.exitCode);
-    } else {
-      if (!options.jsonErrors) {
-        console.error(pc.red(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`));
-      }
     }
   }
 
-  inputs = validationResult.validInputs;
-  if (inputs.length === 0) {
-    if (options.jsonErrors) {
-      jsonOut({ success: false, error: { code: 'ERR_VALIDATION', title: 'Validation Failed', reason: 'No valid input files to process.' } });
-    }
-    process.exit(hasErrors ? EXIT.USAGE_ERROR : EXIT.OK);
-  }
-
+  // Do not exit early here! Pass ALL inputs (and errors) into the handlers so they can report them in JSON/Batch summary!
   if (isBatch) {
-    await handleBatch(inputs, options, cliFlags, resolvedConfig);
+    await handleBatch(inputs, options, cliFlags, resolvedConfig, validationResult);
   } else {
-    await handleSingle(inputs[0], options, cliFlags, resolvedConfig);
+    await handleSingle(inputs[0], options, cliFlags, resolvedConfig, validationResult);
   }
 }

@@ -21,7 +21,8 @@ export async function handleBatch(
   inputs: string[],
   options: any,
   cliFlags: any,
-  resolvedConfig: any
+  resolvedConfig: any,
+  validationResult?: any
 ): Promise<void> {
   const startTime = Date.now();
   const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
@@ -51,7 +52,7 @@ export async function handleBatch(
   let isShuttingDown = false;
   const sigintHandler = async () => {
     isShuttingDown = true;
-    console.log(pc.yellow('\n[WARN] Process interrupted by user. Cleaning up...'));
+    console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
     await cleanup();
     process.exitCode = 130;
     return;
@@ -104,9 +105,33 @@ export async function handleBatch(
       ? parseInt(cliFlags.concurrency as string)
       : Math.min(4, os.cpus().length);
 
-    const results: any[] = new Array(inputs.length);
     let completedCount = 0;
-
+    const preValidationErrors: string[] = [];
+    const results: any[] = new Array(inputs.length);
+    if (validationResult?.errors) {
+      for (const err of validationResult.errors) {
+        const i = inputs.indexOf(err.input);
+        if (i !== -1) {
+          hasErrors = true;
+          failedCount++;
+          results[i] = { isError: true, error: err.error.reason || err.error.message, code: err.error.code || 'ERR_VALIDATION', outputPath: '-', pageCounts: 0, renderTimeMs: 0, warnings: [] };
+          preValidationErrors.push(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`);
+          completedCount++;
+        }
+      }
+    }
+    if (validationResult?.errors) {
+      for (const err of validationResult.errors) {
+        const i = inputs.indexOf(err.input);
+        if (i !== -1) {
+          hasErrors = true;
+          failedCount++;
+          results[i] = { isError: true, error: err.error.reason || err.error.message, code: err.error.code || 'ERR_VALIDATION', outputPath: '-', pageCounts: 0, renderTimeMs: 0, warnings: [] };
+          preValidationErrors.push(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`);
+          completedCount++;
+        }
+      }
+    }
     const updateSpinner = () => {
       if (!options.jsonErrors && !options.quiet) {
         const percent = Math.round((completedCount / inputs.length) * 100);
@@ -130,6 +155,10 @@ export async function handleBatch(
 
     const worker = async () => {
       while (queue.length > 0 && !isShuttingDown) {
+        if (results[queue[0].i]) {
+          queue.shift();
+          continue;
+        }
         const { input, i } = queue.shift()!;
         const fileStartTime = Date.now();
 
@@ -152,9 +181,9 @@ export async function handleBatch(
           if (dirErr.code !== 'EEXIST') {
             hasErrors = true;
             failedCount++;
-            if (!options.jsonErrors) {
+            if (!options.jsonErrors && !options.quiet) {
               spinner.stop();
-              console.error(pc.red(`[ERR] ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
+              console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
               spinner.start();
             }
             results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
@@ -180,11 +209,11 @@ export async function handleBatch(
             const fileHash = computeHash(rawContent, convertOptions);
             if (checkCache(input, fileHash, output as string)) {
               results[i] = { fromCache: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-              if (!options.jsonErrors) {
+              if (!options.jsonErrors && !options.quiet) {
                 completedCount++;
                 updateSpinner();
                 spinner.stop();
-                console.log(pc.green(`[OK] ${path.basename(output as string)} (cached)`));
+                console.log(pc.green(`✔ ${path.basename(output as string)} (cached)`));
                 spinner.start();
               }
               successfulCount++;
@@ -202,10 +231,10 @@ export async function handleBatch(
           hasErrors = true;
           failedCount++;
           results[i] = { isError: true, error: `Browser launch failed: ${err.message}`, code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-          if (!options.jsonErrors) {
+          if (!options.jsonErrors && !options.quiet) {
             completedCount++;
             spinner.stop();
-            console.error(pc.red(`[ERR] ${path.basename(input)} - Browser launch failed: ${err.message}`));
+            console.error(pc.red(`✖ ${path.basename(input)} - Browser launch failed: ${err.message}`));
             spinner.start();
           }
           continue;
@@ -242,7 +271,7 @@ export async function handleBatch(
         if (fs.existsSync(output as string) && !options.force) {
           skippedExistingCount++;
           results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
-          if (!options.jsonErrors) {
+          if (!options.jsonErrors && !options.quiet) {
             completedCount++;
             updateSpinner();
           }
@@ -268,15 +297,15 @@ export async function handleBatch(
 
           if (!options.jsonErrors && result.warnings.length > 0) {
             spinner.stop();
-            result.warnings.forEach(w => console.warn(pc.yellow(`[WARN] ${w}`)));
+            result.warnings.forEach(w => console.warn(pc.yellow(`⚠ ${w}`)));
             spinner.start();
           }
 
-          if (!options.jsonErrors) {
+          if (!options.jsonErrors && !options.quiet) {
             completedCount++;
             spinner.stop();
             const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
-            console.log(pc.green(`[OK] ${path.basename(result.outputPath)} (${timing})`));
+            console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${timing})`));
             updateSpinner();
             spinner.start();
           }
@@ -289,9 +318,9 @@ export async function handleBatch(
           if (err?.code === 'ERR_PUBLISH_SKIPPED') {
             skippedPublishCount++;
             results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'], skipReason: 'publish: false' };
-            if (!options.jsonErrors) {
+            if (!options.jsonErrors && !options.quiet) {
               spinner.stop();
-              console.error(pc.dim(`[SKIP] Skipped ${path.basename(input)} (publish: false)`));
+              console.error(pc.dim(`➖ Skipped ${path.basename(input)} (publish: false)`));
               spinner.start();
               completedCount++;
               updateSpinner();
@@ -304,9 +333,9 @@ export async function handleBatch(
           const rawMsg = err.reason || err.message || String(err);
           const cleanMsg = rawMsg.split('\n').slice(0, 3).join(' | ');
 
-          if (!options.jsonErrors) {
+          if (!options.jsonErrors && !options.quiet) {
             spinner.stop();
-            console.error(pc.red(`[ERR] ${path.basename(input)} - ${cleanMsg}`));
+            console.error(pc.red(`✖ ${path.basename(input)} - ${cleanMsg}`));
             spinner.start();
           }
 
@@ -322,7 +351,7 @@ export async function handleBatch(
             warnings: []
           };
 
-          if (!options.jsonErrors) {
+          if (!options.jsonErrors && !options.quiet) {
             completedCount++;
             updateSpinner();
           }
@@ -362,12 +391,16 @@ export async function handleBatch(
     } else {
       const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
       spinner.stop();
+      
+      if (!options.quiet && preValidationErrors.length > 0) {
+        preValidationErrors.forEach(err => console.error(pc.red(err)));
+      }
       console.log(`\n${successfulCount} succeeded, ${failedCount} failed in ${totalTime}s`);
       if (skippedExistingCount > 0) {
-        console.log(pc.yellow(`[WARN] Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
+        console.log(pc.yellow(`⚠ Skipped ${skippedExistingCount} existing PDFs (use --force to overwrite)`));
       }
       if (skippedPublishCount > 0) {
-        console.log(pc.yellow(`[WARN] Skipped ${skippedPublishCount} files (publish: false)`));
+        console.log(pc.yellow(`⚠ Skipped ${skippedPublishCount} files (publish: false)`));
       }
     }
 
@@ -384,7 +417,7 @@ export async function handleBatch(
         emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
       } else {
         spinner.stop();
-        console.error(pc.red('[ERR]') + ' ' + pc.red(err.message));
+        console.error(pc.red('✖') + ' ' + pc.red(err.message));
         const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME'
           || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
         if (!isUserError) {

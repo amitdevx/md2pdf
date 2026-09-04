@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -20,6 +20,12 @@ function runCli(args: string): { status: number; stdout: string; stderr: string 
 }
 
 describe('Exit Code Contract (27 Matrix Rows)', () => {
+  afterAll(() => {
+    const toDelete = ['bad-yaml.md', 'bad.md', 'chmod.md', 'complex.md', 'large.md', 'pub-false.md', 'pub.md', 'rce.md', 'test.txt', 'temp.txt', 'temp_skip.md', 'bad_yaml.md', 'basic.pdf', 'bad-yaml.pdf', 'bad.pdf', 'pub-false.pdf', 'pub.pdf', 'complex.pdf', 'rce.pdf', 'large.pdf', 'test.pdf'];
+    for (const file of toDelete) {
+      try { fs.unlinkSync(path.join(fixturesDir, file)); } catch { /* ignore */ }
+    }
+  });
   let basicMd = '';
 
   beforeAll(() => {

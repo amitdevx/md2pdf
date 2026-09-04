@@ -18,8 +18,19 @@ export async function handleSingle(
   input: string,
   options: any,
   cliFlags: any,
-  resolvedConfig: any
+  resolvedConfig: any,
+  validationResult?: any
 ): Promise<void> {
+  if (validationResult?.errors?.length > 0) {
+    const err = validationResult.errors[0];
+    if (options.jsonErrors) {
+      jsonOut({ success: false, error: { code: err.error.code, title: err.error.title || 'Error', reason: err.error.reason || err.error.message } });
+    } else {
+      renderCliError(err.error, options);
+    }
+    process.exitCode = err.error.code === 'ERR_PATH_TRAVERSAL' ? 1 : (err.error.code === 'ERR_FILE_TOO_LARGE' || err.error.code === 'ERR_DOCUMENT_TOO_COMPLEX' ? 2 : 1);
+    return;
+  }
   let output = cliFlags.output;
   if (output) {
     if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
@@ -43,7 +54,7 @@ export async function handleSingle(
           if (options.jsonErrors) {
             jsonOut({ success: true, results: [{ input, output, pages: 0, timeMs: 0, warnings: [] }] });
           } else if (!options.quiet) {
-            console.log(pc.green(`[OK] ${path.basename(output)} (cached)`));
+            console.log(pc.green(`✔ ${path.basename(output)} (cached)`));
           }
           process.exitCode = EXIT.OK;
           return;
@@ -65,7 +76,7 @@ export async function handleSingle(
       });
       if (parsed.data?.publish === false) {
         if (!options.quiet) {
-          console.info(pc.dim(`[INFO] Skipped ${path.basename(input)} (publish: false)`));
+          console.info(pc.dim(`ℹ Skipped ${path.basename(input)} (publish: false)`));
         }
         process.exitCode = EXIT.OK;
         return;
@@ -105,7 +116,7 @@ export async function handleSingle(
   let isShuttingDown = false;
   const sigintHandler = async () => {
     isShuttingDown = true;
-    console.log(pc.yellow('\n[WARN] Process interrupted by user. Cleaning up...'));
+    console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
     await cleanup();
     process.exitCode = 130;
     return;
@@ -125,7 +136,7 @@ export async function handleSingle(
     // Check if output exists (--force not set)
     if (fs.existsSync(output) && !options.force) {
       if (!options.jsonErrors) {
-        console.warn(pc.yellow(`[WARN] Skipped: Output file '${output}' already exists (use --force to overwrite).`));
+        console.warn(pc.yellow(`⚠ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
       }
       process.exitCode = EXIT.OK;
       return;
@@ -133,17 +144,19 @@ export async function handleSingle(
 
     // Read raw content for mermaid check
     let rawContent = '';
-    try {
-      rawContent = fs.readFileSync(input, 'utf-8');
-    } catch {
-      const { Md2PdfError: E, Md2PdfErrorCode } = await import('../../errors/index.js');
-      throw new E(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', `Cannot read file '${input}': Permission denied.`, { markdownFile: input });
+    let hasMermaid = false;
+    if (input !== '-') {
+      try {
+        rawContent = fs.readFileSync(input, 'utf-8');
+      } catch {
+        const { Md2PdfError: E, Md2PdfErrorCode } = await import('../../errors/index.js');
+        throw new E(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', `SINGLE-ERR Cannot read file '${input}': Permission denied.`, { markdownFile: input });
+      }
+      hasMermaid = rawContent.includes('```mermaid');
     }
 
     globalBrowserPromise = getBrowser().then(b => { globalBrowser = b; return b; });
     await globalBrowserPromise;
-
-    const hasMermaid = rawContent.includes('```mermaid');
     if (hasMermaid) {
       mermaidInitPromise = (async () => {
         globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
@@ -163,8 +176,8 @@ export async function handleSingle(
 
     if (options.verbose && !options.jsonErrors) {
       spinner.stop();
-      console.log(pc.dim(`\n[INFO] Starting conversion pipeline for: ${input}`));
-      console.log(pc.dim(`[INFO] Output target: ${output}`));
+      console.log(pc.dim(`\nℹ Starting conversion pipeline for: ${input}`));
+      console.log(pc.dim(`ℹ Output target: ${output}`));
       spinner.start();
     }
 
@@ -173,13 +186,13 @@ export async function handleSingle(
 
     if (options.verbose && !options.jsonErrors) {
       spinner.stop();
-      console.log(pc.dim(`[INFO] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
+      console.log(pc.dim(`ℹ Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
       spinner.start();
     }
 
     if (!options.jsonErrors && result.warnings.length > 0) {
       spinner.stop();
-      result.warnings.forEach(w => console.warn(pc.yellow(`[WARN] ${w}`)));
+      result.warnings.forEach(w => console.warn(pc.yellow(`⚠ ${w}`)));
       spinner.start();
     }
 
@@ -191,7 +204,7 @@ export async function handleSingle(
     } else {
       const outDest = options.output ? ` (Saved to: ${options.output})` : '';
       spinner.stop();
-      console.log(pc.green('[OK]') + ' ' + pc.green(`Successfully converted 1 file in ${((Date.now() - startTime) / 1000).toFixed(1)}s!${outDest}`));
+      console.log(pc.green('✔') + ' ' + pc.green(`Successfully converted 1 file in ${((Date.now() - startTime) / 1000).toFixed(1)}s!${outDest}`));
     }
 
     process.exitCode = EXIT.OK;
@@ -217,7 +230,7 @@ export async function handleSingle(
         emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
       } else {
         spinner.stop();
-        console.error(pc.red('[ERR]') + ' ' + pc.red(err.message));
+        console.error(pc.red('✖') + ' ' + pc.red(err.message));
         const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME'
           || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
         if (!isUserError) {

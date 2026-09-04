@@ -78,8 +78,8 @@ export default new Command('doctor')
     const oraOptions = { prefixText: ' ' };
     let spinner: any = null;
     if (!options.json) {
-      console.log(pc.bold('\n[INFO]  md2pdf System Health Check\n'));
-      checks.forEach(check => console.log(`  ${pc.green('[OK]')} ${check.name}`));
+      console.log(pc.bold('\nℹ  md2pdf System Health Check\n'));
+      checks.forEach(check => console.log(`  ${pc.green('✔')} ${check.name}`));
       spinner = ora({ text: 'Discovering browser...', ...oraOptions }).start();
     }
 
@@ -104,7 +104,7 @@ export default new Command('doctor')
       
       if (spinner) {
         spinner.stop();
-          console.log('  ' + pc.green('[OK]') + ' ' + checks[checks.length - 1].name);
+          console.log('  ' + pc.green('✔') + ' ' + checks[checks.length - 1].name);
       }
 
       let skipBrowserLaunch = false;
@@ -125,7 +125,7 @@ export default new Command('doctor')
 
       if (skipBrowserLaunch) {
         if (spinner) spinner.stop();
-          console.log('  ' + pc.green('[OK]') + ' ' + checks[checks.length - 1].name);
+          console.log('  ' + pc.green('✔') + ' ' + checks[checks.length - 1].name);
       } else {
         if (spinner) spinner = ora({ text: 'Launching browser...', ...oraOptions }).start();
         
@@ -136,7 +136,7 @@ export default new Command('doctor')
         
         if (spinner) {
           spinner.stop();
-          console.log('  ' + pc.green('[OK]') + ' ' + 'Compatible browser found and launched');
+          console.log('  ' + pc.green('✔') + ' ' + 'Compatible browser found and launched');
           spinner = ora({ text: 'Rendering HTML...', ...oraOptions }).start();
         }
 
@@ -147,7 +147,7 @@ export default new Command('doctor')
 
         if (spinner) {
           spinner.stop();
-          console.log('  ' + pc.green('[OK]') + ' ' + 'HTML rendered successfully');
+          console.log('  ' + pc.green('✔') + ' ' + 'HTML rendered successfully');
           spinner = ora({ text: 'Testing Mermaid rendering...', ...oraOptions }).start();
         }
 
@@ -169,9 +169,9 @@ export default new Command('doctor')
         if (spinner) {
           spinner.stop();
           if (results.checks.mermaidRender) {
-            console.log('  ' + pc.green('[OK]') + ' ' + 'Mermaid diagrams rendering correctly');
+            console.log('  ' + pc.green('✔') + ' ' + 'Mermaid diagrams rendering correctly');
           } else {
-            console.log('  ' + pc.red('[ERR]') + ' ' + 'Mermaid diagram rendering failed');
+            console.log('  ' + pc.red('✖') + ' ' + 'Mermaid diagram rendering failed');
           }
           spinner = ora({ text: 'Generating PDF...', ...oraOptions }).start();
         }
@@ -182,7 +182,7 @@ export default new Command('doctor')
         
         if (spinner) {
           spinner.stop();
-          console.log('  ' + pc.green('[OK]') + ' ' + 'PDF generated successfully');
+          console.log('  ' + pc.green('✔') + ' ' + 'PDF generated successfully');
         }
       }
       
@@ -200,7 +200,7 @@ export default new Command('doctor')
         
         if (spinner) {
           spinner.stop();
-          console.log('  ' + pc.green('[OK]') + ' ' + 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
+          console.log('  ' + pc.green('✔') + ' ' + 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
         }
       } catch (err: any) {
         throw new Md2PdfError(
@@ -215,7 +215,7 @@ export default new Command('doctor')
 
     } catch (e: unknown) {
       if (spinner) spinner.stop();
-          console.log('  ' + pc.red('[ERR]') + ' ' + 'Test failed');
+          console.log('  ' + pc.red('✖') + ' ' + 'Test failed');
       
       mdError = detectBrowserError(e, { platform: process.platform });
       results.errorContext = {
@@ -240,7 +240,7 @@ export default new Command('doctor')
 
     if (mdError) {
       const rec = getRecommendation(mdError);
-      console.log('\n  ' + pc.red(`[ERR]  Error: ${mdError.title}`));
+      console.log('\n  ' + pc.red(`✖  Error: ${mdError.title}`));
       console.log(`     ${mdError.reason}`);
       
       if (rec) {
@@ -269,7 +269,7 @@ export default new Command('doctor')
 
       process.exit(EXIT.ENVIRONMENT_ERROR);
     } else {
-      console.log(`\n  [OK] ${pc.green('Everything is OK!')} Your system is ready to generate PDFs.\n`);
+      console.log(`\n  ✔ ${pc.green('Everything is OK!')} Your system is ready to generate PDFs.\n`);
       process.exit(EXIT.OK);
     }
   });

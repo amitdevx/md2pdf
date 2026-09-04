@@ -30,6 +30,7 @@ export interface CliOptions {
   force?: boolean;
   dryRun?: boolean;
   quiet?: boolean;
+  stdin?: boolean;
   __preparsed?: any;
 }
 
