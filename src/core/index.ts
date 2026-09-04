@@ -129,6 +129,29 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     }
   }
 
+  if (input === '-') {
+    let complexityDepth = 0;
+    let pos = 0;
+    while (pos < rawMarkdown.length) {
+      let nextNewline = rawMarkdown.indexOf('\n', pos);
+      if (nextNewline === -1) nextNewline = rawMarkdown.length;
+      let depth = 0;
+      let i = pos;
+      while (i < nextNewline) {
+        const char = rawMarkdown[i];
+        if (char === '>') depth++;
+        else if (char !== ' ' && char !== '\t') break;
+        i++;
+      }
+      if (depth > complexityDepth) complexityDepth = depth;
+      pos = nextNewline + 1;
+    }
+    if (complexityDepth > 200) {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX, 'Document Too Complex', `The document contains blockquote nesting ${complexityDepth} levels deep. Maximum supported depth is 200.`, { markdownFile: 'stdin' });
+    }
+  }
+
   let frontmatter: any;
   let markdown: string;
   try {

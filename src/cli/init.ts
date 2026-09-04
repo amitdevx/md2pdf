@@ -61,7 +61,7 @@ export default new Command('init')
       console.log(pc.yellow('None were found on your system. You can install one manually, or let md2pdf download a local copy.'));
 
       if (!process.stdin.isTTY) {
-        console.error(pc.red('\nNon-interactive environment detected. Run `md2pdf init` in a terminal or install Chromium manually.'));
+        console.error(pc.red('\n✖ Non-interactive environment detected. Run `md2pdf init` in a terminal or install Chromium manually.'));
         process.exit(EXIT.ENVIRONMENT_ERROR);
       }
 
@@ -101,7 +101,7 @@ export default new Command('init')
           }
 
           if (!hasSudo) {
-            console.warn(pc.yellow('[!] sudo not available - skipping system library install'));
+            console.warn(pc.yellow('⚠  sudo not available - skipping system library install'));
             console.log(pc.dim('  If Playwright fails, install these manually as root:'));
             console.log(pc.dim(`  ${process.execPath} ${pwCli} install-deps chromium`));
           } else {
@@ -122,7 +122,7 @@ export default new Command('init')
           console.error(pc.red(`\nError details:`));
           console.error(pc.dim((e.stderr || e.stdout || e.message).toString()));
         }
-        console.error(pc.red('\nPlease run the installation commands manually.'));
+        console.error(pc.red('\n✖ Please run the installation commands manually.'));
         process.exit(EXIT.ENVIRONMENT_ERROR);
       }
     }

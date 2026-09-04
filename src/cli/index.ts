@@ -20,6 +20,7 @@ import initCmd from './init.js';
 import { runConvert } from '../commands/convert.js';
 import { renderCliError, jsonOut } from './formatter.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
+import pc from 'picocolors';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8'));
@@ -186,11 +187,11 @@ if (process.argv[2] === 'help') {
   process.exit(0);
 }
 if (process.argv[2] === '--init') {
-  console.error("Unknown option '--init'. Did you mean: md2pdf init");
+  console.error(pc.red("✖ Unknown option '--init'. Did you mean: md2pdf init"));
   process.exit(1);
 }
 if (process.argv[2] === '--doctor') {
-  console.error("Unknown option '--doctor'. Did you mean: md2pdf doctor");
+  console.error(pc.red("✖ Unknown option '--doctor'. Did you mean: md2pdf doctor"));
   process.exit(1);
 }
 
