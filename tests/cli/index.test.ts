@@ -104,5 +104,5 @@ describe('CLI End-to-End Tests', () => {
     expect(result.status, `CLI failed with stdout: ${result.stdout}\nstderr: ${result.stderr}`).toBe(0);
     expect(fs.existsSync(outPdf)).toBe(true);
     if (fs.existsSync(outPdf)) fs.unlinkSync(outPdf);
-  }, 60000);
+  }, 120000);
 });

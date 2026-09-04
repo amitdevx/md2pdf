@@ -228,8 +228,8 @@ publish: false
 ---
 # skip
 EOF2
-python3 -c "open('$TMPDIR_TEST/big.md','w').write('# x\n\n'+'x '*3000000)" 2>/dev/null || \
-  dd if=/dev/urandom bs=1024 count=6000 2>/dev/null | base64 > "$TMPDIR_TEST/big.md"
+python3 -c "open('$TMPDIR_TEST/big.md','w').write('# x\\n\\n'+'x '*16000000)" 2>/dev/null || \
+  dd if=/dev/urandom bs=1024 count=32000 2>/dev/null | base64 > "$TMPDIR_TEST/big.md"
 
 check_exit_code() {
   local label=$1
