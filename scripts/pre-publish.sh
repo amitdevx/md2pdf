@@ -358,9 +358,9 @@ PYEOF
   if [[ $? -ne 0 ]]; then FAILURES+=("json-errors: $label"); fi
 }
 
-check_json "missing file"       "false"  "ERR_VALIDATION"         $CLI /nonexistent.md
-check_json "directory input"    "false"  "ERR_VALIDATION"         $CLI "$TMPDIR_TEST"
-check_json "wrong extension"    "false"  "ERR_VALIDATION"         $CLI "$TMPDIR_TEST/test.txt"
+check_json "missing file"       "false"  "ERR_INVALID_INPUT"         $CLI /nonexistent.md
+check_json "directory input"    "false"  "ERR_INVALID_INPUT"         $CLI "$TMPDIR_TEST"
+check_json "wrong extension"    "false"  "ERR_INVALID_INPUT"         $CLI "$TMPDIR_TEST/test.txt"
 check_json "output is dir"      "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST"
 check_json "output dir slash"   "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST/"
 
