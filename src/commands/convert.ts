@@ -79,16 +79,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     }
   }
 
-  for (const flag of ['stdout', 'input']) {
-    if ((cliFlags as any)[flag]) {
-      if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_UNSUPPORTED_OPTION', 'Unsupported Option', `The --${flag} option is not currently supported.`);
-      } else {
-        console.error(pc.red(`error: The --${flag} option is not currently supported.`));
-        process.exit(EXIT.USAGE_ERROR);
-      }
-    }
-  }
 
   if (cliFlags.vaultRoot && !fs.existsSync(cliFlags.vaultRoot)) {
     if (options.jsonErrors) {

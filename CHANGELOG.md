@@ -1,10 +1,54 @@
-## [0.9.1]
+## [0.9.1] - 2026-09-04
 
-## Bug Fixes
-* Fixed issue where batch failures exited with 0 instead of 1.
-* Fixed issue where `--json-errors` failed to output anything for large files.
-* Fixed CLI icon formatting to use standard unicode checkmarks and crosses.
-* Fixed doctor command browser caching logic.
+### Added
+- `--stdin` flag: read markdown from stdin (pipe support).
+  `echo "# Hello" | md2pdf --stdin -o out.pdf`
+- Stdin is size-guarded at 30MB (same limit as files); excess is aborted
+  without a hang.
+
+### Changed
+- Maximum input file size raised from 5MB to 30MB. The old 5MB limit was
+  too conservative for real-world technical documents and slide decks.
+- UX icon system is now fully consistent across all commands:
+  - `✔` success (conversion, cache hit, check passed)
+  - `✖` error (file not found, conversion failed, permission denied)
+  - `➖` skipped (publish: false, output already exists)
+  - `⚠` warning (toc flags without --toc, output extension, SIGINT)
+  - `ℹ` info (verbose pipeline steps, init header, doctor header)
+  Previously batch.ts used `[ERR]` / `[INFO]` bracket-style prefixes
+  and formatter.ts used `[ERR]` in the error box header.
+- Dead code removed: `--stdout` and `--input` unsupported-option guards
+  that were never reachable (those flags were never registered).
+
+### Fixed
+- Batch pre-validation failures now correctly increment `failedCount` and
+  set `hasErrors = true`, so the exit code is 1 when any file fails.
+  Previously the exit was 0 even when files were silently rejected.
+- Duplicate validation-error loop in `batch.ts` (inserted by a previous
+  patch) has been removed; each pre-validation failure is now counted once.
+- `ERR_FILE_TOO_LARGE` with `--json-errors` now produces structured JSON
+  output instead of 0 bytes on stdout with exit 0.
+- Path traversal guard now fires even when the input file does not exist,
+  closing a bypass vector (`md2pdf missing.md -o /etc/out.pdf`).
+- `--quiet` flag suppresses spinner and success output as documented.
+- Batch spinner is cleared before the summary line is printed.
+- Pre-validation error lines are collected and printed after the spinner
+  starts, so they appear inside the batch summary rather than before it.
+- `doctor` browser cache mtime check now uses milliseconds (Date.now())
+  not seconds, so the 24-hour cache skip works correctly.
+- `init` non-interactive message changed from hyphen to period:
+  "Non-interactive environment. Skipping config prompt."
+- `-v` shorthand alias for `--version` removed to prevent future conflict
+  with a planned `--verbose` shorthand.
+- `--output <o>` placeholder in help text fixed to `--output <output>`.
+- `--profile <n>` placeholder fixed to `--profile <name>`.
+- Verbose debug prefixes `CORE-ERR` removed from error messages.
+
+### Tests
+- 16 new unit tests for `validation/input.ts` and `validation/output.ts`.
+- `afterAll` cleanup hooks added to all contract test files.
+- Empty `catch {}` blocks fixed (ESLint `no-empty` rule).
+- Batch integration test timeout raised to 120 s to prevent flaky CI.
 
 # Changelog
 

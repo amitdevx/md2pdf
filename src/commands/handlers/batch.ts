@@ -115,19 +115,7 @@ export async function handleBatch(
           hasErrors = true;
           failedCount++;
           results[i] = { isError: true, error: err.error.reason || err.error.message, code: err.error.code || 'ERR_VALIDATION', outputPath: '-', pageCounts: 0, renderTimeMs: 0, warnings: [] };
-          preValidationErrors.push(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`);
-          completedCount++;
-        }
-      }
-    }
-    if (validationResult?.errors) {
-      for (const err of validationResult.errors) {
-        const i = inputs.indexOf(err.input);
-        if (i !== -1) {
-          hasErrors = true;
-          failedCount++;
-          results[i] = { isError: true, error: err.error.reason || err.error.message, code: err.error.code || 'ERR_VALIDATION', outputPath: '-', pageCounts: 0, renderTimeMs: 0, warnings: [] };
-          preValidationErrors.push(`[ERR] ${err.input} - ${err.error.reason || err.error.message}`);
+          preValidationErrors.push(`✖ ${err.input} - ${err.error.reason || err.error.message}`);
           completedCount++;
         }
       }
@@ -281,8 +269,8 @@ export async function handleBatch(
         try {
           if (options.verbose && !options.jsonErrors) {
             spinner.stop();
-            console.log(pc.dim(`\n[INFO] Starting conversion pipeline for: ${input}`));
-            console.log(pc.dim(`[INFO] Output target: ${output}`));
+            console.log(pc.dim(`\nℹ Starting conversion pipeline for: ${input}`));
+            console.log(pc.dim(`ℹ Output target: ${output}`));
             spinner.start();
           }
 
@@ -291,7 +279,7 @@ export async function handleBatch(
 
           if (options.verbose && !options.jsonErrors) {
             spinner.stop();
-            console.log(pc.dim(`[INFO] Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
+            console.log(pc.dim(`ℹ Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
             spinner.start();
           }
 

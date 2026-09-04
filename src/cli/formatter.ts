@@ -36,7 +36,7 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
 
   const rec = getRecommendation(err);
   
-  console.error('\n' + pc.red(`[ERR]  Error: ${err.title}`));
+  console.error('\n' + pc.red(`✖  Error: ${err.title}`));
   console.error(`\n   ${err.reason}`);
   
   if (rec) {

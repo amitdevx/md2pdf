@@ -76,7 +76,7 @@ export async function handleSingle(
       });
       if (parsed.data?.publish === false) {
         if (!options.quiet) {
-          console.info(pc.dim(`ℹ Skipped ${path.basename(input)} (publish: false)`));
+          console.info(pc.dim(`➖ Skipped ${path.basename(input)} (publish: false)`));
         }
         process.exitCode = EXIT.OK;
         return;
@@ -136,7 +136,7 @@ export async function handleSingle(
     // Check if output exists (--force not set)
     if (fs.existsSync(output) && !options.force) {
       if (!options.jsonErrors) {
-        console.warn(pc.yellow(`⚠ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
+        console.warn(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
       }
       process.exitCode = EXIT.OK;
       return;
@@ -216,7 +216,7 @@ export async function handleSingle(
       if (options.jsonErrors) {
         jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'publish: false' }] });
       } else {
-        spinner.info(pc.yellow(`Skipped ${path.basename(input)} (publish: false)`));
+        spinner.info(pc.dim(`➖ Skipped ${path.basename(input)} (publish: false)`));
       }
       process.exitCode = EXIT.OK;
       return;

@@ -42,9 +42,9 @@ describe('Validation: input.ts', () => {
     expect(err?.reason).toBe('Not a markdown file');
   });
 
-  it('should return error for file > 5MB', () => {
+  it('should return error for file > 30MB', () => {
     const large = path.join(fixturesDir, 'large.md');
-    fs.writeFileSync(large, 'a'.repeat(6 * 1024 * 1024));
+    fs.writeFileSync(large, 'a'.repeat(31 * 1024 * 1024));
     const err = validateInput(large);
     expect(err).not.toBeNull();
     expect(err?.code).toBe(Md2PdfErrorCode.ERR_FILE_TOO_LARGE);

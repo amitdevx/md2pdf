@@ -12,10 +12,10 @@ export function validateInput(input: string): Md2PdfError | null {
   }
 
   const stat = fs.statSync(input);
-  const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+  const MAX_SIZE_BYTES = 30 * 1024 * 1024;
   
   if (stat.size > MAX_SIZE_BYTES) {
-    return new Md2PdfError(Md2PdfErrorCode.ERR_FILE_TOO_LARGE, 'File Too Large', `Input markdown exceeds 5MB (${(stat.size/1024/1024).toFixed(2)}MB).`, { markdownFile: input });
+    return new Md2PdfError(Md2PdfErrorCode.ERR_FILE_TOO_LARGE, 'File Too Large', `Input markdown exceeds 30MB (${(stat.size/1024/1024).toFixed(2)}MB).`, { markdownFile: input });
   }
 
   if (stat.isDirectory()) {

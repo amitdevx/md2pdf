@@ -64,22 +64,43 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   if (input === '-') {
     rawMarkdown = await new Promise<string>((resolve, reject) => {
       let data = '';
+      let byteCount = 0;
+      const MAX_STDIN_BYTES = 30 * 1024 * 1024;
       process.stdin.setEncoding('utf-8');
-      process.stdin.on('data', chunk => data += chunk);
+      process.stdin.on('data', chunk => {
+        byteCount += Buffer.byteLength(chunk, 'utf-8');
+        if (byteCount > MAX_STDIN_BYTES) {
+          process.stdin.destroy();
+          reject(new Error('ERR_FILE_TOO_LARGE:Stdin input exceeds maximum size of 30MB.'));
+          return;
+        }
+        data += chunk;
+      });
       process.stdin.on('end', () => resolve(data));
       process.stdin.on('error', reject);
+    }).catch(async (err: any) => {
+      if (typeof err?.message === 'string' && err.message.startsWith('ERR_FILE_TOO_LARGE:')) {
+        const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+        throw new Md2PdfError(
+          Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
+          'File Too Large',
+          err.message.replace('ERR_FILE_TOO_LARGE:', ''),
+          {}
+        );
+      }
+      throw err;
     });
   } else {
     try {
       const stats = await fs.stat(inputPath);
-      // 5MB limit to prevent V8 OOM during unified/AST parsing
-      const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+      // 30MB limit
+      const MAX_SIZE_BYTES = 30 * 1024 * 1024;
       if (stats.size > MAX_SIZE_BYTES) {
         const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
         throw new Md2PdfError(
           Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
           'File Too Large',
-          `Input markdown exceeds maximum size of 5MB (${(stats.size / 1024 / 1024).toFixed(2)}MB).`,
+          `Input markdown exceeds maximum size of 30MB (${(stats.size / 1024 / 1024).toFixed(2)}MB).`,
           { markdownFile: inputPath }
         );
       }
@@ -88,7 +109,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         throw new Md2PdfError(
           Md2PdfErrorCode.ERR_PERMISSION_DENIED,
           'Permission Denied',
-          `CORE-ERR Cannot read file '${inputPath}': Permission denied (mode 000).`,
+          `Cannot read file '${inputPath}': Permission denied (mode 000).`,
           { markdownFile: inputPath }
         );
       }
@@ -99,7 +120,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         throw new Md2PdfError(
           Md2PdfErrorCode.ERR_PERMISSION_DENIED,
           'Permission Denied',
-          `CORE-ERR Cannot read file '${inputPath}': Permission denied.`,
+          `Cannot read file '${inputPath}': Permission denied.`,
           { markdownFile: inputPath },
           error
         );
