@@ -6,6 +6,15 @@
 ### Fixed
 - Fixed dark theme print CSS: `dracula`, `nord`, and `obsidian-dark` now render beautifully on screen while cleanly inverting to a white background with dark text during PDF generation (saves ink without breaking screen visuals)
 
+## [0.9.3] - 2026-09-06
+
+### Fixed
+- Fixed an issue where the browser missing error would overshadow correct errors (like invalid YAML or `publish: false`) by hoisting configuration and YAML validation to run before launching the browser.
+- Fixed `md2pdf init` crashing on unexported `cli.js` by properly resolving the `playwright-core` package root.
+- Fixed `md2pdf init` correctly auto-installing Linux system dependencies when the browser binary is present but system libraries (like `libatk`) are missing.
+- Fixed `md2pdf doctor` outputting overwhelming Playwright stack traces by intelligently truncating the GitHub issue template and providing exact install commands for missing dependencies.
+- Added automatic detection of manually installed Playwright Chromium paths (`npx playwright install`) in the local cache, preventing `Browser Not Found` errors if the user manually installed a slightly different Playwright version.
+
 ## [0.9.2] - 2026-09-06
 ### Fixed
 - Stabilized browser layer with full cross-platform discovery fallback logic
