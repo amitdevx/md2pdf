@@ -147,7 +147,7 @@ export function getPlatformCandidates(): BrowserEntry[] {
     const pf    = process.env['PROGRAMFILES']       ?? 'C:\\Program Files';
     const pfx86 = process.env['PROGRAMFILES(X86)']  ?? 'C:\\Program Files (x86)';
     const local = process.env['LOCALAPPDATA']        ?? '';
-    return [
+    const baseWinCandidates: BrowserEntry[] = [
       { name: 'Chrome',   path: path.join(pf,    'Google','Chrome','Application','chrome.exe') },
       { name: 'Chrome',   path: path.join(pfx86, 'Google','Chrome','Application','chrome.exe') },
       { name: 'Chrome',   path: path.join(local, 'Google','Chrome','Application','chrome.exe') },
@@ -187,7 +187,28 @@ export function getPlatformCandidates(): BrowserEntry[] {
       { name: 'Orbitum',  path: path.join(local, 'Orbitum','Application','orbitum.exe') },
       { name: 'Colibri',  path: path.join(local, 'Colibri','Colibri.exe') },
       { name: 'Sidekick', path: path.join(local, 'Sidekick','Application','sidekick.exe') },
-    ].filter(e => e.path && !e.path.startsWith('\\'));
+    ];
+    
+    const winCandidates = baseWinCandidates.filter(e => e.path && !e.path.startsWith('\\'));
+    
+    const pwCacheDirWin = path.join(local, 'ms-playwright');
+    if (fs.existsSync(pwCacheDirWin)) {
+      try {
+        const dirs = fs.readdirSync(pwCacheDirWin);
+        dirs.sort().reverse();
+        for (const dir of dirs) {
+          if (dir.startsWith('chromium')) {
+            winCandidates.push(
+              { name: `Playwright (Manual) ${dir}`, path: path.join(pwCacheDirWin, dir, 'chrome-win', 'chrome.exe') },
+              { name: `Playwright (Manual) ${dir}`, path: path.join(pwCacheDirWin, dir, 'chrome-headless-shell-win64', 'chrome-headless-shell.exe') },
+              { name: `Playwright (Manual) ${dir}`, path: path.join(pwCacheDirWin, dir, 'chrome-win64', 'chrome.exe') }
+            );
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    
+    return winCandidates;
   }
 
   // Linux + FreeBSD
