@@ -9,9 +9,7 @@ export interface Recommendation {
 
 
 
-function getPlatformRecommendation(): string {
-  return 'md2pdf init';
-}
+
 
 export function getRecommendation(error: Md2PdfError): Recommendation | null {
   

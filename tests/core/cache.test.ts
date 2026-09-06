@@ -16,8 +16,8 @@ describe('Cache Module', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
     clearCache();
+    vi.unstubAllEnvs();
   });
 
   it('should compute the same hash for case-insensitive paths on Windows (CP-03)', () => {

@@ -78,7 +78,7 @@ export default new Command('init')
               execFileSync(process.execPath, [pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
               console.log('  ' + pc.green('✔') + ' ' + 'System dependencies installed! Browser is ready.');
               // Continue to the config prompt section below
-            } catch (depsErr: any) {
+            } catch {
               console.log('  ' + pc.red('✖') + ' ' + 'Failed to install system libraries automatically.');
               console.error(pc.red('\nRun this command manually as root to install them:'));
               console.error(pc.cyan(`  npx playwright install-deps chromium`));

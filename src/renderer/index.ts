@@ -29,8 +29,14 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
   const themeLinks = options?.theme?.fontUrls?.map(url => `<link href="${escapeHtml(url)}" rel="stylesheet">`).join('\n  ') || '';
   
   const customStyles = [];
-  if (options?.fontSize) customStyles.push(`:root { --md2pdf-font-size: ${options.fontSize} !important; }`);
-  if (options?.lineHeight) customStyles.push(`:root { --md2pdf-line-height: ${options.lineHeight} !important; }`);
+  if (options?.fontSize) {
+    const cleanSize = options.fontSize.replace(/[^a-zA-Z0-9.%-]/g, '');
+    customStyles.push(`:root { --md2pdf-font-size: ${cleanSize} !important; }`);
+  }
+  if (options?.lineHeight) {
+    const cleanHeight = String(options.lineHeight).replace(/[^0-9.]/g, '');
+    customStyles.push(`:root { --md2pdf-line-height: ${cleanHeight} !important; }`);
+  }
   
   return `<!DOCTYPE html>
 <html lang="en">

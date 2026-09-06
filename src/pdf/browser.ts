@@ -77,8 +77,8 @@ export function readCache(): BrowserCache | null {
     if (c.executablePath && !fs.existsSync(c.executablePath)) {
       fs.unlinkSync(CACHE_FILE); return null;
     }
-    // Invalidate if Playwright was upgraded (driver mismatch)
-    if (c.playwrightVersion && c.playwrightVersion !== getPlaywrightVersion()) {
+    const pw = getPlaywrightVersion();
+    if (!c.playwrightVersion || c.playwrightVersion !== pw) {
       fs.unlinkSync(CACHE_FILE); return null;
     }
     return c;
