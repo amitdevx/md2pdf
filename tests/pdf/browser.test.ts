@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { discoverBrowser } from '../../src/pdf/browser';
 import fs from 'node:fs';
-import childProcess from 'node:child_process';
+vi.mock('node:child_process', () => ({
+  execSync: vi.fn(() => 'Custom Chrome Version')
+}));
 
 describe('Browser Discovery', () => {
   beforeEach(() => {
@@ -47,13 +49,11 @@ describe('Browser Discovery', () => {
       return p === '/custom/path/to/chrome' || p === '/usr/bin/google-chrome';
     });
 
-    // Mock execSync to avoid running the command
-    vi.spyOn(childProcess, 'execSync').mockReturnValue('Custom Chrome Version');
 
     const result = discoverBrowser();
     expect(result).not.toBeNull();
     expect(result?.executablePath).toBe('/custom/path/to/chrome');
-    expect(result?.name).toBe('env override'); // execSync fails in test environment, falling back
+    expect(result?.name).toBe('Custom Chrome Version');
   });
 
   it('should discover Edge on Windows when it exists', () => {

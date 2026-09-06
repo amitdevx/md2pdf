@@ -74,7 +74,7 @@ export default new Command('init')
       if (ans.toLowerCase().startsWith('n')) {
         console.log(pc.yellow('\nSkipping browser installation. md2pdf requires a browser to convert documents.'));
         console.log(pc.dim('Please install Chrome, Edge, Brave, or Chromium system-wide to proceed.'));
-        process.exit(EXIT.OK);
+        process.exit(EXIT.ENVIRONMENT_ERROR);
       }
 
       spinner = ora({ text: 'Downloading Chromium for md2pdf. This may take a minute...', color: 'cyan' }).start();
