@@ -6,9 +6,6 @@
 ### Fixed
 - Fixed dark theme print CSS: `dracula`, `nord`, and `obsidian-dark` now render beautifully on screen while cleanly inverting to a white background with dark text during PDF generation (saves ink without breaking screen visuals)
 
-## [0.9.3] - 2026-09-06
-
-### Fixed
 - Fixed an issue where the browser missing error would overshadow correct errors (like invalid YAML or `publish: false`) by hoisting configuration and YAML validation to run before launching the browser.
 - Fixed `md2pdf init` crashing on unexported `cli.js` by properly resolving the `playwright-core` package root.
 - Fixed `md2pdf init` correctly auto-installing Linux system dependencies when the browser binary is present but system libraries (like `libatk`) are missing.
