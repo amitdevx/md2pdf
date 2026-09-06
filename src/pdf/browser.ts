@@ -50,11 +50,23 @@ function verifyChromiumEngine(executablePath: string): void {
 const CACHE_DIR  = path.join(os.homedir(), '.md2pdf');
 const CACHE_FILE = path.join(CACHE_DIR, 'browser-cache.json');
 
+import { createRequire } from 'node:module';
+
 interface BrowserCache {
   executablePath?: string;
   channel?: string;
   browserName: string;
   md2pdfVersion: string;
+  playwrightVersion?: string;
+}
+
+export function getPlaywrightVersion(): string {
+  try {
+    const req = typeof require !== 'undefined' ? require : createRequire(import.meta.url);
+    return req('playwright-core/package.json').version;
+  } catch {
+    return 'unknown';
+  }
 }
 
 export function readCache(): BrowserCache | null {
@@ -65,17 +77,22 @@ export function readCache(): BrowserCache | null {
     if (c.executablePath && !fs.existsSync(c.executablePath)) {
       fs.unlinkSync(CACHE_FILE); return null;
     }
+    // Invalidate if Playwright was upgraded (driver mismatch)
+    if (c.playwrightVersion && c.playwrightVersion !== getPlaywrightVersion()) {
+      fs.unlinkSync(CACHE_FILE); return null;
+    }
     return c;
   } catch { return null; }
 }
 
-export function writeCache(data: BrowserCache): void {
+export function writeCache(cache: Partial<BrowserCache>) {
   try {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+    if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+    const pwVersion = getPlaywrightVersion();
     const tmpFile = CACHE_FILE + '.' + Math.random().toString(36).slice(2, 8) + '.tmp';
-    fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2));
+    fs.writeFileSync(tmpFile, JSON.stringify({ ...cache, playwrightVersion: pwVersion }, null, 2));
     fs.renameSync(tmpFile, CACHE_FILE);
-  } catch { /* non-fatal */ }
+  } catch { /* ignore */ }
 }
 
 // ─── Platform discovery ───────────────────────────────────────
