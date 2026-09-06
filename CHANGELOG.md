@@ -1,3 +1,11 @@
+## [0.9.2] - 2026-09-06
+### Fixed
+- Fixed `md2pdf init` text indicating incorrect download size
+- Fixed `md2pdf init` failing to install Linux system dependencies due to explicit sudo wrapper on NVM installs
+- Fixed batch mode (`md2pdf *.md`) printing 30+ duplicate browser launch error messages instead of failing fast
+- Fixed `pre-publish.sh` failing with Cannot find module package.json when executed from the scripts directory
+
+
 ## [0.9.1] - 2026-09-04
 
 ### Added

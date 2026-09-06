@@ -67,37 +67,35 @@ export default new Command('init')
 
       const rlInit = readline.createInterface({ input: process.stdin, output: process.stdout });
       const ans = await new Promise<string>(resolve => {
-        rlInit.question('\nWould you like md2pdf to automatically download Playwright Chromium (~150MB)? (Y/n) ', resolve);
+        rlInit.question('\nWould you like md2pdf to automatically download Playwright Chromium (~300MB)? (Y/n) ', resolve);
       });
       rlInit.close();
 
       if (ans.toLowerCase().startsWith('n')) {
         console.log(pc.yellow('\nSkipping browser installation. md2pdf requires a browser to convert documents.'));
-        console.log(pc.yellow('Please install Chrome, Edge, Brave, or Chromium system-wide to proceed.'));
-        process.exit(EXIT.ENVIRONMENT_ERROR);
+        console.log(pc.dim('Please install Chrome, Edge, Brave, or Chromium system-wide to proceed.'));
+        process.exit(EXIT.OK);
       }
 
-      console.log(pc.cyan('\nDownloading Chromium for md2pdf. This may take a minute...'));
+      spinner = ora({ text: 'Downloading Chromium for md2pdf. This may take a minute...', color: 'cyan' }).start();
       
       try {
-        spinner = ora({ text: 'Installing Chromium dependencies...', ...oraOptions }).start();
-        
         const { createRequire } = await import('node:module');
-        const { execFileSync } = await import('node:child_process');
         const require = createRequire(import.meta.url);
-        const pwPkg = require.resolve('playwright-core/package.json');
-        const pwCli = path.join(path.dirname(pwPkg), 'cli.js');
+        const pwCli = require.resolve('playwright-core/cli.js');
+        const { execFileSync } = await import('node:child_process');
 
         execFileSync(process.execPath, [pwCli, 'install', 'chromium'], { stdio: 'inherit' });
         
         if (process.platform === 'linux') {
-          console.log(pc.cyan('\nInstalling required Linux system libraries...'));
+          spinner.start('Installing required Linux system libraries...');
+          
           let hasSudo = false;
           try {
-            execSync('command -v sudo', { stdio: 'pipe' });
+            execSync('command -v sudo', { stdio: 'ignore' });
             hasSudo = true;
           } catch {
-            // ignore error if sudo is missing
+            hasSudo = false;
           }
 
           if (!hasSudo) {
@@ -107,8 +105,8 @@ export default new Command('init')
           } else {
             spinner.stop();
             console.log(pc.cyan('\nℹ  Playwright requires system libraries to run Chromium headless.'));
-            console.log(pc.cyan('    Requesting sudo access to install dependencies...'));
-            execFileSync('sudo', [process.execPath, pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
+            console.log(pc.cyan('    (Playwright may prompt for your sudo password to install them)'));
+            execFileSync(process.execPath, [pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
             spinner.start('Finishing installation...');
           }
         }

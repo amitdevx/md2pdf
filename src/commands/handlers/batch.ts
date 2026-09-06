@@ -213,20 +213,7 @@ export async function handleBatch(
         if (!globalBrowserPromise) {
           globalBrowserPromise = getBrowser().then(b => { globalBrowser = b; return b; });
         }
-        try {
-          await globalBrowserPromise;
-        } catch (err: any) {
-          hasErrors = true;
-          failedCount++;
-          results[i] = { isError: true, error: `Browser launch failed: ${err.message}`, code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-          if (!options.jsonErrors && !options.quiet) {
-            completedCount++;
-            spinner.stop();
-            console.error(pc.red(`✖ ${path.basename(input)} - Browser launch failed: ${err.message}`));
-            spinner.start();
-          }
-          continue;
-        }
+        await globalBrowserPromise;
 
         if (!globalBrowser) {
           hasErrors = true;
@@ -349,9 +336,13 @@ export async function handleBatch(
 
     const workers = Array.from({ length: Math.min(concurrencyLimit, inputs.length) }, () => worker());
     const settledResults = await Promise.allSettled(workers);
+    
+    const rejectedWorker = settledResults.find(r => r.status === 'rejected');
+    if (rejectedWorker) {
+      throw (rejectedWorker as PromiseRejectedResult).reason;
+    }
 
-    const anyErrors = results.some((r: any) => !r || r.isError)
-      || settledResults.some(r => r.status === 'rejected');
+    const anyErrors = results.some((r: any) => !r || r.isError);
     if (anyErrors) hasErrors = true;
 
     if (options.jsonErrors) {
