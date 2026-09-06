@@ -85,10 +85,10 @@ export default new Command('init')
               process.exit(EXIT.ENVIRONMENT_ERROR);
             }
           } else {
-            console.log('  ' + pc.red('✖') + ' ' + 'Browser is installed but crashed during launch');
-            const { renderCliError } = await import('./formatter.js');
-            renderCliError(mdError, { jsonErrors: false, verbose: false, debug: false } as any);
-            process.exit(EXIT.ENVIRONMENT_ERROR);
+            console.log('  ' + pc.red('✖') + ' ' + `Browser launch failed (${mdError.code})`);
+            // For other non-dependency crash errors (e.g. corrupted binary, incompatible system browser),
+            // fallback to prompting the user to download the known-good Playwright Chromium bundle.
+            throw new Error('fallback_to_download');
           }
         } else {
           throw new Error('missing');
@@ -96,9 +96,9 @@ export default new Command('init')
       }
     } catch {
       spinner.stop();
-        console.log('  ' + pc.red('✖') + ' ' + 'Chromium browser missing');
-      console.log(pc.yellow('\nmd2pdf requires a Chromium-based browser (Chrome, Edge, Brave, etc.) to generate PDFs.'));
-      console.log(pc.yellow('None were found on your system. You can install one manually, or let md2pdf download a local copy.'));
+        console.log('  ' + pc.red('✖') + ' ' + 'Chromium browser missing or failed to launch');
+      console.log(pc.yellow('\nmd2pdf requires a working Chromium-based browser (Chrome, Edge, Brave, etc.).'));
+      console.log(pc.yellow('No working browser was found. You can let md2pdf download a local copy of Playwright Chromium.'));
 
       if (!process.stdin.isTTY) {
         console.error(pc.red('\n✖ Non-interactive environment detected. Run `md2pdf init` in a terminal or install Chromium manually.'));
