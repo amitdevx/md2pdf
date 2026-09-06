@@ -1,13 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkCache, clearCache, computeHash } from '../../src/core/cache';
+import { checkCache, clearCache, computeHash, updateCache } from '../../src/core/cache';
 import path from 'node:path';
 import os from 'node:os';
+import fs from 'node:fs';
 
 describe('Cache Module', () => {
   const tempDir = path.join(os.tmpdir(), 'md2pdf-cache-test');
 
   beforeEach(() => {
-    vi.stubEnv('MD2PDF_CACHE_DIR', tempDir);
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    vi.stubEnv('MD2PDF_CACHE_DIR', path.join(tempDir, 'cache'));
     clearCache();
   });
 
@@ -42,5 +46,32 @@ describe('Cache Module', () => {
     
     expect(h1).not.toBe(h2);
     expect(h1).not.toBe(h3);
+  });
+
+  it('should successfully write, read, and invalidate cache entries', () => {
+    const inputPath = path.join(tempDir, 'input.md');
+    const outputPath = path.join(tempDir, 'output.pdf');
+    const hash = 'dummy-hash-123';
+
+    // Ensure initial state is empty
+    expect(checkCache(inputPath, hash, outputPath)).toBe(false);
+
+    // Write a dummy output file so checkCache doesn't fail on existence check
+    fs.writeFileSync(outputPath, 'dummy pdf content');
+
+    // Update cache
+    updateCache(inputPath, hash, outputPath);
+
+    // Read cache - should succeed
+    expect(checkCache(inputPath, hash, outputPath)).toBe(true);
+
+    // Hash mismatch - should fail
+    expect(checkCache(inputPath, 'wrong-hash', outputPath)).toBe(false);
+
+    // Clear cache
+    clearCache();
+
+    // Cache should be empty again
+    expect(checkCache(inputPath, hash, outputPath)).toBe(false);
   });
 });

@@ -173,6 +173,9 @@ export async function handleSingle(
     }
 
     convertOptions.sharedBrowser = globalBrowser;
+    if (globalMermaidPage) {
+      convertOptions.sharedMermaidPage = globalMermaidPage;
+    }
 
     if (options.verbose && !options.jsonErrors) {
       spinner.stop();

@@ -242,6 +242,9 @@ export async function handleBatch(
         }
 
         convertOptions.sharedBrowser = globalBrowser;
+        if (globalMermaidPage) {
+          convertOptions.sharedMermaidPage = globalMermaidPage;
+        }
 
         if (fs.existsSync(output as string) && !options.force) {
           skippedExistingCount++;

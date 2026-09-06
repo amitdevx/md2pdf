@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-
 import os from 'node:os';
 
-const CACHE_DIR = path.join(os.homedir(), '.md2pdf', 'render-cache');
+function getCacheDir(): string {
+  return process.env.MD2PDF_CACHE_DIR || path.join(os.homedir(), '.md2pdf', 'render-cache');
+}
 
 interface CacheEntry {
   hash: string;
@@ -12,8 +13,9 @@ interface CacheEntry {
 }
 
 export function clearCache() {
-  if (fs.existsSync(CACHE_DIR)) {
-    fs.rmSync(CACHE_DIR, { recursive: true, force: true });
+  const dir = getCacheDir();
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 }
 
@@ -23,7 +25,7 @@ function getCachePath(inputPath: string): string {
     resolvedPath = resolvedPath.toLowerCase();
   }
   const pathHash = crypto.createHash('sha256').update(resolvedPath).digest('hex');
-  return path.join(CACHE_DIR, `${pathHash}.json`);
+  return path.join(getCacheDir(), `${pathHash}.json`);
 }
 
 export function computeHash(content: string, options: any): string {
@@ -63,8 +65,9 @@ export function checkCache(inputPath: string, hash: string, outputPath: string):
 }
 
 export function updateCache(inputPath: string, hash: string, outputPath: string) {
-  if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  const dir = getCacheDir();
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
   const cacheFile = getCachePath(inputPath);
   const tmpFile = cacheFile + '.' + crypto.randomBytes(4).toString('hex') + '.tmp';
