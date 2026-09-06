@@ -45,20 +45,60 @@ export default new Command('init')
       } catch (err) {
         if (!isMissingExecutableError(err)) {
           spinner.stop();
-        console.log('  ' + pc.red('✖') + ' ' + 'Browser is installed but crashed during launch');
           const { detectBrowserError } = await import('../errors/detect.js');
           const mdError = detectBrowserError(err);
-          const { renderCliError } = await import('./formatter.js');
-          renderCliError(mdError, { jsonErrors: false, verbose: false, debug: false } as any);
-          process.exit(EXIT.ENVIRONMENT_ERROR);
+
+          // For missing system deps on Linux, auto-run install-deps rather than giving up
+          if (mdError.code === 'ERR_MISSING_DEPENDENCIES' && process.platform === 'linux') {
+            let hasSudo = false;
+            try {
+              const { execSync } = await import('node:child_process');
+              execSync('command -v sudo', { stdio: 'ignore' });
+              hasSudo = true;
+            } catch {
+              hasSudo = false;
+            }
+            
+            const isRoot = typeof process.getuid === 'function' && process.getuid() === 0;
+
+            if (!hasSudo && !isRoot) {
+              console.log('  ' + pc.red('✖') + ' ' + 'System libraries are missing, but sudo is not available.');
+              console.error(pc.red('\nRun this command manually as root to install them:'));
+              console.error(pc.cyan(`  npx playwright install-deps chromium`));
+              process.exit(EXIT.ENVIRONMENT_ERROR);
+            }
+
+            console.log('  ' + pc.yellow('⚠') + ' ' + 'Browser found but system libraries are missing. Installing them now...');
+            try {
+              const { createRequire } = await import('node:module');
+              const req = createRequire(import.meta.url);
+              const pwRoot = path.dirname(req.resolve('playwright-core'));
+              const pwCli = path.join(pwRoot, 'cli.js');
+              const { execFileSync } = await import('node:child_process');
+              execFileSync(process.execPath, [pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
+              console.log('  ' + pc.green('✔') + ' ' + 'System dependencies installed! Browser is ready.');
+              // Continue to the config prompt section below
+            } catch {
+              console.log('  ' + pc.red('✖') + ' ' + 'Failed to install system libraries automatically.');
+              console.error(pc.red('\nRun this command manually as root to install them:'));
+              console.error(pc.cyan(`  npx playwright install-deps chromium`));
+              process.exit(EXIT.ENVIRONMENT_ERROR);
+            }
+          } else {
+            console.log('  ' + pc.red('✖') + ' ' + `Browser launch failed (${mdError.code})`);
+            // For other non-dependency crash errors (e.g. corrupted binary, incompatible system browser),
+            // fallback to prompting the user to download the known-good Playwright Chromium bundle.
+            throw new Error('fallback_to_download');
+          }
+        } else {
+          throw new Error('missing');
         }
-        throw new Error('missing');
       }
     } catch {
       spinner.stop();
-        console.log('  ' + pc.red('✖') + ' ' + 'Chromium browser missing');
-      console.log(pc.yellow('\nmd2pdf requires a Chromium-based browser (Chrome, Edge, Brave, etc.) to generate PDFs.'));
-      console.log(pc.yellow('None were found on your system. You can install one manually, or let md2pdf download a local copy.'));
+        console.log('  ' + pc.red('✖') + ' ' + 'Chromium browser missing or failed to launch');
+      console.log(pc.yellow('\nmd2pdf requires a working Chromium-based browser (Chrome, Edge, Brave, etc.).'));
+      console.log(pc.yellow('No working browser was found. You can let md2pdf download a local copy of Playwright Chromium.'));
 
       if (!process.stdin.isTTY) {
         console.error(pc.red('\n✖ Non-interactive environment detected. Run `md2pdf init` in a terminal or install Chromium manually.'));
@@ -81,8 +121,10 @@ export default new Command('init')
       
       try {
         const { createRequire } = await import('node:module');
-        const require = createRequire(import.meta.url);
-        const pwCli = require.resolve('playwright-core/cli.js');
+        const req = createRequire(import.meta.url);
+        // Resolve from the package root (playwright-core/cli.js is not in exports map)
+        const pwRoot = path.dirname(req.resolve('playwright-core'));
+        const pwCli = path.join(pwRoot, 'cli.js');
         const { execFileSync } = await import('node:child_process');
 
         execFileSync(process.execPath, [pwCli, 'install', 'chromium'], { stdio: 'inherit' });
@@ -98,7 +140,9 @@ export default new Command('init')
             hasSudo = false;
           }
 
-          if (!hasSudo) {
+          const isRoot = typeof process.getuid === 'function' && process.getuid() === 0;
+
+          if (!hasSudo && !isRoot) {
             console.warn(pc.yellow('⚠  sudo not available - skipping system library install'));
             console.log(pc.dim('  If Playwright fails, install these manually as root:'));
             console.log(pc.dim(`  ${process.execPath} ${pwCli} install-deps chromium`));

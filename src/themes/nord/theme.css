@@ -1,7 +1,9 @@
 :root {
   --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', 'Cascadia Code', monospace;
-  --md2pdf-color-heading: #2e3440;
+  --md2pdf-color-bg: #2e3440;
+  --md2pdf-color-text: #d8dee9;
+  --md2pdf-color-heading: #eceff4;
   --md2pdf-color-link: #5e81ac;
   --md2pdf-color-link-visited: #5e81ac;
   --md2pdf-color-code-bg: #e5e9f0;
@@ -36,4 +38,14 @@ blockquote {
   background-color: rgba(94, 129, 172, 0.15);
   color: #5e81ac;
   border: 1px solid rgba(94, 129, 172, 0.3);
+}
+
+@media print {
+  :root {
+    --md2pdf-color-bg: #ffffff;
+    --md2pdf-color-text: #1a1a1a;
+    --md2pdf-color-heading: #111111;
+    --md2pdf-color-link: #0066cc;
+    --md2pdf-accent-text: #ffffff;
+  }
 }

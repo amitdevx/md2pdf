@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { discoverBrowser } from '../../src/pdf/browser';
 import fs from 'node:fs';
-vi.mock('node:child_process', () => ({
-  execSync: vi.fn(() => 'Custom Chrome Version')
-}));
+vi.mock('node:child_process', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:child_process')>();
+  return { ...mod, execSync: vi.fn(() => 'Custom Chrome Version') };
+});
 
 describe('Browser Discovery', () => {
   beforeEach(() => {
@@ -27,17 +28,19 @@ describe('Browser Discovery', () => {
     const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
     Object.defineProperty(process, 'platform', { value: 'linux' });
 
-    vi.spyOn(fs, 'existsSync').mockImplementation((p: any) => {
-      return p === '/usr/bin/google-chrome';
-    });
+    try {
+      vi.spyOn(fs, 'existsSync').mockImplementation((p: any) => {
+        return p === '/usr/bin/google-chrome';
+      });
 
-    const result = discoverBrowser();
-    expect(result).not.toBeNull();
-    expect(result?.executablePath).toBe('/usr/bin/google-chrome');
-    expect(result?.name).toBe('Chrome');
-
-    if (originalPlatform) {
-      Object.defineProperty(process, 'platform', originalPlatform);
+      const result = discoverBrowser();
+      expect(result).not.toBeNull();
+      expect(result?.executablePath).toBe('/usr/bin/google-chrome');
+      expect(result?.name).toBe('Chrome');
+    } finally {
+      if (originalPlatform) {
+        Object.defineProperty(process, 'platform', originalPlatform);
+      }
     }
   });
 
@@ -60,18 +63,20 @@ describe('Browser Discovery', () => {
     const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
     Object.defineProperty(process, 'platform', { value: 'win32' });
 
-    vi.spyOn(fs, 'existsSync').mockImplementation((p: any) => {
-      // Simulate typical windows path
-      return p.includes('Edge') && p.includes('msedge.exe');
-    });
+    try {
+      vi.spyOn(fs, 'existsSync').mockImplementation((p: any) => {
+        // Simulate typical windows path
+        return p.includes('Edge') && p.includes('msedge.exe');
+      });
 
-    const result = discoverBrowser();
-    expect(result).not.toBeNull();
-    expect(result?.executablePath).toMatch(/msedge\.exe$/);
-    expect(result?.name).toBe('Edge');
-
-    if (originalPlatform) {
-      Object.defineProperty(process, 'platform', originalPlatform);
+      const result = discoverBrowser();
+      expect(result).not.toBeNull();
+      expect(result?.executablePath).toMatch(/msedge\.exe$/);
+      expect(result?.name).toBe('Edge');
+    } finally {
+      if (originalPlatform) {
+        Object.defineProperty(process, 'platform', originalPlatform);
+      }
     }
   });
 });

@@ -317,6 +317,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       mathEnabled: options.math?.enabled,
       obsidianEnabled: !!options.obsidian,
       theme,
+      fontSize: options.fontSize,
+      lineHeight: options.lineHeight
     });
 
     if (options.sharedBrowser) {
@@ -398,6 +400,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
           <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
         </div>`;
       }
+    } else if (options.pageNumbers) {
+      // Minimalist page numbers without the full border/padding of the standard footer
+      marginBottom = '20mm';
+      footerTemplate = `
+      <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; justify-content: center; color: #888;">
+        <span class="pageNumber"></span>
+      </div>`;
     }
 
     await generatePdf({  
@@ -407,7 +416,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       margin,
       marginTop,
       marginBottom,
-      displayHeaderFooter: (headerEnabled && options.header !== undefined) || (footerEnabled && options.footer !== undefined),
+      displayHeaderFooter: (headerEnabled && options.header !== undefined) || (footerEnabled && options.footer !== undefined) || !!options.pageNumbers,
       headerTemplate,
       footerTemplate,
       browser,

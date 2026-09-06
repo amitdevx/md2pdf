@@ -15,10 +15,16 @@ export interface Md2PdfConfig {
   tocDepth?: number;
   /** TOC section title. Default: 'Table of Contents' */
   tocTitle?: string;
+  /** Base font size override (e.g. '14px') */
+  fontSize?: string;
+  /** Base line height override (e.g. 1.5) */
+  lineHeight?: string | number;
   /** Header config */
   header?: boolean | { enabled?: boolean; template?: string };
   /** Footer config */
   footer?: boolean | { enabled?: boolean; template?: string };
+  /** Show page numbers in footer without full header/footer config */
+  pageNumbers?: boolean;
   /** Mermaid config */
   mermaid?: boolean | {
     enabled?: boolean;

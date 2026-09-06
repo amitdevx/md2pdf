@@ -65,26 +65,65 @@ export async function handleSingle(
     }
   }
 
-  if (!options.jsonErrors) {
-    try {
-      const rawContent = fs.readFileSync(input, 'utf-8');
+  // Early validation: parse YAML and check publish:false BEFORE launching the browser
+  // This ensures ERR_CONFIG_ERROR / ERR_PUBLISH_SKIPPED are not shadowed by ERR_BROWSER_MISSING.
+  {
+    const rawContent = (() => { try { return fs.readFileSync(input, 'utf-8'); } catch { return null; } })();
+    if (rawContent !== null) {
+      const { Md2PdfError: EarlyError, Md2PdfErrorCode: EarlyCode } = await import('../../errors/index.js');
       const matter = (await import('gray-matter')).default;
-      const parsed = matter(rawContent, {
-        engines: {
-          js: () => { throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.'); }
-        }
-      });
-      if (parsed.data?.publish === false) {
-        if (!options.quiet) {
+      let parsed: any;
+      let earlyError: any = null;
+      try {
+        parsed = matter(rawContent, {
+          engines: {
+            js: () => { throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.'); }
+          }
+        });
+      } catch (yamlErr: any) {
+        earlyError = new EarlyError(
+          EarlyCode.ERR_CONFIG_ERROR,
+          'Invalid Frontmatter',
+          'Invalid frontmatter YAML: ' + (yamlErr.message || String(yamlErr)),
+          { markdownFile: input }
+        );
+      }
+
+      if (!earlyError && parsed?.data?.publish === false) {
+        if (options.jsonErrors) {
+          jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'publish: false' }] });
+        } else if (!options.quiet) {
           console.info(pc.dim(`➖ Skipped ${path.basename(input)} (publish: false)`));
         }
         process.exitCode = EXIT.OK;
         return;
       }
-      // Cache the parsed frontmatter to avoid double-parsing in core
-      options = { ...options, __preparsed: { data: parsed.data, content: parsed.content } };
-    } catch {
-      // If we can't read frontmatter here, let the pipeline handle it
+
+      if (!earlyError && parsed) {
+        // Validate theme early (before browser launch) so theme errors surface correctly
+        const themeName: string = parsed.data?.theme || options.theme || 'default';
+        try {
+          const { loadTheme } = await import('../../themes/loader.js');
+          await loadTheme(themeName);
+        } catch (themeErr: any) {
+          earlyError = new EarlyError(
+            EarlyCode.ERR_INVALID_THEME,
+            'Theme Load Error',
+            `Failed to load theme "${themeName}": ${themeErr.message}`,
+            { markdownFile: input }
+          );
+        }
+      }
+
+      if (earlyError) {
+        renderCliError(earlyError, options as any);
+        return;
+      }
+
+      if (parsed) {
+        // Cache the parsed frontmatter to avoid double-parsing in core
+        options = { ...options, __preparsed: { data: parsed.data, content: parsed.content } };
+      }
     }
   }
 
