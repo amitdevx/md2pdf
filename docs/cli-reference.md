@@ -27,6 +27,9 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `--toc-depth` | 1-6 | 3 | Heading depth for TOC |
 | `--paper` | A4/Letter/Legal | A4 | Page format |
 | `--margin` | CSS unit | 20mm | Page margins |
+| `--page-numbers` | boolean | false | Show page numbers in footer |
+| `--font-size` | string (px/pt) | - | Base font size (e.g. 14px or 12pt) |
+| `--line-height` | number | - | Base line height (e.g. 1.5) |
 | `--theme` | string | default | Theme name or path to custom CSS |
 | `--no-title` | boolean | false | Disable automatic document title injection |
 | `--header` | boolean | false | Enable running header |
