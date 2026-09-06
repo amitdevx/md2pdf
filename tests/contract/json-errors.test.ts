@@ -138,8 +138,10 @@ describe('JSON Errors Contract (20 Cases)', () => {
 
   it('success', () => {
     // Use --force so a stale file from a prior run never causes a silent skip
-    const res = runCliJson(`"${basicMd}" -o /tmp/success2.pdf --force`);
+    const outPdf = path.join(fixturesDir, 'success2.pdf');
+    const res = runCliJson(`"${basicMd}" -o "${outPdf}" --force`);
     expect(res.success).toBe(true);
+    try { fs.unlinkSync(outPdf); } catch { /* ignore */ }
   });
 
   it.skipIf(process.platform === 'win32')('chmod 000', () => {

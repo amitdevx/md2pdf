@@ -108,7 +108,8 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
   });
 
   it.skipIf(process.platform === 'win32')('traversal warm -> exits 1', () => {
-    runCli(`"${basicMd}" -o /tmp/warm.pdf`);
+    const warmPdf = path.join(fixturesDir, 'warm.pdf');
+    runCli(`"${basicMd}" -o "${warmPdf}"`);
     const res = runCli(`"${basicMd}" -o /etc/out.pdf`);
     expect(res.status).toBe(1);
   });
@@ -145,7 +146,9 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
   });
 
   it('success -> exits 0', () => {
-    const res = runCli(`"${basicMd}" -o /tmp/success.pdf`);
+    const successPdf = path.join(fixturesDir, 'success.pdf');
+    const res = runCli(`"${basicMd}" -o "${successPdf}"`);
     expect(res.status).toBe(0);
+    try { fs.unlinkSync(successPdf); } catch { /* ignore */ }
   });
 });
