@@ -28,7 +28,7 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
       const libString = libs && libs.length > 0 ? ` (e.g., ${libs[0]})` : '';
       return {
         summary: `Your system is missing shared libraries${libString} required to run Chromium.`,
-        commands: [getPlatformRecommendation()],
+        commands: ['npx md2pdf init'],
       };
     }
 

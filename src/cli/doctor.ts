@@ -253,18 +253,22 @@ export default new Command('doctor')
       }
       console.log(pc.dim('────────────────────────────────────────\n'));
       
+      // Show a short diagnostic block (truncated stack trace - first 10 lines max)
       console.log(pc.bold('If you need to report this issue, copy and paste the block below into GitHub:\n'));
       console.log('```markdown');
       console.log(`**OS**: ${process.platform} ${os.release()} (${os.arch()})`);
       console.log(`**Node**: ${process.version}`);
       console.log(`**md2pdf**: v${pkg.version}`);
       console.log(`**Error Code**: ${mdError.code}`);
-      console.log(`\n**Stack Trace**:`);
-      if (mdError.originalError && (mdError.originalError as Error).stack) {
-        console.log((mdError.originalError as Error).stack);
-      } else {
-        console.log(mdError.stack || mdError.message);
-      }
+      console.log(`\n**Error**:`);
+      const rawStack = mdError.originalError && (mdError.originalError as Error).stack
+        ? (mdError.originalError as Error).stack!
+        : (mdError.stack || mdError.message);
+      // Truncate to first 10 lines to avoid overwhelming output
+      const stackLines = rawStack.split('\n');
+      const truncated = stackLines.slice(0, 10);
+      if (stackLines.length > 10) truncated.push(`... (${stackLines.length - 10} more lines - run with --debug for full trace)`);
+      console.log(truncated.join('\n'));
       console.log('```\n');
 
       process.exit(EXIT.ENVIRONMENT_ERROR);
@@ -273,3 +277,4 @@ export default new Command('doctor')
       process.exit(EXIT.OK);
     }
   });
+

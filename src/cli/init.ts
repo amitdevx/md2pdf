@@ -45,14 +45,36 @@ export default new Command('init')
       } catch (err) {
         if (!isMissingExecutableError(err)) {
           spinner.stop();
-        console.log('  ' + pc.red('✖') + ' ' + 'Browser is installed but crashed during launch');
           const { detectBrowserError } = await import('../errors/detect.js');
           const mdError = detectBrowserError(err);
-          const { renderCliError } = await import('./formatter.js');
-          renderCliError(mdError, { jsonErrors: false, verbose: false, debug: false } as any);
-          process.exit(EXIT.ENVIRONMENT_ERROR);
+
+          // For missing system deps on Linux, auto-run install-deps rather than giving up
+          if (mdError.code === 'ERR_MISSING_DEPENDENCIES' && process.platform === 'linux') {
+            console.log('  ' + pc.yellow('⚠') + ' ' + 'Browser found but system libraries are missing. Installing them now...');
+            try {
+              const { createRequire } = await import('node:module');
+              const req = createRequire(import.meta.url);
+              const pwRoot = path.dirname(req.resolve('playwright-core'));
+              const pwCli = path.join(pwRoot, 'cli.js');
+              const { execFileSync } = await import('node:child_process');
+              execFileSync(process.execPath, [pwCli, 'install-deps', 'chromium'], { stdio: 'inherit' });
+              console.log('  ' + pc.green('✔') + ' ' + 'System dependencies installed! Browser is ready.');
+              // Continue to the config prompt section below
+            } catch (depsErr: any) {
+              console.log('  ' + pc.red('✖') + ' ' + 'Failed to install system libraries automatically.');
+              console.error(pc.red('\nRun this command manually as root to install them:'));
+              console.error(pc.cyan(`  sudo npx playwright install-deps chromium`));
+              process.exit(EXIT.ENVIRONMENT_ERROR);
+            }
+          } else {
+            console.log('  ' + pc.red('✖') + ' ' + 'Browser is installed but crashed during launch');
+            const { renderCliError } = await import('./formatter.js');
+            renderCliError(mdError, { jsonErrors: false, verbose: false, debug: false } as any);
+            process.exit(EXIT.ENVIRONMENT_ERROR);
+          }
+        } else {
+          throw new Error('missing');
         }
-        throw new Error('missing');
       }
     } catch {
       spinner.stop();
@@ -81,8 +103,10 @@ export default new Command('init')
       
       try {
         const { createRequire } = await import('node:module');
-        const require = createRequire(import.meta.url);
-        const pwCli = require.resolve('playwright-core/cli.js');
+        const req = createRequire(import.meta.url);
+        // Resolve from the package root (playwright-core/cli.js is not in exports map)
+        const pwRoot = path.dirname(req.resolve('playwright-core'));
+        const pwCli = path.join(pwRoot, 'cli.js');
         const { execFileSync } = await import('node:child_process');
 
         execFileSync(process.execPath, [pwCli, 'install', 'chromium'], { stdio: 'inherit' });
