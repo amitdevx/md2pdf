@@ -1,5 +1,17 @@
+## [0.9.3] - 2026-09-06
+### Added
+- Added `--page-numbers` flag to inject minimalist page numbers into the footer
+- Added `--font-size <px>` and `--line-height <ratio>` CLI flags to override base typography
+
+### Fixed
+- Fixed dark theme print CSS: `dracula`, `nord`, and `obsidian-dark` now render beautifully on screen while cleanly inverting to a white background with dark text during PDF generation (saves ink without breaking screen visuals)
+
 ## [0.9.2] - 2026-09-06
 ### Fixed
+- Stabilized browser layer with full cross-platform discovery fallback logic
+- Fixed Playwright version drift by injecting playwright-core version into the browser cache
+- Fixed Mermaid initialization blocking the main thread during single/batch conversion rendering
+- Added robust caching unit tests and browser discovery unit tests
 - Fixed `md2pdf init` text indicating incorrect download size
 - Fixed `md2pdf init` failing to install Linux system dependencies due to explicit sudo wrapper on NVM installs
 - Fixed batch mode (`md2pdf *.md`) printing 30+ duplicate browser launch error messages instead of failing fast
