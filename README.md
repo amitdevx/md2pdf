@@ -14,20 +14,41 @@
 
 Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, and Table of Contents generation. Available as a CLI and Node.js API.
 
+## Installation
+
+```bash
+# Global installation (for CLI usage)
+npm install -g @amitdevx/md2pdf
+
+# Local installation (for programmatic usage)
+npm install @amitdevx/md2pdf
+```
+
+## CLI Usage
+
+The most common way to use `md2pdf` is via the command line.
+
+### Basic Conversion
+```bash
+md2pdf document.md
+```
+This will automatically generate `document.pdf` in the same directory.
+
+
 > **Note:** All documentation for `md2pdf` has been moved to the `docs/` directory.
 
 ## Documentation Directory
 
-*   **[Getting Started](docs/getting-started.md)** — Installation and quick start guide.
-*   **[CLI Reference](docs/cli-reference.md)** — Command-line flags, options, and usage examples.
-*   **[API Reference](docs/api.md)** — Node.js programmatic API documentation.
-*   **[Configuration](docs/configuration.md)** — Persistent config files and profiles.
-*   **[Themes](docs/themes.md)** — Using and customizing built-in themes.
-*   **[Plugins](docs/plugins.md)** — Extending md2pdf via the plugin API.
-*   **[Obsidian Support](docs/obsidian.md)** — Guide to Obsidian features (callouts, embeds, wiki-links).
-*   **[Mermaid & Math](docs/mermaid.md)** — Using Mermaid diagrams and KaTeX math blocks.
-*   **[Architecture](docs/architecture.md)** — Internal design, caching, and pipeline details.
-*   **[Contributing](docs/contributing.md)** — Guidelines for contributing to md2pdf.
+*   **[Getting Started](docs/getting-started.md)** : Installation and quick start guide.
+*   **[CLI Reference](docs/cli-reference.md)** : Command-line flags, options, and usage examples.
+*   **[API Reference](docs/api.md)** : Node.js programmatic API documentation.
+*   **[Configuration](docs/configuration.md)** : Persistent config files and profiles.
+*   **[Themes](docs/themes.md)** : Using and customizing built-in themes.
+*   **[Plugins](docs/plugins.md)** : Extending md2pdf via the plugin API.
+*   **[Obsidian Support](docs/obsidian.md)** : Guide to Obsidian features (callouts, embeds, wiki-links).
+*   **[Mermaid & Math](docs/mermaid.md)** : Using Mermaid diagrams and KaTeX math blocks.
+*   **[Architecture](docs/architecture.md)** : Internal design, caching, and pipeline details.
+*   **[Contributing](docs/contributing.md)** : Guidelines for contributing to md2pdf.
 
 ## Installation Quick Start
 
