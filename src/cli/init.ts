@@ -50,6 +50,24 @@ export default new Command('init')
 
           // For missing system deps on Linux, auto-run install-deps rather than giving up
           if (mdError.code === 'ERR_MISSING_DEPENDENCIES' && process.platform === 'linux') {
+            let hasSudo = false;
+            try {
+              const { execSync } = await import('node:child_process');
+              execSync('command -v sudo', { stdio: 'ignore' });
+              hasSudo = true;
+            } catch {
+              hasSudo = false;
+            }
+            
+            const isRoot = typeof process.getuid === 'function' && process.getuid() === 0;
+
+            if (!hasSudo && !isRoot) {
+              console.log('  ' + pc.red('✖') + ' ' + 'System libraries are missing, but sudo is not available.');
+              console.error(pc.red('\nRun this command manually as root to install them:'));
+              console.error(pc.cyan(`  npx playwright install-deps chromium`));
+              process.exit(EXIT.ENVIRONMENT_ERROR);
+            }
+
             console.log('  ' + pc.yellow('⚠') + ' ' + 'Browser found but system libraries are missing. Installing them now...');
             try {
               const { createRequire } = await import('node:module');
@@ -63,7 +81,7 @@ export default new Command('init')
             } catch (depsErr: any) {
               console.log('  ' + pc.red('✖') + ' ' + 'Failed to install system libraries automatically.');
               console.error(pc.red('\nRun this command manually as root to install them:'));
-              console.error(pc.cyan(`  sudo npx playwright install-deps chromium`));
+              console.error(pc.cyan(`  npx playwright install-deps chromium`));
               process.exit(EXIT.ENVIRONMENT_ERROR);
             }
           } else {
@@ -122,7 +140,9 @@ export default new Command('init')
             hasSudo = false;
           }
 
-          if (!hasSudo) {
+          const isRoot = typeof process.getuid === 'function' && process.getuid() === 0;
+
+          if (!hasSudo && !isRoot) {
             console.warn(pc.yellow('⚠  sudo not available - skipping system library install'));
             console.log(pc.dim('  If Playwright fails, install these manually as root:'));
             console.log(pc.dim(`  ${process.execPath} ${pwCli} install-deps chromium`));
