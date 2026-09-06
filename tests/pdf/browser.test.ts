@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { discoverBrowser } from '../../src/pdf/browser';
 import fs from 'node:fs';
-import * as childProcess from 'node:child_process';
+import childProcess from 'node:child_process';
 
 describe('Browser Discovery', () => {
   beforeEach(() => {
