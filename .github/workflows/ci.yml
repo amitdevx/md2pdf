@@ -40,12 +40,12 @@ jobs:
       run: npm run build
       shell: bash
 
-    - name: Test
-      run: npm run test
-      shell: bash
-
     - name: Install Playwright Browsers (for E2E)
       run: npx playwright install chromium --with-deps
+      shell: bash
+
+    - name: Test
+      run: npm run test
       shell: bash
 
     - name: Test Global Install & E2E CLI
