@@ -1,6 +1,8 @@
 :root {
   --md2pdf-font-family-body: 'Inter', sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', monospace;
+  --md2pdf-color-bg: #1e1e2e;
+  --md2pdf-color-text: #cdd6f4;
   /* Fix: correct Obsidian dark background - #1e1e2e is the real Obsidian dark palette (Catppuccin Mocha base) */
   /* Fix: headings must be visually distinct from body text - use Obsidian's purple/lavender */
   --md2pdf-color-heading: #cba6f7;
@@ -50,4 +52,14 @@ table th {
   background-color: rgba(203, 166, 247, 0.15);
   color: #cba6f7;
   border: 1px solid rgba(203, 166, 247, 0.3);
+}
+
+@media print {
+  :root {
+    --md2pdf-color-bg: #ffffff;
+    --md2pdf-color-text: #1a1a1a;
+    --md2pdf-color-heading: #111111;
+    --md2pdf-color-link: #0066cc;
+    --md2pdf-accent-text: #ffffff;
+  }
 }
