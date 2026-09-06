@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { discoverBrowser } from '../../src/pdf/browser';
 import fs from 'node:fs';
+import * as childProcess from 'node:child_process';
 
 describe('Browser Discovery', () => {
   beforeEach(() => {
@@ -47,7 +48,6 @@ describe('Browser Discovery', () => {
     });
 
     // Mock execSync to avoid running the command
-    const childProcess = require('node:child_process');
     vi.spyOn(childProcess, 'execSync').mockReturnValue('Custom Chrome Version');
 
     const result = discoverBrowser();
