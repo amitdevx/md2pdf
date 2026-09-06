@@ -54,6 +54,9 @@ export function mergeConfig(
       if (typeof merged.header !== 'object') merged.header = { enabled: cliFlags.header };
       else merged.header.enabled = cliFlags.header;
     }
+    if (cliFlags.pageNumbers !== undefined) merged.pageNumbers = cliFlags.pageNumbers;
+    if (cliFlags.fontSize !== undefined) merged.fontSize = cliFlags.fontSize;
+    if (cliFlags.lineHeight !== undefined) merged.lineHeight = cliFlags.lineHeight;
     if (cliFlags.headerTemplate !== undefined) {
       if (typeof merged.header !== 'object') merged.header = { template: cliFlags.headerTemplate };
       else merged.header.template = cliFlags.headerTemplate;
@@ -112,6 +115,9 @@ export function mergeConfig(
     toc: merged.toc ?? false,
     tocDepth: merged.tocDepth ?? 3,
     tocTitle: merged.tocTitle ?? 'Table of Contents',
+    fontSize: merged.fontSize,
+    lineHeight: merged.lineHeight,
+    pageNumbers: merged.pageNumbers,
     header: merged.header,
     footer: merged.footer,
     theme: merged.theme || 'default',

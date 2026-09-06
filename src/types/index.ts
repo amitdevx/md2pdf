@@ -28,6 +28,9 @@ export interface ConvertOptions {
   tocDepth?: number;
   tocTitle?: string;
   title?: boolean;
+  fontSize?: string;
+  lineHeight?: string | number;
+  pageNumbers?: boolean;
   metadata?: PdfMetadata;
   header?: boolean | { enabled?: boolean; template?: string };
   footer?: boolean | { enabled?: boolean; template?: string };

@@ -94,8 +94,11 @@ program
     return n;
   })
   .option('--toc-title <title>', 'Title for the TOC section')
+  .option('--font-size <px>', 'Base font size (e.g. 14px or 12pt)')
+  .option('--line-height <ratio>', 'Base line height (e.g. 1.5)')
   .option('--header', 'Enable default running header')
   .option('--footer', 'Enable default running footer')
+  .option('--page-numbers', 'Show page numbers in footer')
   .option('--header-template <template>', 'Custom HTML template for header')
   .option('--footer-template <template>', 'Custom HTML template for footer')
   .option('--paper <format>', 'Page format: A4, Letter, Legal', (val) => {

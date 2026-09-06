@@ -22,11 +22,16 @@ function escapeHtml(str: string): string {
   }[tag] || tag));
 }
 
-export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null }): Promise<string> {
+export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null; fontSize?: string; lineHeight?: string | number }): Promise<string> {
   const mathCss = options?.mathEnabled !== false ? await getKatexCss() : '';
   const safeTitle = escapeHtml(title);
   const bodyClass = options?.cssclass ? ` class="${escapeHtml(options.cssclass)}"` : '';
   const themeLinks = options?.theme?.fontUrls?.map(url => `<link href="${escapeHtml(url)}" rel="stylesheet">`).join('\n  ') || '';
+  
+  const customStyles = [];
+  if (options?.fontSize) customStyles.push(`:root { --md2pdf-font-size: ${options.fontSize} !important; }`);
+  if (options?.lineHeight) customStyles.push(`:root { --md2pdf-line-height: ${options.lineHeight} !important; }`);
+  
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,6 +47,7 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
     ${printCss}
     ${mathCss}
     ${options?.obsidianEnabled !== false ? obsidianCss : ''}
+    ${customStyles.join('\n    ')}
   </style>
 </head>
 <body${bodyClass}>
