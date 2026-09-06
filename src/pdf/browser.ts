@@ -89,7 +89,9 @@ export function writeCache(cache: Partial<BrowserCache>) {
   try {
     if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
     const pwVersion = getPlaywrightVersion();
-    fs.writeFileSync(CACHE_FILE, JSON.stringify({ ...cache, playwrightVersion: pwVersion }, null, 2));
+    const tmpFile = CACHE_FILE + '.' + Math.random().toString(36).slice(2, 8) + '.tmp';
+    fs.writeFileSync(tmpFile, JSON.stringify({ ...cache, playwrightVersion: pwVersion }, null, 2));
+    fs.renameSync(tmpFile, CACHE_FILE);
   } catch { /* ignore */ }
 }
 
