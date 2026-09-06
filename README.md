@@ -17,12 +17,16 @@ Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, synt
 ## Installation
 
 ```bash
-# Global installation (for CLI usage)
+# Install globally (for CLI usage)
 npm install -g @amitdevx/md2pdf
+md2pdf init
 
-# Local installation (for programmatic usage)
+# Or use locally within a project (for programmatic usage)
 npm install @amitdevx/md2pdf
+npx md2pdf init
 ```
+
+*For more details on installation and setup, see the [Getting Started guide](docs/getting-started.md).*
 
 ## CLI Usage
 
@@ -33,7 +37,6 @@ The most common way to use `md2pdf` is via the command line.
 md2pdf document.md
 ```
 This will automatically generate `document.pdf` in the same directory.
-
 
 > **Note:** All documentation for `md2pdf` has been moved to the `docs/` directory.
 
@@ -49,20 +52,6 @@ This will automatically generate `document.pdf` in the same directory.
 *   **[Mermaid & Math](docs/mermaid.md)** : Using Mermaid diagrams and KaTeX math blocks.
 *   **[Architecture](docs/architecture.md)** : Internal design, caching, and pipeline details.
 *   **[Contributing](docs/contributing.md)** : Guidelines for contributing to md2pdf.
-
-## Installation Quick Start
-
-```bash
-# Install globally
-npm install -g @amitdevx/md2pdf
-md2pdf init
-
-# Or use locally within a project
-npm install @amitdevx/md2pdf
-npx md2pdf init
-```
-
-*For more details on installation and setup, see the [Getting Started guide](docs/getting-started.md).*
 
 ## License
 
