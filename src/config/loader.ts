@@ -55,6 +55,14 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
       if (current === root) break;
       current = path.dirname(current);
     }
+
+    if (!filepath) {
+      const os = await import('node:os');
+      const globalConfigPath = path.join(os.homedir(), '.md2pdf', 'config.json');
+      if (existsSync(globalConfigPath)) {
+        filepath = globalConfigPath;
+      }
+    }
   }
 
   let rawConfig: any = {};

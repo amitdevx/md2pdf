@@ -1,3 +1,10 @@
+## [0.9.5] - 2026-09-10
+### Fixed
+- Fixed a severe bug where Mermaid diagrams would crash with `TypeError: Cannot read properties of undefined (reading 'initialize')` when running md2pdf globally, caused by incorrect bundle path resolution for `mermaid.min.js`.
+- Improved global Mermaid module fallback logic to guarantee diagram execution across diverse system setups and Node.js environments.
+- Prevented `md2pdf init` from polluting the root home directory with local `.md2pdf.json` files. Running `init` in the home folder now elegantly generates a centralized `~/.md2pdf/config.json` file instead.
+- Formalized `~/.md2pdf/` as the unified cross-platform data directory for caching, configuration, and browser metadata.
+
 ## [0.9.4] - 2026-09-10
 ### Fixed
 - Stabilized the entire test infrastructure to ensure 115/115 tests consistently pass across all supported OS and Node environments.

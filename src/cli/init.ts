@@ -5,6 +5,7 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
+import os from 'node:os';
 import { EXIT } from './formatter.js';
 
 export default new Command('init')
@@ -178,7 +179,11 @@ export default new Command('init')
     }
 
     
-    const configPath = path.resolve(process.cwd(), '.md2pdf.json');
+    const isHome = process.cwd() === os.homedir();
+    const configPath = isHome 
+      ? path.resolve(os.homedir(), '.md2pdf', 'config.json') 
+      : path.resolve(process.cwd(), '.md2pdf.json');
+      
     if (fs.existsSync(configPath)) {
       console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);
       process.exit(EXIT.OK);
@@ -190,18 +195,21 @@ export default new Command('init')
     });
 
     const ans = await new Promise<string>(resolve => {
-      rl.question(pc.cyan('Would you like to create a default .md2pdf.json config file here? (y/N) '), resolve);
+      rl.question(pc.cyan(`Would you like to create a default ${isHome ? 'global config (.md2pdf/config.json)' : 'local config (.md2pdf.json)'} here? (y/N) `), resolve);
     });
     
     if (ans.toLowerCase().startsWith('y')) {
       try {
+        if (isHome) {
+          fs.mkdirSync(path.dirname(configPath), { recursive: true });
+        }
         fs.writeFileSync(configPath, JSON.stringify({
           theme: "github",
           margin: "1in",
           paper: "A4",
           toc: false
         }, null, 2));
-        console.log('\n  ' + pc.green('✔') + ' Created .md2pdf.json\n');
+        console.log('\n  ' + pc.green('✔') + ` Created ${isHome ? '.md2pdf/config.json' : '.md2pdf.json'}\n`);
       } catch (err: any) {
         console.log('');
         const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
