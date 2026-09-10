@@ -1,9 +1,20 @@
 ## [0.9.5] - 2026-09-10
+
+### Added
+- **`--outline`**: Generates PDF bookmarks/outline from markdown headings (H1–H6), navigable in any PDF reader sidebar. Implemented using `pdf-lib` without relying on Playwright's native (broken) outline support.
+- **`--add-date`**: Injects the current date/time into the PDF header (top-right). Does not require `--page-numbers` to be set.
+- **`--add-filename`**: Injects the document title/filename into the PDF header (top-left).
+- **`--document-meta`**: Super flag — enables `--page-numbers`, `--add-date`, and `--add-filename` all at once for a fully annotated PDF in a single flag.
+- **`--page-numbers [position]`**: Now accepts an optional position argument: `bottom-center` (default), `bottom-right`, `top-center`, `top-right`. Previously only supported default bottom-center.
+- Visual regression baseline test suite (`tests/visual/visual.test.ts`) using `pdf-lib` to validate page count and file size for all theme/option combinations.
+- Contract tests for `--outline`, `--page-numbers`, `--line-height`, `--font-size`, and `--theme nord` in `tests/contract/options.test.ts`.
+
 ### Fixed
-- Fixed a severe bug where Mermaid diagrams would crash with `TypeError: Cannot read properties of undefined (reading 'initialize')` when running md2pdf globally, caused by incorrect bundle path resolution for `mermaid.min.js`.
-- Improved global Mermaid module fallback logic to guarantee diagram execution across diverse system setups and Node.js environments.
-- Prevented `md2pdf init` from polluting the root home directory with local `.md2pdf.json` files. Running `init` in the home folder now elegantly generates a centralized `~/.md2pdf/config.json` file instead.
-- Formalized `~/.md2pdf/` as the unified cross-platform data directory for caching, configuration, and browser metadata.
+- Fixed the Chromium default header (date/time/filename) being injected unintentionally when `--page-numbers` was used — Chromium's `displayHeaderFooter` mode now only shows content that was explicitly requested.
+- Fixed Mermaid block rendering crashes in batch mode (`TypeError: Cannot read properties of undefined (reading 'initialize')`).
+- Fixed configuration and cache files polluting the home directory root (`~/.md2pdf.json`); moved to `~/.md2pdf/config.json`.
+- Fixed `--outline` flag being silently dropped before reaching the conversion pipeline by adding `outline` to the explicit property map in `src/config/merge.ts`.
+- Ensured stable dark-theme print CSS via `@media print` for `dracula`, `nord`, and `obsidian-dark` themes.
 
 ## [0.9.4] - 2026-09-10
 ### Fixed
@@ -401,14 +412,3 @@ All notable changes to this project will be documented in this file.
 ### Fixes
 - Addressed hang on missing permissions and 5MB payload limit by hoisting validation before playwright browser launch.
 - Assured 100% adherence to established exit code contract.
-
-## [0.9.5] - 2024-05-30
-### Added
-- Added `--outline` flag to generate PDF bookmarks from markdown headings.
-- Added contract tests for `--outline`, `--page-numbers`, `--line-height`, `--font-size`, and `--theme nord`.
-- Created visual regression baseline artifacts (`tests/visual/*.pdf`) for output quality validation.
-
-### Fixed
-- Fixed Mermaid block rendering crashes in batch mode (`TypeError: Cannot read properties of undefined (reading 'initialize')`).
-- Fixed configuration and cache files polluting the home directory root (`~/.md2pdf.json`); moved to `~/.md2pdf/config.json`.
-- Ensured stable dark-theme print CSS via `@media print`.

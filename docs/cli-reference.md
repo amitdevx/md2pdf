@@ -28,10 +28,10 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `--outline` | boolean | false | Generate PDF bookmarks (outline) from Markdown headings |
 | `--paper` | A4/Letter/Legal | A4 | Page format |
 | `--margin` | CSS unit | 20mm | Page margins |
-| `--page-numbers` | boolean | false | Show page numbers in footer |
-| `--add-date` | boolean | false | Add current date/time to PDF header |
-| `--add-filename` | boolean | false | Add the document filename to PDF header |
-| `--document-meta` | boolean | false | Add page numbers, date, and filename all at once |
+| `--page-numbers [pos]` | `bottom-center`\|`bottom-right`\|`top-center`\|`top-right` | false | Show page numbers (default: `bottom-center`) |
+| `--add-date` | boolean | false | Add current date/time to PDF header (top-right) |
+| `--add-filename` | boolean | false | Add document title/filename to PDF header (top-left) |
+| `--document-meta` | boolean | false | Super flag: enables `--page-numbers`, `--add-date`, and `--add-filename` together |
 | `--font-size` | string (px/pt) | - | Base font size (e.g. 14px or 12pt) |
 | `--line-height` | number | - | Base line height (e.g. 1.5) |
 | `--theme` | string | default | Theme name or path to custom CSS |

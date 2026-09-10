@@ -98,7 +98,7 @@ program
   .option('--line-height <ratio>', 'Base line height (e.g. 1.5)')
   .option('--header', 'Enable default running header')
   .option('--footer', 'Enable default running footer')
-  .option('--page-numbers', 'Show page numbers in footer')
+  .option('--page-numbers [position]', 'Show page numbers (bottom-center, bottom-right, top-center, top-right)')
   .option("--add-date", "Add the current date/time to the PDF header")
   .option("--add-filename", "Add the filename/title to the PDF header")
   .option("--document-meta", "Add page numbers, date, and filename all at once")

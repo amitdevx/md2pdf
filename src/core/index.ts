@@ -370,15 +370,16 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       creationDate: options.metadata?.creationDate ?? (frontmatter.date ? (isNaN(new Date(frontmatter.date).getTime()) ? undefined : new Date(frontmatter.date)) : undefined),
     };
 
+
     const useDate = options.addDate || options.documentMeta;
     const useTitle = options.addFilename || options.documentMeta;
     const usePageNumbers = options.pageNumbers || options.documentMeta;
+    const pageNumPos = typeof options.pageNumbers === 'string' ? options.pageNumbers : 'bottom-center';
 
     if (headerEnabled && options.header !== undefined) {
       marginTop = '30mm';
       if (typeof options.header === 'object' && options.header.template) {
         headerTemplate = options.header.template;
-        // Replace {frontmatter.X} with actual values
         headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
       } else {
         headerTemplate = `
@@ -387,25 +388,34 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
           <span>${metadata.author ? metadata.author + ' - ' : ''}<span class="date"></span></span>
         </div>`;
       }
-    } else if (useDate || useTitle) {
-      marginTop = '20mm';
-      headerTemplate = `
-      <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; justify-content: space-between; padding: 0 10mm; color: #888;">
-        ${useTitle ? '<span class="title"></span>' : '<span></span>'}
-        ${useDate ? '<span class="date"></span>' : '<span></span>'}
-      </div>`;
+    } else {
+      const topCenter = (usePageNumbers && pageNumPos === 'top-center') ? '<span class="pageNumber"></span>' : '';
+      const topLeft = useTitle ? '<span class="title"></span>' : '';
+      let topRight = useDate ? '<span class="date"></span>' : '';
+      
+      if (usePageNumbers && pageNumPos === 'top-right') topRight += ' <span class="pageNumber"></span>';
+      
+      if (useDate || useTitle || (usePageNumbers && pageNumPos.startsWith('top'))) {
+        marginTop = '20mm';
+        
+        // Simple 3-column flex
+        headerTemplate = `
+        <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; padding: 0 10mm; color: #888;">
+          <div style="flex: 1; text-align: left;">${topLeft}</div>
+          <div style="flex: 1; text-align: center;">${topCenter}</div>
+          <div style="flex: 1; text-align: right;">${topRight}</div>
+        </div>`;
+      }
     }
 
     let footerTemplate = undefined;
     let marginBottom = margin;
-    const footerEnabled = options.footer === true || 
-      (typeof options.footer === 'object' && options.footer.enabled !== false);
+    const footerEnabled = options.footer === true || (typeof options.footer === 'object' && options.footer.enabled !== false);
 
     if (footerEnabled && options.footer !== undefined) {
       marginBottom = '30mm';
       if (typeof options.footer === 'object' && options.footer.template) {
         footerTemplate = options.footer.template;
-        // Replace {frontmatter.X} with actual values
         footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
       } else {
         footerTemplate = `
@@ -413,13 +423,17 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
           <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
         </div>`;
       }
-    } else if (usePageNumbers) {
-      // Minimalist page numbers without the full border/padding of the standard footer
-      marginBottom = '20mm';
-      footerTemplate = `
-      <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; justify-content: center; color: #888;">
-        <span class="pageNumber"></span>
-      </div>`;
+    } else {
+      if (usePageNumbers && pageNumPos.startsWith('bottom')) {
+        marginBottom = '20mm';
+        const align = pageNumPos === 'bottom-right' ? 'right' : 'center';
+        footerTemplate = `
+        <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; padding: 0 10mm; color: #888;">
+          <div style="flex: 1; text-align: left;"></div>
+          <div style="flex: 1; text-align: center;">${align === 'center' ? '<span class="pageNumber"></span>' : ''}</div>
+          <div style="flex: 1; text-align: right;">${align === 'right' ? '<span class="pageNumber"></span>' : ''}</div>
+        </div>`;
+      }
     }
 
     const displayHeaderFooter = (headerEnabled && options.header !== undefined) || 
@@ -430,7 +444,6 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       if (!headerTemplate) headerTemplate = '<span></span>';
       if (!footerTemplate) footerTemplate = '<span></span>';
     }
-
     await generatePdf({  
       html: processedHtml, 
       outputPath, 

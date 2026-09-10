@@ -24,7 +24,7 @@ export interface Md2PdfConfig {
   /** Footer config */
   footer?: boolean | { enabled?: boolean; template?: string };
   /** Show page numbers in footer without full header/footer config */
-  pageNumbers?: boolean;
+  pageNumbers?: boolean | 'bottom-center' | 'bottom-right' | 'top-center' | 'top-right';
   addDate?: boolean;
   addFilename?: boolean;
   documentMeta?: boolean;

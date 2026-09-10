@@ -30,7 +30,7 @@ export interface ConvertOptions {
   title?: boolean;
   fontSize?: string;
   lineHeight?: string | number;
-  pageNumbers?: boolean;
+  pageNumbers?: boolean | 'bottom-center' | 'bottom-right' | 'top-center' | 'top-right';
   addDate?: boolean;
   addFilename?: boolean;
   documentMeta?: boolean;
