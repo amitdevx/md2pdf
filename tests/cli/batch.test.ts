@@ -1,7 +1,40 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { runConvert } from '../../src/commands/convert';
 import fs from 'node:fs';
 import path from 'node:path';
+
+// Mock the actual PDF conversion to isolate batch orchestration logic
+vi.mock('../../src/core/index', () => ({
+  convert: vi.fn(async (opts) => {
+    // Simulate writing a PDF output file
+    if (opts.output) {
+      fs.writeFileSync(opts.output, 'mocked-pdf-content');
+    }
+    return {
+      outputPath: opts.output,
+      pageCounts: 1,
+      renderTimeMs: 10,
+      warnings: [],
+      fromCache: false
+    };
+  })
+}));
+
+vi.mock('../../src/pdf/browser', () => ({
+  getBrowser: vi.fn(async () => ({
+    newContext: vi.fn(async () => ({
+      newPage: vi.fn(async () => ({
+        setContent: vi.fn(async () => {}),
+        evaluate: vi.fn(async () => {}),
+        addScriptTag: vi.fn(async () => {}),
+        close: vi.fn(async () => {})
+      })),
+      close: vi.fn(async () => {})
+    })),
+    close: vi.fn(async () => {})
+  }))
+}));
+
 const tempDir = path.join(process.cwd(), '.tmp-batch-test');
 
 describe('Batch Processing (M-05, M-07)', () => {
@@ -12,6 +45,7 @@ describe('Batch Processing (M-05, M-07)', () => {
 
   afterEach(() => {
     if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
+    vi.clearAllMocks();
   }, 120000);
 
   it('should handle concurrent directory creation without EEXIST crash (M-05)', async () => {

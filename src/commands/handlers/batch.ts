@@ -318,11 +318,13 @@ export async function handleBatch(
           }
 
           const md2Error = detectBrowserError(err, { markdownFile: input });
-          // FIX: use err?.errorCode (Md2PdfError property) before falling back to err?.code
+          // Use exact fallback logic requested
+          const resolvedCode = (err as any).errorCode ?? (err as NodeJS.ErrnoException).code ?? md2Error?.code ?? 'ERR_UNKNOWN';
+          
           results[i] = {
             isError: true,
             error: cleanMsg,
-            code: err?.errorCode || err?.code || md2Error?.code || 'ERR_UNKNOWN',
+            code: resolvedCode,
             outputPath: output,
             pageCounts: 0,
             renderTimeMs: 0,

@@ -58,9 +58,8 @@ describe('Validation: input.ts', () => {
     expect(err?.code).toBe(Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX);
   });
 
-  // Skip permission denied because we already tested it in exit-codes, but we can try chmod if not windows
-  it('should return error for permission denied', () => {
-    if (process.platform === 'win32') return;
+  // Skip permission denied on Windows or as root user
+  it.skipIf(typeof process.getuid === 'function' && process.getuid() === 0 || process.platform === 'win32')('should return error for permission denied', () => {
     const chmod = path.join(fixturesDir, 'chmod.md');
     fs.writeFileSync(chmod, '# test');
     fs.chmodSync(chmod, 0o000);

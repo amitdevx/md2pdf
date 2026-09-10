@@ -1,23 +1,10 @@
 import { describe, it, expect, afterAll } from 'vitest';
-import { execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 
-const cliPath = path.resolve(__dirname, '../../dist/cli/index.js');
 const fixturesDir = path.resolve(__dirname, '../fixtures');
 
-function runCli(args: string): { status: number; stdout: string; stderr: string } {
-  try {
-    const output = execSync(`"${process.execPath}" "${cliPath}" ${args}`, { encoding: 'utf-8', stdio: 'pipe' });
-    return { status: 0, stdout: output, stderr: '' };
-  } catch (error: any) {
-    return {
-      status: error.status ?? 1,
-      stdout: error.stdout ?? '',
-      stderr: error.stderr ?? '',
-    };
-  }
-}
+import { runCli } from '../contract/helpers';
 
 describe('CLI End-to-End Tests', () => {
   afterAll(() => {

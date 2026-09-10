@@ -1,22 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 
-const cliPath = path.resolve(__dirname, '../../dist/cli/index.js');
 const fixturesDir = path.resolve(__dirname, '../fixtures-json-errors');
 
+import { runCliJson as helperRunCliJson, isRoot } from './helpers';
+
 function runCliJson(args: string): any {
-  try {
-    const output = execSync(`"${process.execPath}" "${cliPath}" ${args} --json-errors`, { encoding: 'utf-8', stdio: 'pipe' });
-    return JSON.parse(output);
-  } catch (error: any) {
-    try {
-      return JSON.parse(error.stdout);
-    } catch {
-      throw new Error(`Failed to parse JSON output: ${error.stdout || error.stderr}`);
-    }
+  const result = helperRunCliJson(args);
+  if (!result.json) {
+    throw new Error(`Failed to parse JSON output: ${result.stderr}`);
   }
+  return result.json;
 }
 
 describe('JSON Errors Contract (20 Cases)', () => {
@@ -144,7 +139,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
     try { fs.unlinkSync(outPdf); } catch { /* ignore */ }
   });
 
-  it.skipIf(process.platform === 'win32')('chmod 000', () => {
+  it.skipIf(isRoot || process.platform === 'win32')('chmod 000', () => {
     const chmod = path.join(fixturesDir, 'chmod.md');
     if (fs.existsSync(chmod)) {
       try { fs.chmodSync(chmod, 0o666); } catch { /* ignore */ }
