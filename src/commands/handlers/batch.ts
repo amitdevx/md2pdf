@@ -35,13 +35,16 @@ export async function handleBatch(
   let mermaidInitPromise: Promise<void> | null = null;
   let globalBrowserPromise: Promise<any> | null = null;
 
+  let isShuttingDown = false;
+
   const cleanup = async () => {
+    isShuttingDown = true;
     if (mermaidInitPromise) await mermaidInitPromise.catch(() => {});
+    if (globalMermaidContext) await globalMermaidContext.close().catch(() => {});
     if (globalBrowserPromise) {
       const b = await globalBrowserPromise.catch(() => null);
       if (b) await b.close().catch(() => {});
     }
-    if (globalMermaidContext) await globalMermaidContext.close().catch(() => {});
     if (globalBrowser) await globalBrowser.close().catch(() => {});
     try {
       const { forceClose } = await import('../../pdf/daemon.js');
@@ -49,7 +52,6 @@ export async function handleBatch(
     } catch { /* ignore */ }
   };
 
-  let isShuttingDown = false;
   const sigintHandler = async () => {
     isShuttingDown = true;
     console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));

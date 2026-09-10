@@ -140,11 +140,11 @@ export async function handleSingle(
 
   const cleanup = async () => {
     if (mermaidInitPromise) await mermaidInitPromise.catch(() => {});
+    if (globalMermaidContext) await globalMermaidContext.close().catch(() => {});
     if (globalBrowserPromise) {
       const b = await globalBrowserPromise.catch(() => null);
       if (b) await b.close().catch(() => {});
     }
-    if (globalMermaidContext) await globalMermaidContext.close().catch(() => {});
     if (globalBrowser) await globalBrowser.close().catch(() => {});
     try {
       const { forceClose } = await import('../../pdf/daemon.js');

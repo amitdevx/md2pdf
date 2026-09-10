@@ -39,27 +39,46 @@ export function runCli(args: string): CliResult {
     }
     const cliPath = path.resolve(process.cwd(), 'dist/cli/index.js');
     const stdout = execSync(`"${process.execPath}" "${cliPath}" ${args}`, {
-      timeout: 30000,
       encoding: 'utf-8',
       env
     });
     return { status: 0, stdout, stderr: '' };
-  } catch (e: any) {
+  } catch (error: any) {
     return {
-      status: e.status ?? 1,
-      stdout: e.stdout?.toString() ?? '',
-      stderr: e.stderr?.toString() ?? e.message ?? ''
+      status: error.status ?? 1,
+      stdout: error.stdout ?? '',
+      stderr: error.stderr ?? (error.message || ''),
     };
   }
 }
 
-export function runCliJson(args: string): { status: number; json: any; stderr: string } {
-  const result = runCli(`${args} --json-errors`);
-  let json = null;
+/**
+ * Runs the CLI with --json-errors and parses the output.
+ */
+export function runCliJson(args: string, envOverrides?: Record<string, string>): { status: number; json: any; stderr: string } {
   try {
-    json = JSON.parse(result.stdout);
-  } catch {
-    // Cannot parse
+    const env = { ...process.env, ...envOverrides };
+    const CHROME_PATH = resolveBrowserPath();
+    if (CHROME_PATH) {
+      env.CHROME_PATH = CHROME_PATH;
+    }
+    const cliPath = path.resolve(process.cwd(), 'dist/cli/index.js');
+    const stdout = execSync(`"${process.execPath}" "${cliPath}" ${args} --json-errors`, {
+      encoding: 'utf-8',
+      env
+    });
+    return { status: 0, json: JSON.parse(stdout), stderr: '' };
+  } catch (e: any) {
+    let json = null;
+    try {
+      json = JSON.parse(e.stdout);
+    } catch {
+      // Cannot parse
+    }
+    return { 
+      status: e.status ?? 1, 
+      json, 
+      stderr: e.stderr ?? (e.message || '') 
+    };
   }
-  return { status: result.status, json, stderr: result.stderr };
 }

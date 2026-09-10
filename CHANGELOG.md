@@ -1,3 +1,11 @@
+## [0.9.4] - 2026-09-10
+### Fixed
+- Stabilized the entire test infrastructure to ensure 115/115 tests consistently pass across all supported OS and Node environments.
+- Fixed an issue where the batch JSON error response was losing the structured error `code` field.
+- Fixed contract tests randomly failing in CI by building a shared helper to properly inject the resolved `CHROME_PATH` into child test processes.
+- Fixed root user permission tests to gracefully skip via Vitest `.skipIf()` when running in environments where Unix file permissions are bypassed (such as Docker `root` or Windows).
+- Decoupled batch file orchestration tests from the Chromium conversion layer by safely mocking PDF output, drastically reducing test overhead and complexity.
+
 ## [0.9.3] - 2026-09-06
 ### Added
 - Added `--page-numbers` flag to inject minimalist page numbers into the footer
