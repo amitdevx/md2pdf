@@ -55,6 +55,10 @@ export function mergeConfig(
       else merged.header.enabled = cliFlags.header;
     }
     if (cliFlags.pageNumbers !== undefined) merged.pageNumbers = cliFlags.pageNumbers;
+    if (cliFlags.addDate !== undefined) merged.addDate = cliFlags.addDate;
+    if (cliFlags.addFilename !== undefined) merged.addFilename = cliFlags.addFilename;
+    if (cliFlags.documentMeta !== undefined) merged.documentMeta = cliFlags.documentMeta;
+    if (cliFlags.outline !== undefined) merged.outline = cliFlags.outline;
     if (cliFlags.fontSize !== undefined) merged.fontSize = cliFlags.fontSize;
     if (cliFlags.lineHeight !== undefined) merged.lineHeight = cliFlags.lineHeight;
     if (cliFlags.headerTemplate !== undefined) {
@@ -118,6 +122,10 @@ export function mergeConfig(
     fontSize: merged.fontSize,
     lineHeight: merged.lineHeight,
     pageNumbers: merged.pageNumbers,
+    addDate: merged.addDate,
+    addFilename: merged.addFilename,
+    documentMeta: merged.documentMeta,
+    outline: merged.outline,
     header: merged.header,
     footer: merged.footer,
     theme: merged.theme || 'default',

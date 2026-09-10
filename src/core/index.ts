@@ -303,6 +303,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       math: options.math,
       obsidian: options.obsidian,
       shikiTheme: theme?.shikiTheme,
+      outline: options.outline,
+      renderContext: ctx,
     });
 
     title = options.metadata?.title || frontmatter.title || (input === '-' ? 'Untitled Document' : path.basename(input, path.extname(input)));
@@ -368,6 +370,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       creationDate: options.metadata?.creationDate ?? (frontmatter.date ? (isNaN(new Date(frontmatter.date).getTime()) ? undefined : new Date(frontmatter.date)) : undefined),
     };
 
+    const useDate = options.addDate || options.documentMeta;
+    const useTitle = options.addFilename || options.documentMeta;
+    const usePageNumbers = options.pageNumbers || options.documentMeta;
+
     if (headerEnabled && options.header !== undefined) {
       marginTop = '30mm';
       if (typeof options.header === 'object' && options.header.template) {
@@ -381,6 +387,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
           <span>${metadata.author ? metadata.author + ' - ' : ''}<span class="date"></span></span>
         </div>`;
       }
+    } else if (useDate || useTitle) {
+      marginTop = '20mm';
+      headerTemplate = `
+      <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; justify-content: space-between; padding: 0 10mm; color: #888;">
+        ${useTitle ? '<span class="title"></span>' : '<span></span>'}
+        ${useDate ? '<span class="date"></span>' : '<span></span>'}
+      </div>`;
     }
 
     let footerTemplate = undefined;
@@ -400,13 +413,22 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
           <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
         </div>`;
       }
-    } else if (options.pageNumbers) {
+    } else if (usePageNumbers) {
       // Minimalist page numbers without the full border/padding of the standard footer
       marginBottom = '20mm';
       footerTemplate = `
       <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; justify-content: center; color: #888;">
         <span class="pageNumber"></span>
       </div>`;
+    }
+
+    const displayHeaderFooter = (headerEnabled && options.header !== undefined) || 
+                                (footerEnabled && options.footer !== undefined) || 
+                                !!usePageNumbers || !!useDate || !!useTitle;
+
+    if (displayHeaderFooter) {
+      if (!headerTemplate) headerTemplate = '<span></span>';
+      if (!footerTemplate) footerTemplate = '<span></span>';
     }
 
     await generatePdf({  
@@ -416,7 +438,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       margin,
       marginTop,
       marginBottom,
-      displayHeaderFooter: (headerEnabled && options.header !== undefined) || (footerEnabled && options.footer !== undefined) || !!options.pageNumbers,
+      displayHeaderFooter,
       headerTemplate,
       footerTemplate,
       browser,
@@ -424,7 +446,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       renderContext: ctx
     });
     
-    const pageCounts = await injectMetadata(outputPath, metadata);
+    const pageCounts = await injectMetadata(outputPath, metadata, options.outline ? ctx.headings : undefined);
 
     if (options.cache !== false && cacheHash) {
       const { updateCache } = await import('./cache.js');

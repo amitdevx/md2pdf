@@ -10,6 +10,7 @@ import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
 import { getSingletonHighlighter, bundledLanguages, Highlighter } from 'shiki';
 import rehypeStringify from 'rehype-stringify';
 import rehypeToc from '../plugins/layout/toc.js';
+import rehypeOutline from '../plugins/layout/outline.js';
 import rehypePageBreaks from '../plugins/layout/page-breaks.js';
 import remarkBlockRefs from '../plugins/obsidian/block-refs.js';
 
@@ -60,6 +61,8 @@ export async function parseMarkdown(
       showTags?: boolean;
     };
     shikiTheme?: string;
+    outline?: boolean;
+    renderContext?: import('../types/context.js').RenderContext;
   }
 ): Promise<{ html: string; warnings: string[] }> {
   const warnings: string[] = [];
@@ -197,6 +200,7 @@ export async function parseMarkdown(
           }
         }
       }))
+      .use(rehypeOutline, { enable: options?.outline, context: options?.renderContext })
       .use(rehypeStringify, { allowDangerousHtml: true })
       .process(markdown);
   } catch (e) {

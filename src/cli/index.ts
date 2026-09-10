@@ -99,6 +99,10 @@ program
   .option('--header', 'Enable default running header')
   .option('--footer', 'Enable default running footer')
   .option('--page-numbers', 'Show page numbers in footer')
+  .option("--add-date", "Add the current date/time to the PDF header")
+  .option("--add-filename", "Add the filename/title to the PDF header")
+  .option("--document-meta", "Add page numbers, date, and filename all at once")
+  .option('--outline', 'Generate PDF bookmarks/outline from headings')
   .option('--header-template <template>', 'Custom HTML template for header')
   .option('--footer-template <template>', 'Custom HTML template for footer')
   .option('--paper <format>', 'Page format: A4, Letter, Legal', (val) => {

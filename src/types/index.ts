@@ -31,6 +31,10 @@ export interface ConvertOptions {
   fontSize?: string;
   lineHeight?: string | number;
   pageNumbers?: boolean;
+  addDate?: boolean;
+  addFilename?: boolean;
+  documentMeta?: boolean;
+  outline?: boolean;
   metadata?: PdfMetadata;
   header?: boolean | { enabled?: boolean; template?: string };
   footer?: boolean | { enabled?: boolean; template?: string };

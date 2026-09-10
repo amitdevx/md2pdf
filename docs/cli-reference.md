@@ -25,9 +25,13 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `--dry-run` | boolean | false | Run conversion process without writing to disk |
 | `--toc` | boolean | false | Generate Table of Contents |
 | `--toc-depth` | 1-6 | 3 | Heading depth for TOC |
+| `--outline` | boolean | false | Generate PDF bookmarks (outline) from Markdown headings |
 | `--paper` | A4/Letter/Legal | A4 | Page format |
 | `--margin` | CSS unit | 20mm | Page margins |
 | `--page-numbers` | boolean | false | Show page numbers in footer |
+| `--add-date` | boolean | false | Add current date/time to PDF header |
+| `--add-filename` | boolean | false | Add the document filename to PDF header |
+| `--document-meta` | boolean | false | Add page numbers, date, and filename all at once |
 | `--font-size` | string (px/pt) | - | Base font size (e.g. 14px or 12pt) |
 | `--line-height` | number | - | Base line height (e.g. 1.5) |
 | `--theme` | string | default | Theme name or path to custom CSS |

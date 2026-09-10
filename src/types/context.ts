@@ -20,6 +20,7 @@ export interface RenderContext {
   options: ResolvedMd2PdfConfig;
   /** Logger - use instead of console.log */
   logger: Logger;
+  headings?: { level: number; title: string; id: string; pageIndex: number }[];
 }
 
 export interface ExportContext {
@@ -33,4 +34,5 @@ export interface ExportContext {
   options: ResolvedMd2PdfConfig;
   /** Logger - use instead of console.log */
   logger: Logger;
+  headings?: { level: number; title: string; id: string; pageIndex: number }[];
 }

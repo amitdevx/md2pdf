@@ -5,6 +5,7 @@ export interface CliOptions {
   tocTitle?: string;
   header?: boolean;
   footer?: boolean;
+  outline?: boolean;
   headerTemplate?: string;
   footerTemplate?: string;
   paper?: string;

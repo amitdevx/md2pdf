@@ -13,11 +13,16 @@ const pkgPath = existsSync(pkgPath1) ? pkgPath1 : pkgPath2;
 const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
 const version = pkg.version as string;
 
-export async function injectMetadata(pdfPath: string, metadata: PdfMetadata): Promise<number> {
+export async function injectMetadata(
+  pdfPath: string, 
+  metadata: PdfMetadata,
+  headings?: { level: number; title: string; id: string; pageIndex: number }[]
+): Promise<number> {
   const hasMetadata = metadata.title || metadata.author || metadata.subject
     || metadata.keywords || metadata.creator || metadata.producer || metadata.creationDate;
+  const hasHeadings = headings && headings.length > 0;
 
-  if (!hasMetadata) {
+  if (!hasMetadata && !hasHeadings) {
     const pdfBytes = await fs.readFile(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
     return pdfDoc.getPageCount();
@@ -34,6 +39,11 @@ export async function injectMetadata(pdfPath: string, metadata: PdfMetadata): Pr
   pdfDoc.setCreator(metadata.creator || `md2pdf ${version}`);
   pdfDoc.setProducer(metadata.producer || 'Playwright');
   pdfDoc.setCreationDate(metadata.creationDate || new Date());
+
+  if (hasHeadings) {
+    const { injectOutline } = await import('./outline.js');
+    injectOutline(pdfDoc, headings!);
+  }
 
   const modifiedPdfBytes = await pdfDoc.save();
   await fs.writeFile(pdfPath, modifiedPdfBytes);

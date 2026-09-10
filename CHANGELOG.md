@@ -401,3 +401,14 @@ All notable changes to this project will be documented in this file.
 ### Fixes
 - Addressed hang on missing permissions and 5MB payload limit by hoisting validation before playwright browser launch.
 - Assured 100% adherence to established exit code contract.
+
+## [0.9.5] - 2024-05-30
+### Added
+- Added `--outline` flag to generate PDF bookmarks from markdown headings.
+- Added contract tests for `--outline`, `--page-numbers`, `--line-height`, `--font-size`, and `--theme nord`.
+- Created visual regression baseline artifacts (`tests/visual/*.pdf`) for output quality validation.
+
+### Fixed
+- Fixed Mermaid block rendering crashes in batch mode (`TypeError: Cannot read properties of undefined (reading 'initialize')`).
+- Fixed configuration and cache files polluting the home directory root (`~/.md2pdf.json`); moved to `~/.md2pdf/config.json`.
+- Ensured stable dark-theme print CSS via `@media print`.

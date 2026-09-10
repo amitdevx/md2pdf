@@ -25,6 +25,9 @@ export interface Md2PdfConfig {
   footer?: boolean | { enabled?: boolean; template?: string };
   /** Show page numbers in footer without full header/footer config */
   pageNumbers?: boolean;
+  addDate?: boolean;
+  addFilename?: boolean;
+  documentMeta?: boolean;
   /** Mermaid config */
   mermaid?: boolean | {
     enabled?: boolean;
@@ -63,6 +66,8 @@ export interface Md2PdfConfig {
     h1NewPage?: boolean;
     hrAsPageBreak?: boolean;
   };
+  /** Generate PDF bookmarks/outline from headings */
+  outline?: boolean;
   /** Output options */
   output?: {
     dir?: string;
