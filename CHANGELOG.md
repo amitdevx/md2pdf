@@ -1,35 +1,39 @@
 ## [0.9.6] - 2026-09-12
 
 ### Security
-- Fixed a path traversal vulnerability that could allow output PDFs to be written to restricted system directories (SEC-01).
-- Hardened SEC-01 path traversal validation to properly resolve macOS symlinks (e.g. `/etc` -> `/private/etc`), preventing blocklist bypass.
-- Fixed an arbitrary file read vulnerability in the Obsidian plugin that allowed embedding restricted files via directory traversal in embeds (SEC-02).
-- Fixed a local file access vulnerability where maliciously crafted markdown images could read internal system files by escaping the Playwright sandbox (SEC-03).
-- Eliminated a command injection vector when resolving custom browser executables via the CHROME_PATH environment variable (SEC-04).
+- Fixed a path traversal vulnerability that could allow output PDFs to be written to restricted system directories.
+- Hardened the output path validation to correctly resolve macOS symlinks (e.g. `/etc` resolves to `/private/etc`), preventing blocklist bypass on macOS.
+- Fixed an over-broad path blocklist that incorrectly rejected valid output paths such as `/tmp`, custom user directories, and any directory outside `process.cwd()`. Only true OS-critical directories (`/etc`, `/usr`, `/bin`, `/sys`, `/proc`, `/dev`, `/boot`, `/lib`) are blocked.
+- Fixed an arbitrary file read vulnerability in the Obsidian embed plugin where directory traversal sequences in embed paths could escape the vault boundary.
+- Fixed a local file inclusion vulnerability where maliciously crafted markdown image paths could read internal system files by escaping the Playwright file URL sandbox.
+- Eliminated a command injection vector when resolving custom browser executables via the `CHROME_PATH` environment variable.
 
-### Performance
-- Introduced concurrent Mermaid pre-warming to overlap browser context initialization with AST parsing, significantly reducing rendering latency.
-- Refactored batch daemon mode to natively utilize the shared Mermaid context, eliminating redundant Playwright page allocations and preventing memory bloat.
-
-### Benchmarks & Testing
-- Added an automated concurrency benchmark suite using `vitest bench` to validate batch processing performance across multiple worker configurations.
-- Integrated the benchmark suite into the GitHub Actions CI pipeline and local `scripts/pre-publish.sh` guard.
-- Improved the robustness of Mermaid library path resolution for testing environments.
-- Fixed CI test suite breaking on Node 24 and macOS environments due to cross-platform temporary directory (`/tmp`) and symlink resolution differences in the security blocklist.
-
-### Maintenance
-- Cleaned up the codebase by removing verbose decorative ASCII comments and unused variables.
-
-### Performance & Daemon
-- Implemented a persistent background Browser Daemon (`md2pdf daemon start`) that maintains a warm Playwright instance, eliminating the ~200ms browser initialization penalty for high-frequency or single file conversions.
-- Optimized concurrent batch processing via `globalBrowserManager` to gracefully reuse Chromium instances without causing premature idle shutdown during sustained workloads.
-- Converted synchronous `fs.writeFileSync` artifact creation to an atomic `stage -> renameSync` pattern, preventing corrupt or half-written PDFs when interrupted or run in parallel.
-- Added strict `md2pdf` version strings and resolved `options.theme` contents into the incremental cache hash to ensure correct cache invalidation across upgrades.
+### Added
+- Implemented a persistent background Browser Daemon (`md2pdf daemon start`) that maintains a warm Playwright instance, eliminating the ~200ms browser startup cost for repeated conversions.
+- Added `md2pdf daemon stop` and `md2pdf daemon status` subcommands.
+- Added automated concurrency benchmark suite using `vitest bench` to validate batch processing throughput across worker configurations.
 
 ### Fixed
-- Fixed CLI numeric flags parsing by replacing `parseInt` with `Number.isFinite` to safely reject garbage input.
-- Fixed `options.pageNumbers`, `options.outline`, and other missing format configurations being improperly stripped by Zod schemas in `src/config/validate.ts`.
-- Cleaned up console noise; fixed `console.warn` and success `console.log` statements correctly respecting the `--quiet` flag.
+- Fixed input file glob patterns resolving against the package install directory instead of the user's shell current working directory. Running `md2pdf fixtures/*.md` from any directory now works correctly.
+- Fixed absolute input and output paths being re-resolved through `process.cwd()` inside the daemon, causing ENOENT errors when the daemon was started from a different directory than the user.
+- Fixed the Playwright file URL sandbox using `process.cwd()` (the package dir) as the allowed base, blocking image assets in the user's actual document directory.
+- Fixed `options.pageNumbers`, `options.outline`, `options.fontSize`, `options.lineHeight`, and related formatting flags being silently stripped by the Zod config schema validator.
+- Fixed parser memory bloat on deeply nested blockquotes by replacing an unbounded `Math.max(...array)` spread with an iterative loop.
+- Fixed incremental cache not invalidating when the installed md2pdf version or the custom theme CSS changed between runs.
+- Fixed CLI numeric flag parsing (`--timeout`, `--workers`, etc.) to use `Number.isFinite` instead of `parseInt`, rejecting garbage input without silent truncation.
+- Fixed `console.warn` and conversion success messages leaking output when `--quiet` flag was set.
+- Fixed `--force` flag being ignored on the first file in batch mode when a daemon was active.
+
+### Performance
+- Overlapped Mermaid browser context initialization with AST parsing, reducing warm-path Mermaid conversion latency.
+- Replaced the naive browser lifecycle with a reference-counted `globalBrowserManager` that holds Chromium alive across concurrent batch jobs and releases it only when all jobs are complete.
+- Converted PDF output writing to a staged atomic pattern (`output.pdf.stage` then `fs.renameSync`) to prevent partial/corrupt files on crash or interrupt.
+- Added version and theme-contents hashing to the cache key so upgrades and theme changes correctly invalidate cached PDFs.
+
+### CI & Testing
+- Fixed YAML syntax error in `.github/workflows/ci.yml` that prevented the Benchmark step from running.
+- Added `tags: ['v*']` to the CI push trigger so GitHub Actions runs on tag pushes.
+- Integrated benchmark suite into CI and `scripts/pre-publish.sh`.
 
 ## [0.9.5] - 2026-09-10
 
