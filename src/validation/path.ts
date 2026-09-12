@@ -26,12 +26,23 @@ export function isSafeOutputPath(resolvedPath: string): boolean {
   const blockedDirs = [
     '/etc', '/root', '/var', '/usr', '/bin', '/proc', 
     '/sys', '/dev', '/boot', '/lib', '/lib64', '/sbin', 
-    '/opt', '/srv', '/run', '/tmp'
+    '/opt', '/srv', '/run'
   ];
 
-  // We ensure it starts with the block directory exactly, handling trailing slashes
-  // e.g. /etc/passwd -> true, /etc_stuff -> false
+  // Map to real paths to handle macOS symlinks (e.g. /etc -> /private/etc)
+  const resolvedBlockedDirs = new Set<string>();
   for (const dir of blockedDirs) {
+    resolvedBlockedDirs.add(dir);
+    try {
+      if (fs.existsSync(dir)) {
+        resolvedBlockedDirs.add(fs.realpathSync(dir));
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  for (const dir of resolvedBlockedDirs) {
     if (realPath === dir || realPath.startsWith(dir + path.sep) || realPath.startsWith(dir + '/')) {
       return false;
     }

@@ -281,9 +281,14 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   if (!options.sharedMermaidPage && (frontmatter.mermaid?.enabled !== false && options.mermaid?.enabled !== false)) {
     localMermaidInitPromise = (async () => {
       try {
-        const { getBrowser } = await import('../pdf/browser.js');
+        let b;
+        if (options.sharedBrowser) {
+          b = options.sharedBrowser;
+        } else {
+          const { globalBrowserManager } = await import('./browser-manager.js');
+          b = await globalBrowserManager.acquireBrowser();
+        }
         const { initializeMermaid } = await import('../plugins/mermaid/runtime.js');
-        const b = options.sharedBrowser || await getBrowser();
         const ctx = await b.newContext({ deviceScaleFactor: 2 });
         const page = await ctx.newPage();
         await initializeMermaid(page);
@@ -513,6 +518,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         }
       } catch {
         // ignore
+      }
+      if (!options.sharedBrowser) {
+        const { globalBrowserManager } = await import('./browser-manager.js');
+        globalBrowserManager.releaseBrowser();
       }
     }
     if (!options.sharedBrowser) {

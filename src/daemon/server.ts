@@ -2,6 +2,27 @@ import http from 'node:http';
 import { convert } from '../core/index.js';
 import type { ConvertOptions } from '../types/index.js';
 
+let daemonMermaidPage: import('playwright-core').Page | null = null;
+
+async function getDaemonMermaidPage() {
+  if (daemonMermaidPage && !daemonMermaidPage.isClosed()) return daemonMermaidPage;
+  try {
+    const { globalBrowserManager } = await import('../core/browser-manager.js');
+    const { initializeMermaid } = await import('../plugins/mermaid/runtime.js');
+    const browser = await globalBrowserManager.acquireBrowser();
+    const ctx = await browser.newContext({ deviceScaleFactor: 2 });
+    const page = await ctx.newPage();
+    await initializeMermaid(page);
+    daemonMermaidPage = page;
+    // We intentionally DO NOT release the browser lock here!
+    // The daemon will hold 1 active job count permanently, 
+    // ensuring the Playwright browser stays warm and never closes.
+    return daemonMermaidPage;
+  } catch {
+    return null;
+  }
+}
+
 export function startDaemon() {
   process.env.MD2PDF_DAEMON = '1';
   const PORT = 47231;
@@ -34,6 +55,8 @@ export function startDaemon() {
             res.end(JSON.stringify({ success: false, error: 'Path Traversal Blocked' }));
             return;
           }
+          
+          options.sharedMermaidPage = await getDaemonMermaidPage() || undefined;
           
           const result = await convert(options);
           res.writeHead(200, { 'Content-Type': 'application/json' });

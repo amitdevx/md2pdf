@@ -2,6 +2,7 @@
 
 ### Security
 - Fixed a path traversal vulnerability that could allow output PDFs to be written to restricted system directories (SEC-01).
+- Hardened SEC-01 path traversal validation to properly resolve macOS symlinks (e.g. `/etc` -> `/private/etc`), preventing blocklist bypass.
 - Fixed an arbitrary file read vulnerability in the Obsidian plugin that allowed embedding restricted files via directory traversal in embeds (SEC-02).
 - Fixed a local file access vulnerability where maliciously crafted markdown images could read internal system files by escaping the Playwright sandbox (SEC-03).
 - Eliminated a command injection vector when resolving custom browser executables via the CHROME_PATH environment variable (SEC-04).
@@ -14,6 +15,7 @@
 - Added an automated concurrency benchmark suite using `vitest bench` to validate batch processing performance across multiple worker configurations.
 - Integrated the benchmark suite into the GitHub Actions CI pipeline and local `scripts/pre-publish.sh` guard.
 - Improved the robustness of Mermaid library path resolution for testing environments.
+- Fixed CI test suite breaking on Node 24 and macOS environments due to cross-platform temporary directory (`/tmp`) and symlink resolution differences in the security blocklist.
 
 ### Maintenance
 - Cleaned up the codebase by removing verbose decorative ASCII comments and unused variables.

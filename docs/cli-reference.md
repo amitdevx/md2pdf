@@ -12,6 +12,8 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 |---|---|
 | `md2pdf init` | Interactive setup to create a `.md2pdf.json` config |
 | `md2pdf doctor` | Diagnose environment issues (Node, Playwright, Chrome permissions) |
+| `md2pdf daemon start` | Start a persistent background browser for fast conversions |
+| `md2pdf daemon stop` | Stop the background browser daemon |
 | `md2pdf list-themes` | Print a list of all available built-in CSS themes |
 | `md2pdf clear-cache` | Clear the global `.md2pdf-cache` used for incremental rendering |
 
@@ -60,6 +62,17 @@ It features a live progress bar indicating:
 * Completion percentage
 * `X/Y` files completed
 * Estimated time remaining (ETA)
+
+### Background Daemon
+For high-frequency conversions or script integrations, you can avoid the Chromium boot overhead (~200-500ms) by running a background daemon:
+```bash
+md2pdf daemon start
+# Subsequent md2pdf commands will automatically connect to the warm browser
+md2pdf file1.md
+md2pdf file2.md
+md2pdf daemon stop
+```
+The daemon runs independently and `md2pdf` seamlessly falls back to normal execution if the daemon is not running.
 
 ## Limits
 

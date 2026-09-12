@@ -69,6 +69,7 @@ const daemonCmd = new CommanderCommand('daemon')
     if (action === 'start') {
       const { startDaemon } = await import('../daemon/server.js');
       startDaemon();
+      await new Promise(() => {}); // Keep alive
     } else if (action === 'stop') {
       const { stopDaemon } = await import('../daemon/client.js');
       const stopped = await stopDaemon();

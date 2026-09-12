@@ -22,8 +22,11 @@ describe('convert()', () => {
 
 
   it('should reject output to sensitive directories', async () => {
+    const inputPath = path.join(__dirname, 'traversal-test.md');
+    fs.writeFileSync(inputPath, '# content');
     const sensitivePath = process.platform === 'win32' ? 'C:\\Windows\\System32\\config' : '/etc/passwd';
-    await expect(convert({ input: 'test.md', output: sensitivePath } as any))
+    await expect(convert({ input: inputPath, output: sensitivePath } as any))
       .rejects.toThrow('protected system directory');
+    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
   });
 });

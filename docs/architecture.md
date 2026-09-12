@@ -39,3 +39,6 @@ All input, output, and flag validation is centrally located in `src/validation/`
 
 ### Error System
 Structured errors (`Md2PdfError`) are used throughout, delivering context like the triggering file, expected conditions, hints, and documentation URLs, which empowers both programmatic usage and CLI JSON outputs.
+
+### Background Daemon & Browser Management
+Playwright/Chromium initialization natively introduces ~200-500ms of latency per process. To solve this for high-frequency CLI loops, `md2pdf` implements an optional persistent background daemon (`md2pdf daemon start`). The `globalBrowserManager` orchestrates connection logic, detecting the warm daemon via WebSockets and seamlessly reusing the shared browser context. This brings subsequent render latency down to near zero. If the daemon is absent, the manager safely falls back to a temporary ephemeral browser.

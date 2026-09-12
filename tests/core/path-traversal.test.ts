@@ -16,7 +16,8 @@ describe('Path Traversal Security (M-01)', () => {
   });
 
   it('should block explicit sensitive directories', async () => {
-    await expect(runConvert(['test.md'], { output: '/etc/out.pdf', jsonErrors: true })).rejects.toThrow('process.exit');
+    const sensitivePath = process.platform === 'win32' ? 'C:\\Windows\\System32\\config\\out.pdf' : '/etc/out.pdf';
+    await expect(runConvert(['test.md'], { output: sensitivePath, jsonErrors: true })).rejects.toThrow('process.exit');
   });
 
   it('should NOT block legitimate paths that share a prefix with sensitive dirs', async () => {
