@@ -147,15 +147,18 @@ export async function handleSingle(
     }
     if (globalBrowser) await globalBrowser.close().catch(() => {});
     try {
-      const { forceClose } = await import('../../pdf/daemon.js');
-      await forceClose();
+      const { globalBrowserManager } = await import('../../core/browser-manager.js');
+      await globalBrowserManager.forceClose();
     } catch { /* ignore */ }
   };
 
   let isShuttingDown = false;
   const sigintHandler = async () => {
     isShuttingDown = true;
-    console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
+    if (!options.quiet && !options.jsonErrors) {
+      console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
+    }
+    spinner.stop();
     await cleanup();
     process.exitCode = 130;
     return;
@@ -174,7 +177,7 @@ export async function handleSingle(
 
     // Check if output exists (--force not set)
     if (fs.existsSync(output) && !options.force) {
-      if (!options.jsonErrors) {
+      if (!options.jsonErrors && !options.quiet) {
         console.warn(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
       }
       process.exitCode = EXIT.OK;
@@ -251,7 +254,9 @@ export async function handleSingle(
     } else {
       const outDest = options.output ? ` (Saved to: ${options.output})` : '';
       spinner.stop();
-      console.log(pc.green('✔') + ' ' + pc.green(`Successfully converted 1 file in ${((Date.now() - startTime) / 1000).toFixed(1)}s!${outDest}`));
+      if (!options.quiet) {
+        console.log(pc.green('✔') + ' ' + pc.green(`Successfully converted 1 file in ${((Date.now() - startTime) / 1000).toFixed(1)}s!${outDest}`));
+      }
     }
 
     process.exitCode = EXIT.OK;

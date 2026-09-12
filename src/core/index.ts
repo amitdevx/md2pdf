@@ -26,6 +26,13 @@ function sanitizeFrontmatterValue(val: unknown): string {
 }
 
 export async function convert(options: ConvertOptions): Promise<ConvertResult> {
+  if (!process.env.MD2PDF_DAEMON && !options.sharedBrowser) {
+    const { isDaemonAlive, submitToDaemon } = await import('../daemon/client.js');
+    if (await isDaemonAlive()) {
+      return submitToDaemon(options);
+    }
+  }
+
   const startTime = Date.now();
   const { input, output, paper, margin } = options;
 
@@ -342,11 +349,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     if (options.sharedBrowser) {
       browser = options.sharedBrowser;
     } else {
-      const { getWarmBrowser, scheduleClose } = await import('../pdf/daemon.js');
-      browser = await getWarmBrowser();
-      // Don't set internallyLaunchedBrowser - daemon manages lifecycle
-      // Schedule close after idle period
-      scheduleClose();
+      const { globalBrowserManager } = await import('./browser-manager.js');
+      browser = await globalBrowserManager.acquireBrowser();
     }
 
     const resolvedSharedMermaidPage = localMermaidInitPromise ? await localMermaidInitPromise : (options as any).sharedMermaidPage;
@@ -462,9 +466,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       if (!headerTemplate) headerTemplate = '<span></span>';
       if (!footerTemplate) footerTemplate = '<span></span>';
     }
+    const stagePath = outputPath + '.stage';
     await generatePdf({  
       html: processedHtml, 
-      outputPath, 
+      outputPath: stagePath, 
       format: paper, 
       margin,
       marginTop,
@@ -477,7 +482,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       renderContext: ctx
     });
     
-    const pageCounts = await injectMetadata(outputPath, metadata, options.outline ? ctx.headings : undefined);
+    const pageCounts = await injectMetadata(stagePath, metadata, options.outline ? ctx.headings : undefined);
+
+    // Final atomic write to prevent incomplete PDFs
+    const fsNode = await import('node:fs');
+    fsNode.renameSync(stagePath, outputPath);
 
     if (options.cache !== false && cacheHash) {
       const { updateCache } = await import('./cache.js');
@@ -505,6 +514,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       } catch {
         // ignore
       }
+    }
+    if (!options.sharedBrowser) {
+      const { globalBrowserManager } = await import('./browser-manager.js');
+      globalBrowserManager.releaseBrowser();
     }
   }
 }

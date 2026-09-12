@@ -46,8 +46,8 @@ export async function handleBatch(
     }
     if (globalBrowser) await globalBrowser.close().catch(() => {});
     try {
-      const { forceClose } = await import('../../pdf/daemon.js');
-      await forceClose();
+      const { globalBrowserManager } = await import('../../core/browser-manager.js');
+      await globalBrowserManager.forceClose();
     } catch { /* ignore */ }
   };
 
@@ -206,35 +206,44 @@ export async function handleBatch(
           } catch { /* ignore cache errors */ }
         }
 
-        if (!globalBrowserPromise) {
+        // Check daemon first to bypass local browser
+        let daemonAlive = false;
+        if (!process.env.MD2PDF_DAEMON) {
+          const { isDaemonAlive } = await import('../../daemon/client.js');
+          daemonAlive = await isDaemonAlive();
+        }
+
+        if (!daemonAlive && !globalBrowserPromise) {
           globalBrowserPromise = getBrowser().then(b => { globalBrowser = b; return b; });
         }
-        await globalBrowserPromise;
+        if (!daemonAlive) {
+          await globalBrowserPromise;
 
-        if (!globalBrowser) {
-          hasErrors = true;
-          failedCount++;
-          results[i] = { isError: true, error: 'Browser launch failed: globalBrowser is null', code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-          completedCount++;
-          continue;
-        }
-
-        const hasMermaid = rawContent.includes('```mermaid');
-        if (hasMermaid) {
-          if (!mermaidInitPromise) {
-            mermaidInitPromise = (async () => {
-              globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
-              globalMermaidPage = await globalMermaidContext.newPage();
-              const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
-              await initializeMermaid(globalMermaidPage);
-            })();
+          if (!globalBrowser) {
+            hasErrors = true;
+            failedCount++;
+            results[i] = { isError: true, error: 'Browser launch failed: globalBrowser is null', code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            completedCount++;
+            continue;
           }
-          await mermaidInitPromise;
-        }
 
-        convertOptions.sharedBrowser = globalBrowser;
-        if (globalMermaidPage) {
-          convertOptions.sharedMermaidPage = globalMermaidPage;
+          const hasMermaid = rawContent.includes('```mermaid');
+          if (hasMermaid) {
+            if (!mermaidInitPromise) {
+              mermaidInitPromise = (async () => {
+                globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
+                globalMermaidPage = await globalMermaidContext.newPage();
+                const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
+                await initializeMermaid(globalMermaidPage);
+              })();
+            }
+            await mermaidInitPromise;
+          }
+
+          convertOptions.sharedBrowser = globalBrowser;
+          if (globalMermaidPage) {
+            convertOptions.sharedMermaidPage = globalMermaidPage;
+          }
         }
 
         if (fs.existsSync(output as string) && !options.force) {
