@@ -3,7 +3,7 @@ import type { Browser, LaunchOptions } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from 'node:url';
 
 function getVersion() {
@@ -22,7 +22,7 @@ function getVersion() {
 function verifyChromiumEngine(executablePath: string): void {
   try {
     // Almost all browsers respond to --version
-    const output = execSync(`"${executablePath}" --version`, {
+    const output = execFileSync(executablePath, ['--version'], {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'ignore'],
       timeout: 2000 // Don't let it hang
@@ -259,7 +259,7 @@ export function discoverBrowser(): { executablePath: string; name: string } | nu
   const envPath = process.env.CHROME_PATH ?? process.env.BROWSER_PATH;
   if (envPath && fs.existsSync(envPath)) {
     try {
-      const output = execSync(`"${envPath}" --version`, {
+      const output = execFileSync(envPath, ['--version'], {
         encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000
       }).trim();
       return { executablePath: envPath, name: output || 'env override' };
