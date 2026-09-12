@@ -72,6 +72,13 @@ const baseConfigSchema = z.object({
     filename: z.string().optional(),
     merge: z.boolean().optional(),
   }).optional(),
+  outline: z.boolean().optional(),
+  fontSize: z.string().optional(),
+  lineHeight: z.number().optional(),
+  pageNumbers: z.string().optional(),
+  addDate: z.boolean().optional(),
+  addFilename: z.boolean().optional(),
+  documentMeta: z.boolean().optional(),
   plugins: z.array(z.any()).optional(),
 });
 
