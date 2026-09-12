@@ -3,7 +3,7 @@ import { discoverBrowser } from '../../src/pdf/browser';
 import fs from 'node:fs';
 vi.mock('node:child_process', async (importOriginal) => {
   const mod = await importOriginal<typeof import('node:child_process')>();
-  return { ...mod, execSync: vi.fn(() => 'Custom Chrome Version') };
+  return { ...mod, execFileSync: vi.fn(() => 'Custom Chrome Version') };
 });
 
 describe('Browser Discovery', () => {
