@@ -502,7 +502,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         if (page && page.context()) {
           await page.context().close();
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }

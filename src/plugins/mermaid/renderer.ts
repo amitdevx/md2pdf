@@ -2,7 +2,6 @@ import { Browser } from 'playwright-core';
 
 import { MermaidBlock } from './detector.js';
 import { getMermaidTheme, MermaidTheme } from './theme-map.js';
-import { fontCss } from '../../assets/fonts.js';
 
 
 export interface RenderedMermaid {
