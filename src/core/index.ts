@@ -54,18 +54,18 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   await registry.setupAll();
 
   if (typeof output === 'string') {
-    const resolvedOutput = path.resolve(process.cwd(), output);
+    const resolvedOutput = path.isAbsolute(output) ? output : path.resolve(process.cwd(), output);
     if (!isSafeOutputPath(resolvedOutput)) {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
       throw new Md2PdfError(
         Md2PdfErrorCode.ERR_PATH_TRAVERSAL,
         'Access Denied',
-        'Cannot write output to protected system directory.'
+        'Cannot write output to a protected system directory.'
       );
     }
   }
 
-  const inputPath = input === '-' ? '-' : path.resolve(process.cwd(), input);
+  const inputPath = input === '-' ? '-' : (path.isAbsolute(input) ? input : path.resolve(process.cwd(), input));
   let rawMarkdown = '';
   if (input === '-') {
     rawMarkdown = await new Promise<string>((resolve, reject) => {
@@ -185,7 +185,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     );
   }
 
-  const outputPath = path.resolve(process.cwd(), output);
+  const outputPath = path.isAbsolute(output) ? output : path.resolve(process.cwd(), output);
   let cacheHash = '';
   if (options.cache !== false) {
     const { computeHash, checkCache } = await import('./cache.js');

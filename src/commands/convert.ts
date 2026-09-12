@@ -29,17 +29,22 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
   if (options.stdin) {
     inputs = ['-'];
   } else {
+    const shellCwd = process.cwd();
     for (const raw of inputsRaw) {
-      if (fs.existsSync(raw)) {
-        inputs.push(path.normalize(raw));
+      // Resolve relative to shell cwd before checking existence
+      const resolved = path.resolve(shellCwd, raw);
+      if (fs.existsSync(resolved)) {
+        inputs.push(resolved);
         continue;
       }
       const normalizedPattern = raw.replace(/\\/g, '/');
       if (fg.isDynamicPattern(normalizedPattern)) {
-        const matches = await fg(normalizedPattern, { dot: true, unique: true, onlyFiles: false });
-        inputs.push(...matches.map(p => path.normalize(p)));
+        // Pass explicit cwd so fast-glob resolves against the user's shell dir
+        const matches = await fg(normalizedPattern, { cwd: shellCwd, dot: true, unique: true, onlyFiles: true, absolute: true });
+        inputs.push(...matches);
       } else {
-        inputs.push(path.normalize(raw));
+        // Not a glob, just push the resolved path (validation will give proper error)
+        inputs.push(resolved);
       }
     }
     inputs = Array.from(new Set(inputs));

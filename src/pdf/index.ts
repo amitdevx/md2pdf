@@ -1,6 +1,7 @@
 import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 export interface PdfOptions {
@@ -53,13 +54,20 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       if (url.startsWith('file://')) {
         try {
           const fileUrl = fileURLToPath(new URL(url));
-          const allowedDirs = [process.cwd()];
+          const allowedDirs: string[] = [];
           if (options.renderContext?.inputPath) {
-            allowedDirs.push(path.dirname(path.resolve(options.renderContext.inputPath)));
+            const inputDir = path.dirname(path.resolve(options.renderContext.inputPath));
+            allowedDirs.push(inputDir);
+            // Also allow the parent dir for relative image paths like ../images/
+            allowedDirs.push(path.dirname(inputDir));
+          } else {
+            allowedDirs.push(process.cwd());
           }
           if (options.renderContext?.options?.obsidian?.vaultRoot) {
             allowedDirs.push(path.resolve(options.renderContext.options.obsidian.vaultRoot));
           }
+          // Allow os.tmpdir for any temp assets
+          allowedDirs.push(os.tmpdir());
 
           const isAllowed = allowedDirs.some(dir => 
             fileUrl.startsWith(dir + path.sep) || fileUrl === dir
