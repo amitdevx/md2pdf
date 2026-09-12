@@ -46,7 +46,7 @@ function verifyChromiumEngine(executablePath: string): void {
   }
 }
 
-// ─── Cache ───────────────────────────────────────────────────
+// Cache
 const CACHE_DIR  = path.join(os.homedir(), '.md2pdf');
 const CACHE_FILE = path.join(CACHE_DIR, 'browser-cache.json');
 
@@ -95,7 +95,7 @@ export function writeCache(cache: Partial<BrowserCache>) {
   } catch { /* ignore */ }
 }
 
-// ─── Platform discovery ───────────────────────────────────────
+// Platform discovery
 interface BrowserEntry { name: string; path?: string; channel?: string; }
 
 export function getPlatformCandidates(): BrowserEntry[] {
@@ -276,7 +276,7 @@ export function discoverBrowser(): { executablePath: string; name: string } | nu
   return null;
 }
 
-// ─── Launch ───────────────────────────────────────────────────
+// Launch
 export function isMissingExecutableError(err: any): boolean {
   if (err?.code === 'ERR_BROWSER_MISSING') return true;
   const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
@@ -292,7 +292,7 @@ export async function getBrowser(): Promise<Browser> {
     args: [...sandbox, '--disable-gpu', '--js-flags=--max-old-space-size=256'],
   };
 
-  // ── 0. Explicit --browser path ───────────────────────────────
+  // 0. Explicit --browser path
   const cliPath = process.env.MD2PDF_BROWSER;
   if (cliPath) {
     if (!fs.existsSync(cliPath)) throw new Error(`Browser not found at '${cliPath}'`);
@@ -309,7 +309,7 @@ export async function getBrowser(): Promise<Browser> {
     }
   }
 
-  // ── 1. Disk cache hit ─────────────────────────────────────────
+  // 1. Disk cache hit
   const cached = readCache();
   if (cached?.executablePath) {
     try {
@@ -323,7 +323,7 @@ export async function getBrowser(): Promise<Browser> {
     }
   }
 
-  // ── 2. Platform discovery (O(1) fs.existsSync scan) ──────────
+  // 2. Platform discovery (O(1) fs.existsSync scan)
   const found = discoverBrowser();
   if (found) {
     try {
@@ -338,7 +338,7 @@ export async function getBrowser(): Promise<Browser> {
     }
   }
 
-  // ── 3. Playwright's own bundled Chromium (from md2pdf init) ──
+  // 3. Playwright's own bundled Chromium (from md2pdf init)
   try {
     const browser = await chromium.launch(launchOpts);
     const exePath = chromium.executablePath();

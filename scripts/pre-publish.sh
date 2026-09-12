@@ -19,11 +19,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# ── Colours ──────────────────────────────────────────────────────────────────
+# Colours
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
 
-# ── State ────────────────────────────────────────────────────────────────────
+# State
 FAILURES=()
 WARNINGS=()
 SKIP_E2E=false
@@ -35,7 +35,7 @@ for arg in "$@"; do
   [[ "$arg" == "--fix" ]]      && AUTO_FIX=true
 done
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 pass()  { echo -e "  ${GREEN}✔${RESET} $1"; }
 fail()  { echo -e "  ${RED}✖${RESET} $1"; FAILURES+=("$1"); }
 warn()  { echo -e "  ${YELLOW}⚠${RESET} $1"; WARNINGS+=("$1"); }
@@ -199,6 +199,7 @@ fi
 section "GATE 4: Unit Tests"
 
 check_exit "Vitest suite: all tests pass" npm run test
+check_exit "Vitest suite: benchmark passes" npm run bench
 
 # =============================================================================
 # GATE 5 — EXIT CODE CONTRACT

@@ -1,13 +1,13 @@
 export const baseCss = `
 :root {
-  /* ── Typography ── */
+  /* Typography */
   --md2pdf-font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --md2pdf-font-family-heading: inherit;
   --md2pdf-font-family-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --md2pdf-font-size: 11pt;
   --md2pdf-line-height: 1.7;
 
-  /* ── Colors ── */
+  /* Colors */
   --md2pdf-color-bg: #ffffff;
   --md2pdf-color-text: #1a1a1a;
   --md2pdf-color-heading: #111111;
@@ -22,17 +22,17 @@ export const baseCss = `
   --md2pdf-color-tag-bg: #f6f8fa;
   --md2pdf-color-tag-text: #1a1a1a;
 
-  /* ── Accent ── */
+  /* Accent */
   --md2pdf-accent-color: #0066cc;
   --md2pdf-accent-text: #ffffff;
 
-  /* ── Spacing ── */
+  /* Spacing */
   --md2pdf-margin-top: 16px;
   --md2pdf-margin-bottom: 16px;
   --md2pdf-margin-left: 0;
   --md2pdf-margin-right: 0;
 
-  /* ── Components ── */
+  /* Components */
   --md2pdf-code-border-radius: 6px;
   --md2pdf-callout-border-radius: 4px;
   --md2pdf-blockquote-border-width: 4px;

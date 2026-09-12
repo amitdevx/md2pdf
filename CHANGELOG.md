@@ -10,8 +10,13 @@
 - Introduced concurrent Mermaid pre-warming to overlap browser context initialization with AST parsing, significantly reducing rendering latency.
 - Refactored batch daemon mode to natively utilize the shared Mermaid context, eliminating redundant Playwright page allocations and preventing memory bloat.
 
-### Benchmarks
+### Benchmarks & Testing
 - Added an automated concurrency benchmark suite using `vitest bench` to validate batch processing performance across multiple worker configurations.
+- Integrated the benchmark suite into the GitHub Actions CI pipeline and local `scripts/pre-publish.sh` guard.
+- Improved the robustness of Mermaid library path resolution for testing environments.
+
+### Maintenance
+- Cleaned up the codebase by removing verbose decorative ASCII comments and unused variables.
 
 ## [0.9.5] - 2026-09-10
 

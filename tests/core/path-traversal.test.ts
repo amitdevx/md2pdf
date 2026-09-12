@@ -6,7 +6,8 @@ describe('Path Traversal Security (M-01)', () => {
 
   beforeEach(() => {
     vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
-    jsonOutMock = vi.spyOn(console, 'log').mockImplementation(() => {});
+    jsonOutMock = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 

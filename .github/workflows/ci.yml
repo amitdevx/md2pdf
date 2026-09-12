@@ -46,6 +46,9 @@ jobs:
 
     - name: Test
       run: npm run test
+n    - name: Benchmark
+      run: npm run bench
+      shell: bash
       shell: bash
 
     - name: Test Global Install & E2E CLI
