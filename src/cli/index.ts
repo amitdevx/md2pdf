@@ -60,6 +60,31 @@ program.exitOverride((err) => {
 // Register subcommands
 program.addCommand(doctorCmd);
 program.addCommand(initCmd);
+
+import { Command as CommanderCommand } from 'commander';
+const daemonCmd = new CommanderCommand('daemon')
+  .description('Manage the md2pdf background daemon')
+  .argument('<action>', 'start, stop, or status')
+  .action(async (action) => {
+    if (action === 'start') {
+      const { startDaemon } = await import('../daemon/server.js');
+      startDaemon();
+    } else if (action === 'stop') {
+      const { stopDaemon } = await import('../daemon/client.js');
+      const stopped = await stopDaemon();
+      console.log(stopped ? 'Daemon stopped.' : 'Daemon was not running.');
+      process.exit(0);
+    } else if (action === 'status') {
+      const { isDaemonAlive } = await import('../daemon/client.js');
+      const alive = await isDaemonAlive();
+      console.log(alive ? 'Daemon is running.' : 'Daemon is stopped.');
+      process.exit(0);
+    } else {
+      console.error('Invalid action. Use start, stop, or status.');
+      process.exit(1);
+    }
+  });
+program.addCommand(daemonCmd);
 program.command('list-themes')
   .description('List all available built-in themes')
   .action(async () => {
@@ -87,8 +112,8 @@ program
   .option('-o, --output <output>', 'Output PDF file (or directory if multiple inputs)')
   .option('--toc', 'Generate a Table of Contents')
   .option('--toc-depth <depth>', 'Maximum heading depth for TOC (1-6)', (val) => {
-    const n = parseInt(val);
-    if (isNaN(n) || n < 1 || n > 6) {
+    const n = Number(val);
+    if (!Number.isFinite(n) || n < 1 || n > 6) {
       throw new InvalidArgumentError(`must be a number between 1 and 6`);
     }
     return n;
@@ -129,8 +154,8 @@ program
     return val;
   })
   .option('--mermaid-timeout <ms>', 'Timeout for Mermaid rendering in milliseconds', (val) => {
-    const n = parseInt(val);
-    if (isNaN(n) || n <= 0) {
+    const n = Number(val);
+    if (!Number.isFinite(n) || n <= 0) {
       throw new InvalidArgumentError(`must be a positive integer in milliseconds`);
     }
     return n;
@@ -148,16 +173,16 @@ program
   .option('--vault-root <path>', 'Path to the Obsidian vault root directory')
   .option('--attachment-folder <path>', 'Default attachment folder for unresolved embeds')
   .option('--max-attachment-size <mb>', 'Max attachment size in MB (default: 10)', (val) => {
-    const n = parseInt(val);
-    if (isNaN(n) || n <= 0) {
+    const n = Number(val);
+    if (!Number.isFinite(n) || n <= 0) {
       throw new InvalidArgumentError(`must be a positive integer`);
     }
     return n;
   })
   .option('--no-cache', 'Disable incremental rendering cache')
   .option('--concurrency <n>', 'Limit concurrent file processing workers', (val) => {
-    const n = parseInt(val);
-    if (isNaN(n) || n <= 0) {
+    const n = Number(val);
+    if (!Number.isFinite(n) || n <= 0) {
       throw new InvalidArgumentError(`must be a positive integer`);
     }
     return n;
