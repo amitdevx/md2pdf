@@ -174,9 +174,22 @@ export async function parseMarkdown(
   //                 → stringify
   
   // Prevent V8 stack overflow from pathologically nested blockquotes
-  const maxNestingDepth = Math.max(0, ...markdown.split('\n').map(
-    line => (line.match(/^(>\s*)+/) || [''])[0].split('>').length - 1
-  ));
+  let maxNestingDepth = 0;
+  for (let i = 0, len = markdown.length; i < len; i++) {
+    if (markdown[i] === '>') {
+      let depth = 0;
+      while (i < len && (markdown[i] === '>' || markdown[i] === ' ')) {
+        if (markdown[i] === '>') depth++;
+        i++;
+      }
+      if (depth > maxNestingDepth) maxNestingDepth = depth;
+      // Skip the rest of the line
+      while (i < len && markdown[i] !== '\n') i++;
+    } else {
+      // Skip the rest of the line
+      while (i < len && markdown[i] !== '\n') i++;
+    }
+  }
   if (maxNestingDepth > 200) {
     throw new Md2PdfError(
       Md2PdfErrorCode.ERR_DOCUMENT_TOO_COMPLEX,
