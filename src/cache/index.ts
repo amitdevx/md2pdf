@@ -38,7 +38,22 @@ export function computeHash(content: string, options: any): string {
   delete stableOptions.vaultRoot;
   delete stableOptions.sharedBrowser;
   delete stableOptions.sharedMermaidPage;
+  delete stableOptions.__preparsed;
+  
   hash.update(JSON.stringify(stableOptions));
+  
+  // Include global version to bust cache on updates
+  hash.update('v0.9.6');
+
+  // If theme is a custom local path, hash its contents to invalidate on change
+  if (options.theme && options.theme !== 'default' && options.theme !== 'light' && options.theme !== 'dark') {
+    try {
+      if (fs.existsSync(options.theme)) {
+        hash.update(fs.readFileSync(options.theme, 'utf-8'));
+      }
+    } catch { /* ignore */ }
+  }
+
   return hash.digest('hex');
 }
 
