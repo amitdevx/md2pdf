@@ -1,5 +1,7 @@
 import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export interface PdfOptions {
   html: string;
@@ -50,9 +52,8 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       
       if (url.startsWith('file://')) {
         try {
-          const rawPath = decodeURIComponent(new URL(url).pathname);
-          const resolvedPath = path.resolve(rawPath);
-          const allowedDirs = [path.resolve(process.cwd())];
+          const fileUrl = fileURLToPath(new URL(url));
+          const allowedDirs = [process.cwd()];
           if (options.renderContext?.inputPath) {
             allowedDirs.push(path.dirname(path.resolve(options.renderContext.inputPath)));
           }
@@ -61,10 +62,12 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
           }
 
           const isAllowed = allowedDirs.some(dir => 
-            resolvedPath.startsWith(dir + path.sep) || resolvedPath === dir
+            fileUrl.startsWith(dir + path.sep) || fileUrl === dir
           );
 
-          if (!isAllowed) return route.abort('accessdenied');
+          if (!isAllowed) {
+            return route.abort('accessdenied');
+          }
         } catch {
           return route.abort('accessdenied');
         }
@@ -81,8 +84,6 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     } catch {
       // Font CDN timed out - PDF renders with fallback fonts, no crash
     }
-
-
 
     // Call afterPageLoad hook
     if (options.registry && options.renderContext) {
@@ -111,7 +112,6 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     }
 
     const fs = await import('node:fs/promises');
-    const path = await import('node:path');
     await fs.mkdir(path.dirname(options.outputPath), { recursive: true });
     await fs.writeFile(options.outputPath, pdfBuffer);
   } finally {
