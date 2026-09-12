@@ -1,3 +1,18 @@
+## [0.9.6] - 2026-09-12
+
+### Security
+- Fixed a path traversal vulnerability that could allow output PDFs to be written to restricted system directories (SEC-01).
+- Fixed an arbitrary file read vulnerability in the Obsidian plugin that allowed embedding restricted files via directory traversal in embeds (SEC-02).
+- Fixed a local file access vulnerability where maliciously crafted markdown images could read internal system files by escaping the Playwright sandbox (SEC-03).
+- Eliminated a command injection vector when resolving custom browser executables via the CHROME_PATH environment variable (SEC-04).
+
+### Performance
+- Introduced concurrent Mermaid pre-warming to overlap browser context initialization with AST parsing, significantly reducing rendering latency.
+- Refactored batch daemon mode to natively utilize the shared Mermaid context, eliminating redundant Playwright page allocations and preventing memory bloat.
+
+### Benchmarks
+- Added an automated concurrency benchmark suite using `vitest bench` to validate batch processing performance across multiple worker configurations.
+
 ## [0.9.5] - 2026-09-10
 
 ### Added
