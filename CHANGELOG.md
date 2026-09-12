@@ -18,6 +18,17 @@
 ### Maintenance
 - Cleaned up the codebase by removing verbose decorative ASCII comments and unused variables.
 
+### Performance & Daemon
+- Implemented a persistent background Browser Daemon (`md2pdf daemon start`) that maintains a warm Playwright instance, eliminating the ~200ms browser initialization penalty for high-frequency or single file conversions.
+- Optimized concurrent batch processing via `globalBrowserManager` to gracefully reuse Chromium instances without causing premature idle shutdown during sustained workloads.
+- Converted synchronous `fs.writeFileSync` artifact creation to an atomic `stage -> renameSync` pattern, preventing corrupt or half-written PDFs when interrupted or run in parallel.
+- Added strict `md2pdf` version strings and resolved `options.theme` contents into the incremental cache hash to ensure correct cache invalidation across upgrades.
+
+### Fixed
+- Fixed CLI numeric flags parsing by replacing `parseInt` with `Number.isFinite` to safely reject garbage input.
+- Fixed `options.pageNumbers`, `options.outline`, and other missing format configurations being improperly stripped by Zod schemas in `src/config/validate.ts`.
+- Cleaned up console noise; fixed `console.warn` and success `console.log` statements correctly respecting the `--quiet` flag.
+
 ## [0.9.5] - 2026-09-10
 
 ### Added
