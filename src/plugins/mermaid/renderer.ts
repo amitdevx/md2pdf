@@ -29,7 +29,7 @@ export async function renderMermaidBlocks(
   md2pdfTheme: string = 'default',
   globalMermaidTheme?: MermaidTheme,
   themeVariables?: Record<string, string>,
-  timeoutMs: number = 10000,
+  timeoutMs: number = 30000,
   maxWidth: string = '100%',
   maxHeight: string = 'none',
   sharedMermaidPage?: import('playwright-core').Page

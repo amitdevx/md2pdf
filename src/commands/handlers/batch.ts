@@ -98,8 +98,8 @@ export async function handleBatch(
     }
 
     const concurrencyLimit = cliFlags.concurrency
-      ? parseInt(cliFlags.concurrency as string)
-      : Math.min(4, os.cpus().length);
+      ? Math.max(1, Number(cliFlags.concurrency) || 1)
+      : Math.min(2, os.cpus().length);
 
     let completedCount = 0;
     const preValidationErrors: string[] = [];
