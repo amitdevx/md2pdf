@@ -270,6 +270,23 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   let browser;
   let title: string = '';
   
+  let localMermaidInitPromise: Promise<import('playwright-core').Page | null> | null = null;
+  if (!options.sharedMermaidPage && (frontmatter.mermaid?.enabled !== false && options.mermaid?.enabled !== false)) {
+    localMermaidInitPromise = (async () => {
+      try {
+        const { getBrowser } = await import('../pdf/browser.js');
+        const { initializeMermaid } = await import('../plugins/mermaid/runtime.js');
+        const b = options.sharedBrowser || await getBrowser();
+        const ctx = await b.newContext({ deviceScaleFactor: 2 });
+        const page = await ctx.newPage();
+        await initializeMermaid(page);
+        return page;
+      } catch {
+        return null; // Fallback to synchronous init in renderer.ts if it fails
+      }
+    })();
+  }
+
   try {
     const { loadTheme } = await import('../themes/loader.js');
     const themeName = frontmatter.theme || options.theme || 'default';
@@ -332,6 +349,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       scheduleClose();
     }
 
+    const resolvedSharedMermaidPage = localMermaidInitPromise ? await localMermaidInitPromise : (options as any).sharedMermaidPage;
+    
     const { processBeforeRender } = await import('../renderer/pipeline.js');
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, warnings, {
       theme: frontmatter.theme || options.theme,
@@ -341,7 +360,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       mermaidEnabled: frontmatter.mermaid?.enabled ?? options.mermaid?.enabled,
       maxWidth: frontmatter.mermaid?.maxWidth || options.mermaid?.maxWidth,
       maxHeight: frontmatter.mermaid?.maxHeight || options.mermaid?.maxHeight,
-      sharedMermaidPage: (options as any).sharedMermaidPage,
+      sharedMermaidPage: resolvedSharedMermaidPage,
       registry,
       ctx
     });
@@ -477,6 +496,16 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     throw detectBrowserError(error, { markdownFile: inputPath, outputPath });
   } finally {
     await registry.teardownAll();
+    if (localMermaidInitPromise) {
+      try {
+        const page = await localMermaidInitPromise;
+        if (page && page.context()) {
+          await page.context().close();
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 }
 

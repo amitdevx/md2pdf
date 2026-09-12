@@ -93,18 +93,8 @@ export async function handleBatch(
         if (!globalBrowser) throw new Error('Failed to initialize browser for Mermaid warmup');
         globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
         globalMermaidPage = await globalMermaidContext.newPage();
-        const { fontCss } = await import('../../assets/fonts.js');
-        await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
-        await globalMermaidPage.evaluate(() => document.fonts.ready);
-        try {
-          let scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
-          const fs = await import('node:fs');
-          if (!fs.existsSync(scriptPath)) {
-            const pkgUrl = import.meta.resolve('mermaid/package.json');
-            scriptPath = path.resolve(path.dirname(fileURLToPath(pkgUrl)), 'dist/mermaid.min.js');
-          }
-          await globalMermaidPage.addScriptTag({ path: scriptPath });
-        } catch { /* fallback */ }
+        const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
+        await initializeMermaid(globalMermaidPage);
       })();
     }
 
@@ -236,18 +226,8 @@ export async function handleBatch(
             mermaidInitPromise = (async () => {
               globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
               globalMermaidPage = await globalMermaidContext.newPage();
-              const { fontCss } = await import('../../assets/fonts.js');
-              await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
-              await globalMermaidPage.evaluate(() => document.fonts.ready);
-              try {
-                let scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
-                const fs = await import('node:fs');
-                if (!fs.existsSync(scriptPath)) {
-                  const pkgUrl = import.meta.resolve('mermaid/package.json');
-                  scriptPath = path.resolve(path.dirname(fileURLToPath(pkgUrl)), 'dist/mermaid.min.js');
-                }
-                await globalMermaidPage.addScriptTag({ path: scriptPath });
-              } catch { /* fallback */ }
+              const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
+              await initializeMermaid(globalMermaidPage);
             })();
           }
           await mermaidInitPromise;
