@@ -1,3 +1,4 @@
+import { isSafeOutputPath } from "../validation/path.js";
 import { parseMarkdown } from '../parser/index.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import { renderHtmlTemplate } from '../renderer/index.js';
@@ -47,9 +48,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   if (typeof output === 'string') {
     const resolvedOutput = path.resolve(process.cwd(), output);
-    const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
-    const isSensitive = sensitiveDirs.some(dir => resolvedOutput.startsWith(dir + path.sep) || resolvedOutput === dir) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(resolvedOutput);
-    if (isSensitive) {
+    if (!isSafeOutputPath(resolvedOutput)) {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
       throw new Md2PdfError(
         Md2PdfErrorCode.ERR_PATH_TRAVERSAL,

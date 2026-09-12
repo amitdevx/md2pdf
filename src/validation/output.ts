@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
+import { isSafeOutputPath } from './path.js';
 
 export function predictOutputPath(input: string, outputOption: string | undefined, isBatch: boolean): string {
   let predictedOutput = outputOption;
@@ -29,18 +30,9 @@ export function validateOutput(input: string, outputOption: string | undefined, 
     return new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Input', `${input} - Input and Output Cannot Be the Same File`, { markdownFile: input });
   }
 
-  const sensitiveDirs = ['/etc', '/root', '/var', '/usr', '/bin'];
   const outputAbs = path.resolve(process.cwd(), predictedOutput);
-  const normalizedRaw = predictedOutput.replace(/\\/g, '/');
   
-  const isSensitive = sensitiveDirs.some(dir => 
-    outputAbs.startsWith(dir + path.sep) || 
-    outputAbs === dir || 
-    normalizedRaw.startsWith(dir + '/') || 
-    normalizedRaw === dir
-  ) || new RegExp('^([a-zA-Z]:)?[/\\\\\\\\]Windows', 'i').test(outputAbs);
-  
-  if (isSensitive) {
+  if (!isSafeOutputPath(outputAbs)) {
     return new Md2PdfError(Md2PdfErrorCode.ERR_PATH_TRAVERSAL, 'Access Denied', 'Cannot write output to protected system directory.', { markdownFile: input, outputPath: outputAbs });
   }
 
