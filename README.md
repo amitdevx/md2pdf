@@ -12,7 +12,7 @@
 </p>
 </div>
 
-Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, and Table of Contents generation. Available as a CLI and Node.js API.
+Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, file merging, watch mode, and Table of Contents generation. Available as a CLI and Node.js API.
 
 ## Installation
 

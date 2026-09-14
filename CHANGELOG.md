@@ -1,28 +1,30 @@
 ## [0.9.7] - 2026-09-14
 
-### Security & Fixes
-- feat(security): implement offline mode and daemon path redaction
-- chore: fix remaining eslint violations
-- fix(security): resolve parser test failures by refining rehype-sanitize schema
-- fix: pass offline flag to generatePdf options
-- chore(security): remove destructive postuninstall script and fix dependency versions
-- ci(security): harden workflow with permissions and npm audit
-- docs(security): update version table and refine security claims
-- fix(security): prevent timeouts and limit overrides
-- fix(security): harden output path guard deny-list
-- fix(security): validate cache entry output path before copying
-- fix(security): escape HTML injection points
-- fix(security): verify chromium engine for cached and env paths
-- fix(security): make obsidian embed containment symlink-aware
-- fix(security): prevent symlink escapes in file:// allowlist
-- fix(security): sanitize dangerous HTML in Markdown
-- fix(security): don't disable sandbox just because DISPLAY is unset
-- fix(security): improve SSRF blocklist
-- fix(security): stop config auto-discovery at project boundaries
-- fix(security): add token auth, CSRF guard, body limit to daemon
-- fix(security): restrict frontmatter theme to built-in names only
-- fix(security): block all gray-matter JS engine aliases
-- fix: resolve SIGPIPE bug in pre-publish script
+### Security
+- Fixed arbitrary code execution vulnerability by explicitly disabling all JavaScript and CoffeeScript engine aliases in the gray-matter frontmatter parser.
+- Fixed path traversal vulnerabilities by restricting frontmatter `theme` declarations to built-in themes only.
+- Fixed path traversal in cache extractions by strictly validating output paths before copying cached artifacts.
+- Fixed Server-Side Request Forgery (SSRF) bypasses by blocking connections to cloud metadata endpoints, loopback addresses, and restricted ports.
+- Fixed Local File Read vulnerabilities by sanitizing dangerous HTML nodes in Markdown and making the Obsidian embed containment symlink-aware.
+- Fixed potential command injection by rigorously verifying custom Chromium executable paths.
+- Hardened daemon security by implementing required token authentication, CSRF guards, and strict body payload limits.
+- Enforced Chromium sandbox boundaries even when the DISPLAY environment variable is unset.
+- Stopped configuration auto-discovery at project boundaries to prevent malicious configurations from being loaded from parent directories.
+- Implemented offline mode and restricted external Playwright network resource loading.
+- Removed destructive postuninstall script that manipulated filesystem permissions.
+
+### Added
+- Added `-r, --recursive` flag for processing directories recursively to discover and compile all Markdown files within nested folders.
+- Added `--merge` flag to concatenate multiple converted Markdown files into a single unified output PDF.
+- Added `--watch` flag for continuous conversion of Markdown files upon save events.
+- Added `--split-by-heading <depth>` flag to automatically partition large Markdown documents into separate PDFs based on heading levels.
+- Added `--watermark <text>` flag to overlay customizable watermark text across generated PDFs securely.
+
+### Fixed
+- Fixed CLI directory handling to return `ERR_NO_INPUT` on empty directories instead of throwing an invalid input exception.
+- Fixed potential application crashes during `split-by-heading` by intercepting invalid inputs prior to AST parsing.
+- Fixed stream interruption bugs occurring in the pre-publish hook.
+- Fixed intermittent parser test failures by refining the internal `rehype-sanitize` configuration schema.
 
 ## [0.9.6] - 2026-09-12
 

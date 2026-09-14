@@ -43,6 +43,18 @@ md2pdf document.md --toc --toc-depth 3
 md2pdf document.md --header --footer
 ```
 
+### Watch Mode
+Watch a document and re-compile automatically on save:
+```bash
+md2pdf document.md --watch
+```
+
+### Batch Directory Processing & Merging
+Recursively process all markdown files in a folder and merge them into a single PDF:
+```bash
+md2pdf docs/ --recursive --merge -o handbook.pdf
+```
+
 ### Pipe from Standard Input (stdin)
 You can pipe markdown directly into `md2pdf` without saving to a file first using the `--stdin` flag.
 ```bash

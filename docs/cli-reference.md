@@ -53,6 +53,11 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `--concurrency` | number | os.cpus() | Number of parallel workers for batch mode |
 | `--no-cache` | boolean | false | Disable incremental rendering cache |
 | `--stdin` | boolean | false | Read input markdown from standard input (stdin) |
+| `-r, --recursive` | boolean | false | Recursively search input directories for Markdown files |
+| `--watch` | boolean | false | Watch input files for changes and automatically rebuild |
+| `--merge` | boolean | false | Merge multiple generated PDFs into a single file |
+| `--split-by-heading` | number | - | Split output into multiple PDFs based on heading depth |
+| `--watermark` | string | - | Add custom watermark text to PDF pages |
 
 ## Features
 
