@@ -163,6 +163,7 @@ program
   })
   .option('--no-math', 'Disable KaTeX math rendering for LaTeX equations')
   .option('--offline', 'Disable outbound network requests for remote assets')
+  .option('-r, --recursive', 'Recursively process all markdown files in given directories')
   .option('--merge <output>', 'Combine all converted PDFs into a single file')
   .option('--watch', 'Watch input files for changes and automatically rebuild')
   .option('--watermark <text>', 'Inject a pure CSS watermark text into the output')

@@ -36,7 +36,13 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       // Resolve relative to shell cwd before checking existence
       const resolved = path.resolve(shellCwd, raw);
       if (fs.existsSync(resolved)) {
-        inputs.push(resolved);
+        if (fs.statSync(resolved).isDirectory()) {
+          const pattern = options.recursive ? '**/*.md' : '*.md';
+          const matches = await fg(pattern, { cwd: resolved, dot: false, unique: true, onlyFiles: true, absolute: true });
+          inputs.push(...matches);
+        } else {
+          inputs.push(resolved);
+        }
         continue;
       }
       const normalizedPattern = raw.replace(/\\/g, '/');

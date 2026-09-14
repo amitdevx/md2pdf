@@ -12,6 +12,9 @@ export interface CliOptions {
   margin?: string;
   hrPageBreak?: boolean;
   h1NewPage?: boolean;
+  watch?: boolean;
+  merge?: string;
+  recursive?: boolean;
   theme?: string;
   mermaidTheme?: string;
   mermaidTimeout?: string;

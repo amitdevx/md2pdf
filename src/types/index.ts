@@ -26,6 +26,7 @@ export interface ConvertOptions {
   splitByHeading?: 1 | 2;
   watch?: boolean;
   merge?: string;
+  recursive?: boolean;
   theme?: string;
   paper?: 'A4' | 'Letter' | 'Legal';
   margin?: string; // e.g., '20mm'
