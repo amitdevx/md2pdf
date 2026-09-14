@@ -6,8 +6,8 @@ Security updates are provided exclusively for the latest major and minor release
 
 | Version | Supported          |
 | :---    | :---               |
-| 0.8.x   | :white_check_mark: |
-| < 0.8   | :x:                |
+| 0.9.x   | :white_check_mark: |
+| < 0.9   | :x:                |
 
 ## 2. Maintainer Availability & Policy Suspension
 
@@ -41,6 +41,6 @@ You can anticipate an initial acknowledgment of your report within 48 hours of s
 
 `md2pdf` is designed with the following strict security boundaries:
 
-- **No Remote Code Execution via Frontmatter**: Starting with v0.8.8, the JavaScript execution engine (`---js`) within `gray-matter` has been completely disabled. Untrusted markdown files cannot execute arbitrary JavaScript during the YAML parsing phase.
-- **Isolated Browser Context**: PDF rendering happens via Playwright in a heavily sandboxed headless Chromium instance. Local file access is strictly bound to relative assets unless explicitly allowed.
-- **Path Traversal Guards**: The CLI enforces strict path traversal mitigation for all batch-mode outputs to prevent malicious files from writing to system directories (e.g., `/etc/`).
+- **No Remote Code Execution via Frontmatter**: The JavaScript execution engine (and aliases like `---js`, `---javascript`, `---coffee`) within `gray-matter` has been disabled. Untrusted markdown files cannot execute arbitrary code during parsing.
+- **Browser Context**: PDF rendering happens via Playwright in a headless Chromium instance. Note that the Chromium sandbox is only enabled if not running as root and not disabled via the `MD2PDF_NO_SANDBOX` flag. Local file access (`file://`) is strictly bound to resolved safe directories using `fs.realpathSync`.
+- **Path Traversal Guards**: The CLI enforces strict path traversal mitigation for all batch-mode and daemon outputs to prevent malicious files from writing to system directories (e.g., `/etc/`, `/var/`, `/opt/`).

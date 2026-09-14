@@ -386,14 +386,22 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
     const resolvedSharedMermaidPage = localMermaidInitPromise ? await localMermaidInitPromise : (options as any).sharedMermaidPage;
     
-    const { processBeforeRender } = await import('../renderer/pipeline.js');
-    const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, warnings, {
-      theme: frontmatterTheme || options.theme,
-      globalMermaidTheme: theme?.mermaidTheme || frontmatter.mermaid?.theme || options.mermaid?.theme,
-      themeVariables: theme?.mermaidThemeVariables,
-      timeout: frontmatter.mermaid?.timeout || options.mermaid?.timeout,
-      mermaidEnabled: frontmatter.mermaid?.enabled ?? options.mermaid?.enabled,
-      maxWidth: frontmatter.mermaid?.maxWidth || options.mermaid?.maxWidth,
+      const baseTimeout = options.mermaid?.timeout || 30000;
+      const fmTimeout = frontmatter.mermaid?.timeout ? Number(frontmatter.mermaid.timeout) : undefined;
+      const safeTimeout = (fmTimeout && fmTimeout <= baseTimeout) ? fmTimeout : baseTimeout;
+
+      const baseEnabled = options.mermaid?.enabled !== false;
+      const fmEnabled = frontmatter.mermaid?.enabled !== false;
+      const safeEnabled = baseEnabled && fmEnabled;
+
+      const { processBeforeRender } = await import('../renderer/pipeline.js');
+      const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, warnings, {
+        theme: frontmatterTheme || options.theme,
+        globalMermaidTheme: theme?.mermaidTheme || frontmatter.mermaid?.theme || options.mermaid?.theme,
+        themeVariables: theme?.mermaidThemeVariables,
+        timeout: safeTimeout,
+        mermaidEnabled: safeEnabled,
+        maxWidth: frontmatter.mermaid?.maxWidth || options.mermaid?.maxWidth,
       maxHeight: frontmatter.mermaid?.maxHeight || options.mermaid?.maxHeight,
       sharedMermaidPage: resolvedSharedMermaidPage,
       registry,

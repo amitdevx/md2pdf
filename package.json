@@ -43,8 +43,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist', {recursive:true,force:true})\"",
     "prepare": "husky install || true",
-    "prepublishOnly": "npm run clean && npm run build",
-    "postuninstall": "node -e \"const fs=require('fs'); const path=require('path'); const os=require('os'); const p=path.join(os.homedir(), '.md2pdf'); if(fs.existsSync(p)) fs.rmSync(p, {recursive:true, force:true});\""
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "author": {
     "name": "Amit Divekar",
@@ -109,7 +108,7 @@
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
     "jiti": "^2.7.0",
-    "js-yaml": "^5.3.0",
+    "js-yaml": "^4.1.0",
     "katex": "^0.16.47",
     "mermaid": "11.16.1",
     "mime-types": "^3.0.2",

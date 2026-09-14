@@ -109,35 +109,43 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       route.continue();
     });
 
-    // Load HTML - use domcontentloaded first, then briefly wait for networkidle
-    // (covers Google Fonts CDN). Falls back gracefully if fonts are slow/offline.
-    await page.setContent(options.html, { waitUntil: 'domcontentloaded' });
-    try {
-      await page.waitForLoadState('networkidle', { timeout: 3000 });
-    } catch {
-      // Font CDN timed out - PDF renders with fallback fonts, no crash
-    }
+    const convertLogic = async () => {
+      // Load HTML - use domcontentloaded first, then briefly wait for networkidle
+      // (covers Google Fonts CDN). Falls back gracefully if fonts are slow/offline.
+      await page.setContent(options.html, { waitUntil: 'domcontentloaded' });
+      try {
+        await page.waitForLoadState('networkidle', { timeout: 3000 });
+      } catch {
+        // Font CDN timed out - PDF renders with fallback fonts, no crash
+      }
 
-    // Call afterPageLoad hook
-    if (options.registry && options.renderContext) {
-      await options.registry.executeAfterPageLoad(page, options.renderContext);
-    }
+      // Call afterPageLoad hook
+      if (options.registry && options.renderContext) {
+        await options.registry.executeAfterPageLoad(page, options.renderContext);
+      }
 
-    const marginValue = options.margin || '20mm';
+      const marginValue = options.margin || '20mm';
 
-    let pdfBuffer = await page.pdf({
-      format: options.format || 'A4',
-      printBackground: true,
-      margin: {
-        top: options.marginTop || marginValue,
-        right: marginValue,
-        bottom: options.marginBottom || marginValue,
-        left: marginValue,
-      },
-      displayHeaderFooter: options.displayHeaderFooter || false,
-      headerTemplate: options.headerTemplate,
-      footerTemplate: options.footerTemplate,
+      return await page.pdf({
+        format: options.format || 'A4',
+        printBackground: true,
+        margin: {
+          top: options.marginTop || marginValue,
+          right: marginValue,
+          bottom: options.marginBottom || marginValue,
+          left: marginValue,
+        },
+        displayHeaderFooter: options.displayHeaderFooter || false,
+        headerTemplate: options.headerTemplate,
+        footerTemplate: options.footerTemplate,
+      });
+    };
+
+    const globalTimeout = new Promise<Buffer>((_, reject) => {
+      setTimeout(() => reject(new Error('PDF generation timed out after 120s')), 120000);
     });
+
+    let pdfBuffer = await Promise.race([convertLogic(), globalTimeout]);
 
     // Call afterPdf hook
     if (options.registry && options.renderContext) {
