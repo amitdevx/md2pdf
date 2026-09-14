@@ -49,7 +49,7 @@ check_exit() {
     return 0
   else
     fail "$label"
-    cat /tmp/ppg_out.txt | head -15
+    head -n 15 /tmp/ppg_out.txt || true
     return 1
   fi
 }
