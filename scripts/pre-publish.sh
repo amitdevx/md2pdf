@@ -362,7 +362,8 @@ PYEOF
 }
 
 check_json "missing file"       "false"  "ERR_INVALID_INPUT"         $CLI /nonexistent.md
-check_json "directory input"    "false"  "ERR_INVALID_INPUT"         $CLI "$TMPDIR_TEST"
+mkdir -p "$TMPDIR_TEST/empty"
+check_json "directory input"    "false"  "ERR_NO_INPUT"         $CLI "$TMPDIR_TEST/empty"
 check_json "wrong extension"    "false"  "ERR_INVALID_INPUT"         $CLI "$TMPDIR_TEST/test.txt"
 check_json "output is dir"      "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST"
 check_json "output dir slash"   "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST/"
