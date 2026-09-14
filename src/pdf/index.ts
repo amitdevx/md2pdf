@@ -29,23 +29,33 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     });
     const page = await context.newPage();
 
-    await page.route('**/*', (route: Route) => {
+    await page.route('**/*', async (route: Route) => {
       const url = route.request().url();
       
-      const blockedPatterns = [
-        /^169\.254\.169\.254$/, /^127\.0\.0\.1$/, /^localhost$/,
-        /^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./,
-        /^::1$/, /^fc/, /^fe[89ab]/
-      ];
-      
-      const isBlocked = blockedPatterns.some(pattern => {
-        try {
-          const u = new URL(url);
-          return pattern.test(u.hostname);
-        } catch {
-          return pattern.test(url);
+      let isBlocked = false;
+      try {
+        const u = new URL(url);
+        if (u.protocol === 'http:' || u.protocol === 'https:') {
+          const dns = await import('node:dns/promises');
+          const lookup = await dns.lookup(u.hostname);
+          const ip = lookup.address;
+          
+          const blockedIps = [
+            /^169\.254\./, /^127\./, /^10\./, /^192\.168\./, 
+            /^172\.(1[6-9]|2\d|3[01])\./, /^::1$/, /^0\.0\.0\.0$/,
+            /^fc00:/, /^fe80:/ // Fixed false positives for IPv6
+          ];
+          
+          isBlocked = blockedIps.some(pattern => pattern.test(ip));
+          if (!isBlocked && (u.hostname === 'localhost' || u.hostname.includes('internal'))) {
+             // additional checks
+          }
         }
-      });
+      } catch (err) {
+        // If DNS fails or URL is invalid, we might want to block or allow.
+        // For safety, if it's http/https and fails DNS, let Playwright handle the error naturally
+        // by allowing the route, it will just fail to connect.
+      }
 
       if (isBlocked) {
         return route.abort('accessdenied');

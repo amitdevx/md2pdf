@@ -284,9 +284,10 @@ export function isMissingExecutableError(err: any): boolean {
 }
 
 export async function getBrowser(): Promise<Browser> {
-  const isCI    = !!process.env.CI || !!process.env.DOCKER || !process.env.DISPLAY;
+  const isCI    = !!process.env.CI || !!process.env.DOCKER;
   const isRoot  = typeof process.getuid === 'function' && process.getuid() === 0;
-  const sandbox = (isCI || isRoot) ? ['--no-sandbox', '--disable-setuid-sandbox'] : [];
+  const noSandbox = !!process.env.MD2PDF_NO_SANDBOX;
+  const sandbox = (isCI || isRoot || noSandbox) ? ['--no-sandbox', '--disable-setuid-sandbox'] : [];
 
   const launchOpts: LaunchOptions = {
     args: [...sandbox, '--disable-gpu', '--js-flags=--max-old-space-size=256'],

@@ -26,7 +26,8 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
   if (!filepath) {
     let current = cwd;
     const root = path.parse(cwd).root;
-    while (true) {
+    let maxDepth = 10;
+    while (maxDepth-- > 0) {
       for (const file of CONFIG_FILES) {
         const p = path.resolve(current, file);
         if (existsSync(p)) {
@@ -36,8 +37,10 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
       }
       if (filepath) break;
       
+      let isProjectRoot = false;
       const pkgPath = path.resolve(current, 'package.json');
       if (existsSync(pkgPath)) {
+        isProjectRoot = true;
         try {
           // We read it synchronously here to avoid async in the loop if we can,
           // but fs.readFile is async so we use await.
@@ -52,7 +55,11 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
         }
       }
 
-      if (current === root) break;
+      if (existsSync(path.resolve(current, '.git'))) {
+        isProjectRoot = true;
+      }
+
+      if (isProjectRoot || current === root) break;
       current = path.dirname(current);
     }
 

@@ -1,5 +1,6 @@
 import http from 'node:http';
 import type { ConvertOptions, ConvertResult } from '../types/index.js';
+import { readToken } from './token.js';
 
 const PORT = 47231;
 const HOST = '127.0.0.1';
@@ -15,8 +16,14 @@ export async function isDaemonAlive(): Promise<boolean> {
 }
 
 export async function stopDaemon(): Promise<boolean> {
+  const token = readToken();
   return new Promise((resolve) => {
-    const req = http.request(`http://${HOST}:${PORT}/stop`, { method: 'POST' }, (res) => {
+    const req = http.request(`http://${HOST}:${PORT}/stop`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      }
+    }, (res) => {
       resolve(res.statusCode === 200);
     });
     req.on('error', () => resolve(false));
@@ -25,16 +32,26 @@ export async function stopDaemon(): Promise<boolean> {
 }
 
 export async function submitToDaemon(options: ConvertOptions): Promise<ConvertResult> {
+  const token = readToken();
+  if (!token) {
+    throw new Error('Daemon token not found (~/.md2pdf/daemon.token). Is the daemon running?');
+  }
+
   return new Promise((resolve, reject) => {
+    const body = JSON.stringify(options);
     const req = http.request(`http://${HOST}:${PORT}/convert`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Length': Buffer.byteLength(body),
+      }
     }, (res) => {
-      let body = '';
-      res.on('data', chunk => body += chunk.toString());
+      let responseBody = '';
+      res.on('data', chunk => responseBody += chunk.toString());
       res.on('end', () => {
         try {
-          const data = JSON.parse(body);
+          const data = JSON.parse(responseBody);
           if (data.success) {
             resolve(data.result);
           } else {
@@ -45,9 +62,9 @@ export async function submitToDaemon(options: ConvertOptions): Promise<ConvertRe
         }
       });
     });
-    
+
     req.on('error', reject);
-    req.write(JSON.stringify(options));
+    req.write(body);
     req.end();
   });
 }

@@ -75,9 +75,14 @@ export async function handleSingle(
       let parsed: any;
       let earlyError: any = null;
       try {
+        const blockEngine = () => { throw new Error('JavaScript/CoffeeScript frontmatter engines are disabled. Use YAML frontmatter instead.'); };
         parsed = matter(rawContent, {
           engines: {
-            js: () => { throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.'); }
+            js:           blockEngine,
+            javascript:   blockEngine,
+            coffee:       blockEngine,
+            coffeescript: blockEngine,
+            cson:         blockEngine,
           }
         });
       } catch (yamlErr: any) {
@@ -100,8 +105,12 @@ export async function handleSingle(
       }
 
       if (!earlyError && parsed) {
-        // Validate theme early (before browser launch) so theme errors surface correctly
-        const themeName: string = parsed.data?.theme || options.theme || 'default';
+        // Security: only accept built-in names from frontmatter (alphanumeric, hyphens, underscores).
+        // Custom paths must come from config/flags, not document content.
+        const SAFE_THEME_NAME = /^[a-zA-Z0-9_-]+$/;
+        const rawFrontmatterTheme = parsed.data?.theme ? String(parsed.data.theme) : undefined;
+        const safeFrontmatterTheme = rawFrontmatterTheme && SAFE_THEME_NAME.test(rawFrontmatterTheme) ? rawFrontmatterTheme : undefined;
+        const themeName: string = safeFrontmatterTheme || options.theme || 'default';
         try {
           const { loadTheme } = await import('../../themes/loader.js');
           await loadTheme(themeName);

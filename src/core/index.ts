@@ -165,11 +165,20 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       frontmatter = options.__preparsed.data;
       markdown = options.__preparsed.content;
     } else {
+      // Block every executable engine alias that gray-matter supports.
+      // gray-matter resolves engine names case-insensitively and supports
+      // several aliases for JavaScript (js, javascript) and CoffeeScript.
+      // Overriding only 'js' still leaves 'javascript', 'coffee', etc. reachable.
+      const blockExecutableEngine = () => {
+        throw new Error('JavaScript/CoffeeScript frontmatter engines are disabled. Use YAML frontmatter instead.');
+      };
       const parsed = matter(rawMarkdown, {
         engines: {
-          js: () => {
-            throw new Error('JavaScript frontmatter (---js) is disabled. Use YAML frontmatter instead.');
-          },
+          js:           blockExecutableEngine,
+          javascript:   blockExecutableEngine,
+          coffee:       blockExecutableEngine,
+          coffeescript: blockExecutableEngine,
+          cson:         blockExecutableEngine,
         },
       });
       frontmatter = parsed.data;
@@ -301,7 +310,20 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
   try {
     const { loadTheme } = await import('../themes/loader.js');
-    const themeName = frontmatter.theme || options.theme || 'default';
+    // Security: frontmatter.theme is untrusted document content.
+    // Only accept simple built-in names (letters, digits, hyphens, underscores).
+    // Custom paths (containing '/', '.', '\' or '..') must come from config/API (options.theme), not documents.
+    const SAFE_THEME_NAME = /^[a-zA-Z0-9_-]+$/;
+    let frontmatterTheme: string | undefined;
+    if (frontmatter.theme) {
+      if (SAFE_THEME_NAME.test(String(frontmatter.theme))) {
+        frontmatterTheme = String(frontmatter.theme);
+      } else {
+        // Log a warning and ignore the unsafe theme value
+        warnings.push(`Frontmatter 'theme' value "${frontmatter.theme}" is not a valid built-in theme name and was ignored. Use the --theme flag or config file for custom theme paths.`);
+      }
+    }
+    const themeName = frontmatterTheme || options.theme || 'default';
     let theme = null;
     try {
       theme = await loadTheme(themeName);
@@ -362,7 +384,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     
     const { processBeforeRender } = await import('../renderer/pipeline.js');
     const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, warnings, {
-      theme: frontmatter.theme || options.theme,
+      theme: frontmatterTheme || options.theme,
       globalMermaidTheme: theme?.mermaidTheme || frontmatter.mermaid?.theme || options.mermaid?.theme,
       themeVariables: theme?.mermaidThemeVariables,
       timeout: frontmatter.mermaid?.timeout || options.mermaid?.timeout,
