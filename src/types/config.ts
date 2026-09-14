@@ -1,6 +1,8 @@
 import type { AnyPlugin } from './plugin.js';
 
 export interface Md2PdfConfig {
+  /** Offline mode: disable outbound network requests */
+  offline?: boolean;
   /** Theme name or path to custom CSS/dir */
   theme?: string;
   /** Paper size. Default: 'A4' */

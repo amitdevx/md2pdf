@@ -134,7 +134,11 @@ export function startDaemon() {
           res.end(JSON.stringify({ success: true, result }));
         } catch (err: any) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: err.message }));
+          // Redact absolute paths (Unix and Windows) from error messages
+          const safeMsg = (err.message || 'Unknown error')
+            .replace(/(?:\/[a-zA-Z0-9_.-]+){2,}/g, '[REDACTED_PATH]')
+            .replace(/[a-zA-Z]:\\[a-zA-Z0-9_.-\\]+/g, '[REDACTED_PATH]');
+          res.end(JSON.stringify({ success: false, error: safeMsg }));
         }
       });
       return;

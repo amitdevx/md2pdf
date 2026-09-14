@@ -1,16 +1,6 @@
 import { visit } from 'unist-util-visit';
 
-const escapeMap: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  "'": '&#39;',
-  '"': '&quot;'
-};
 
-function escapeHtml(str: string): string {
-  return str.replace(/[&<>'"]/g, tag => escapeMap[tag] || tag);
-}
 
 export default function remarkTags(options: { showTags?: boolean } = {}) {
   const showTags = options.showTags !== false;
@@ -40,8 +30,14 @@ export default function remarkTags(options: { showTags?: boolean } = {}) {
         const tagText = '#' + match[1];
         
         if (showTags) {
-          const htmlString = `<span class="tag">${escapeHtml(tagText)}</span>`;
-          newChildren.push({ type: 'html', value: htmlString });
+          newChildren.push({
+            type: 'obsidianTag',
+            data: {
+              hName: 'span',
+              hProperties: { className: ['tag'] }
+            },
+            children: [{ type: 'text', value: tagText }]
+          });
         } else {
           // If hiding tags, we just don't push anything to effectively remove it
         }

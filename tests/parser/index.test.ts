@@ -36,7 +36,7 @@ describe('Markdown Parser', () => {
     expect(html).toContain('<h1 id="hello">Hello</h1>');
     
     // Second H1 should have page break
-    expect(html).toContain('<h1 id="world" class="md2pdf-page-break-before">World</h1>');
+    expect(html).toContain('class="md2pdf-page-break-before" id="world">World</h1>');
     
     // Manual page break
     expect(html).toContain('<div class="md2pdf-page-break" style="page-break-before: always;"></div>');

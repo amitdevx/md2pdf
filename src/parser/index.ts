@@ -135,17 +135,30 @@ export async function parseMarkdown(
     
     // We want to allow some styling/classes if users use them, but block dangerous things
     // like meta refresh, iframes, script, object, embed.
+    
+    // Strip existing restrictive className rules from defaultSchema
+    const cleanAttributes: Record<string, any[]> = {};
+    for (const [tag, attrs] of Object.entries(defaultSchema.attributes || {})) {
+      cleanAttributes[tag] = attrs.filter((attr: any) => 
+        attr !== 'className' && (!Array.isArray(attr) || attr[0] !== 'className')
+      );
+    }
+    
     const customSchema = {
       ...defaultSchema,
+      tagNames: [...(defaultSchema.tagNames || []), 'span'],
       attributes: {
-        ...defaultSchema.attributes,
-        '*': ['className', 'style', 'id'], // Allow basic styling
+        ...cleanAttributes,
+        '*': [...(cleanAttributes['*'] || []), 'className', 'style', 'id'],
+        'a': [...(cleanAttributes.a || []), 'data-target', 'data-unresolved'],
+        'div': [...(cleanAttributes.div || []), 'data-type'],
       }
     };
 
     proc = proc
       .use(remarkGfm)
       .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypePageBreaks, options?.pageBreaks)
       .use(rehypeSanitize, customSchema);
 
     if (options?.math?.enabled !== false) {
@@ -166,7 +179,6 @@ export async function parseMarkdown(
     proc = proc
       .use(rehypeSlug)
       .use(rehypeCallouts as any)
-      .use(rehypePageBreaks, options?.pageBreaks)
       .use(rehypeToc, {
         enable: options?.toc,
         depth: options?.tocDepth,

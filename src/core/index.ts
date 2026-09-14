@@ -518,7 +518,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       footerTemplate,
       browser,
       registry,
-      renderContext: ctx
+      renderContext: ctx,
+      offline: options.offline
     });
     
     const pageCounts = await injectMetadata(stagePath, metadata, options.outline ? ctx.headings : undefined);

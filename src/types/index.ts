@@ -21,6 +21,7 @@ export interface ConvertOptions {
   sharedBrowser?: import('playwright-core').Browser;
   /** Internal shared Mermaid page for batch processing performance */
   sharedMermaidPage?: any;
+  offline?: boolean;
   theme?: string;
   paper?: 'A4' | 'Letter' | 'Legal';
   margin?: string; // e.g., '20mm'

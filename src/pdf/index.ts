@@ -17,6 +17,7 @@ export interface PdfOptions {
   browser?: Browser;
   registry?: import('../plugins/registry.js').PluginRegistry;
   renderContext?: import('../types/context.js').RenderContext;
+  offline?: boolean;
 }
 
 export async function generatePdf(options: PdfOptions): Promise<void> {
@@ -51,7 +52,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
              // additional checks
           }
         }
-      } catch (err) {
+      } catch {
         // If DNS fails or URL is invalid, we might want to block or allow.
         // For safety, if it's http/https and fails DNS, let Playwright handle the error naturally
         // by allowing the route, it will just fail to connect.
@@ -59,6 +60,10 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
 
       if (isBlocked) {
         return route.abort('accessdenied');
+      }
+      
+      if (options.offline && url.startsWith('http')) {
+        return route.abort('internetdisconnected');
       }
       
       if (url.startsWith('file://')) {

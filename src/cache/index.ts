@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import os from 'node:os';
+import { isSafeOutputPath } from '../validation/path.js';
 
 function getCacheDir(): string {
   return process.env.MD2PDF_CACHE_DIR || path.join(os.homedir(), '.md2pdf', 'render-cache');
@@ -67,7 +68,6 @@ export function checkCache(inputPath: string, hash: string, outputPath: string):
         if (fs.existsSync(outputPath)) return true;
       } else {
         // Security check: validate the path from the cache file before copying
-        const { isSafeOutputPath } = require('../validation/path.js');
         if (
           typeof entry.output === 'string' &&
           entry.output.toLowerCase().endsWith('.pdf') &&

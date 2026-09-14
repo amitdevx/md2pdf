@@ -162,6 +162,7 @@ program
     return n;
   })
   .option('--no-math', 'Disable KaTeX math rendering for LaTeX equations')
+  .option('--offline', 'Disable outbound network requests for remote assets')
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--stdin', 'Read markdown from stdin instead of files')

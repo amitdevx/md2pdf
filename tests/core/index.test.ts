@@ -15,7 +15,7 @@ describe('convert()', () => {
     fs.writeFileSync(input2, '---js\nconsole.log(1)\n---\n# content');
     
     await expect(convert({ input: input2, output: 'out.pdf' } as any))
-      .rejects.toThrow('JavaScript frontmatter (---js) is disabled');
+      .rejects.toThrow('JavaScript/CoffeeScript frontmatter engines are disabled');
       
     if (fs.existsSync(input2)) fs.unlinkSync(input2);
   });
