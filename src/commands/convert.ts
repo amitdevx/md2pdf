@@ -198,6 +198,10 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       
       for (const input of inputs) {
         if (input === '-') { finalInputs.push(input); continue; }
+        if (validationResult.errors.some(e => e.input === input)) {
+          finalInputs.push(input); // pass through to handler so it logs the error
+          continue;
+        }
         const content = fs.readFileSync(input, 'utf-8');
         const splits = splitMarkdownByHeading(content, cliFlags.splitByHeading as 1 | 2);
         if (splits.length === 1) {
