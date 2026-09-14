@@ -71,7 +71,7 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
   </style>
 </head>
 <body${bodyClass}>
-  ${options?.watermark ? `<div class="md2pdf-watermark">${options.watermark}</div>` : ''}
+  ${options?.watermark ? `<div class="md2pdf-watermark">${escapeHtml(options.watermark)}</div>` : ''}
   <div class="markdown-body">
     ${contentHtml}
   </div>

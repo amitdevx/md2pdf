@@ -38,7 +38,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       if (fs.existsSync(resolved)) {
         if (fs.statSync(resolved).isDirectory()) {
           const pattern = options.recursive ? '**/*.md' : '*.md';
-          const matches = await fg(pattern, { cwd: resolved, dot: false, unique: true, onlyFiles: true, absolute: true });
+          const matches = await fg(pattern, { cwd: resolved, dot: false, unique: true, onlyFiles: true, absolute: true, followSymbolicLinks: false, ignore: ['**/node_modules/**'] });
           inputs.push(...matches);
         } else {
           inputs.push(resolved);

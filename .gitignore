@@ -77,3 +77,4 @@ tests/cli/skip*.md
 tests/cli/temp*.txt
 tests/fixtures-exit-codes/
 tests/fixtures-json-errors/
+.md2pdf-cache/

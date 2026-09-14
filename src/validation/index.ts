@@ -26,6 +26,16 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     }
   }
 
+  if (options.merge) {
+    const mergeErr = validateOutput('-', options.merge, options.merge);
+    if (mergeErr && mergeErr.code === Md2PdfErrorCode.ERR_PATH_TRAVERSAL) {
+      return {
+        validInputs: [],
+        errors: inputs.map(input => ({ input, error: mergeErr, isFatal: true }))
+      };
+    }
+  }
+
   for (const input of inputs) {
     const inputErr = validateInput(input);
     if (inputErr) {

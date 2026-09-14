@@ -31,10 +31,18 @@ export async function watchFiles(files: string[], buildFn: (file?: string) => Pr
 
   for (const file of files) {
     if (!fs.existsSync(file)) continue;
-    fs.watch(file, (eventType) => {
-      if (eventType === 'change') {
-        triggerBuild();
+    try {
+      fs.watch(file, (eventType) => {
+        if (eventType === 'change') {
+          triggerBuild();
+        }
+      });
+    } catch (e: any) {
+      if (e.code === 'ENOSPC') {
+        console.warn(pc.yellow(`⚠ Warning: OS watch limit reached. Could not watch ${file}`));
+      } else {
+        console.warn(pc.yellow(`⚠ Warning: Failed to watch ${file} - ${e.message}`));
       }
-    });
+    }
   }
 }
