@@ -141,27 +141,22 @@ export async function handleSingle(
     : ora('Converting...').start() as unknown as SpinnerLike;
 
   const startTime = Date.now();
-  let globalBrowser: any;
-  let mermaidInitPromise: Promise<void> | null = null;
-  let globalMermaidContext: any;
-  let globalMermaidPage: any;
-  let globalBrowserPromise: Promise<any> | null = null;
+  let sharedContext: any = null;
+  let sharedMermaidContext: any = null;
+  let globalMermaidPage: any = null;
+  let isShuttingDown = false;
 
   const cleanup = async () => {
-    if (mermaidInitPromise) await mermaidInitPromise.catch(() => {});
-    if (globalMermaidContext) await globalMermaidContext.close().catch(() => {});
-    if (globalBrowserPromise) {
-      const b = await globalBrowserPromise.catch(() => null);
-      if (b) await b.close().catch(() => {});
-    }
-    if (globalBrowser) await globalBrowser.close().catch(() => {});
+    isShuttingDown = true;
+    if (globalMermaidPage) await globalMermaidPage.close().catch(() => {});
+    if (sharedMermaidContext) await sharedMermaidContext.close().catch(() => {});
+    if (sharedContext) await sharedContext.close().catch(() => {});
     try {
       const { globalBrowserManager } = await import('../../core/browser-manager.js');
-      await globalBrowserManager.forceClose();
+      globalBrowserManager.releaseBrowser();
     } catch { /* ignore */ }
   };
 
-  let isShuttingDown = false;
   const sigintHandler = async () => {
     isShuttingDown = true;
     if (!options.quiet && !options.jsonErrors) {
@@ -206,12 +201,22 @@ export async function handleSingle(
       hasMermaid = rawContent.includes('```mermaid');
     }
 
-    globalBrowserPromise = getBrowser().then(b => { globalBrowser = b; return b; });
-    await globalBrowserPromise;
-    if (hasMermaid) {
-      mermaidInitPromise = (async () => {
-        globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
-        globalMermaidPage = await globalMermaidContext.newPage();
+    const { globalBrowserManager } = await import('../../core/browser-manager.js');
+    
+    // Check daemon first
+    let daemonAlive = false;
+    if (!process.env.MD2PDF_DAEMON) {
+      const { isDaemonAlive } = await import('../../daemon/client.js');
+      daemonAlive = await isDaemonAlive();
+    }
+
+    if (!daemonAlive) {
+      const browser = await globalBrowserManager.acquireBrowser();
+      sharedContext = await browser.newContext({ javaScriptEnabled: false });
+
+      if (hasMermaid) {
+        sharedMermaidContext = await browser.newContext({ deviceScaleFactor: 2 });
+        globalMermaidPage = await sharedMermaidContext.newPage();
         const { fontCss } = await import('../../assets/fonts.js');
         await globalMermaidPage.setContent(`<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    ${fontCss}\n    body { font-family: 'Inter', sans-serif; }\n  </style>\n</head>\n<body></body>\n</html>`);
         await globalMermaidPage.evaluate(() => document.fonts.ready);
@@ -224,11 +229,12 @@ export async function handleSingle(
           }
           await globalMermaidPage.addScriptTag({ path: scriptPath });
         } catch { /* fallback */ }
-      })();
-      await mermaidInitPromise;
+      }
     }
 
-    convertOptions.sharedBrowser = globalBrowser;
+    if (sharedContext) {
+      (convertOptions as any).sharedContext = sharedContext;
+    }
     if (globalMermaidPage) {
       convertOptions.sharedMermaidPage = globalMermaidPage;
     }

@@ -22,6 +22,8 @@ vi.mock('../../src/core/index', () => ({
 
 vi.mock('../../src/pdf/browser', () => ({
   getBrowser: vi.fn(async () => ({
+    isConnected: vi.fn(() => true),
+    on: vi.fn(),
     newContext: vi.fn(async () => ({
       newPage: vi.fn(async () => ({
         setContent: vi.fn(async () => {}),

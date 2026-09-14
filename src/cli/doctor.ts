@@ -66,13 +66,15 @@ export default new Command('doctor')
       checks.push({ name: 'Warning: Running as root (Chromium requires --no-sandbox)', status: false });
     }
     
-    const cacheDir = path.resolve(process.cwd(), '.md2pdf-cache');
-    if (fs.existsSync(cacheDir)) {
-      try {
-        fs.accessSync(cacheDir, fs.constants.W_OK);
-      } catch {
-        checks.push({ name: 'Warning: .md2pdf-cache directory is not writable', status: false });
+    const cacheDir = path.resolve(os.homedir(), '.md2pdf', 'render-cache');
+    try {
+      if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir, { recursive: true });
       }
+      fs.accessSync(cacheDir, fs.constants.W_OK);
+      checks.push({ name: 'Cache directory writable (~/.md2pdf/render-cache)', status: true });
+    } catch {
+      checks.push({ name: 'Warning: ~/.md2pdf/render-cache directory is not writable', status: false });
     }
 
     const oraOptions = { prefixText: ' ' };

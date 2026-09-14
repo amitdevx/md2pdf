@@ -14,6 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import fg from 'fast-glob';
 import pc from 'picocolors';
 import { loadConfig } from '../config/loader.js';
@@ -132,7 +133,13 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     }
   } else if (!isBatch && options.output) {
     const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
-    if (outputStat?.isDirectory()) {
+    // In split mode the output is always a directory (we'll produce multiple files)
+    if (cliFlags.splitByHeading) {
+      // Ensure the directory exists; we'll route files into it later
+      if (!options.dryRun) {
+        fs.mkdirSync(options.output, { recursive: true });
+      }
+    } else if (outputStat?.isDirectory()) {
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output is a Directory', `The output path '${options.output}' is a directory. Provide a file path, e.g. --output report.pdf`);
       } else {
@@ -140,8 +147,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
         console.error(pc.dim('  Provide a full file path, e.g. --output report.pdf'));
         process.exit(EXIT.USAGE_ERROR);
       }
-    }
-    if (!path.extname(options.output)) {
+    } else if (!path.extname(options.output)) {
       if (!options.jsonErrors) console.warn(pc.yellow(`⚠ Output path has no .pdf extension - appending`));
       options.output += '.pdf';
       (cliFlags as any).output = options.output;
@@ -191,7 +197,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     let originalPaths: Record<string, string> | undefined;
 
     if (cliFlags.splitByHeading) {
-      const scratchDir = path.join(process.cwd(), '.md2pdf-cache', 'splits');
+      const scratchDir = path.join(os.homedir(), '.md2pdf', 'splits');
       fs.mkdirSync(scratchDir, { recursive: true });
       finalInputs = [];
       originalPaths = {};

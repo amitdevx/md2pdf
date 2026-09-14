@@ -30,26 +30,21 @@ export async function handleBatch(
     ? noopSpinner
     : ora('Starting batch conversion...').start() as unknown as SpinnerLike;
 
-  let globalBrowser: any;
-  let globalMermaidContext: any;
-  let globalMermaidPage: any;
+  let sharedContext: any = null;
+  let sharedMermaidContext: any = null;
+  let globalMermaidPage: any = null;
   let mermaidInitPromise: Promise<void> | null = null;
-  let globalBrowserPromise: Promise<any> | null = null;
-
   let isShuttingDown = false;
 
   const cleanup = async () => {
     isShuttingDown = true;
     if (mermaidInitPromise) await mermaidInitPromise.catch(() => {});
-    if (globalMermaidContext) await globalMermaidContext.close().catch(() => {});
-    if (globalBrowserPromise) {
-      const b = await globalBrowserPromise.catch(() => null);
-      if (b) await b.close().catch(() => {});
-    }
-    if (globalBrowser) await globalBrowser.close().catch(() => {});
+    if (globalMermaidPage) await globalMermaidPage.close().catch(() => {});
+    if (sharedMermaidContext) await sharedMermaidContext.close().catch(() => {});
+    if (sharedContext) await sharedContext.close().catch(() => {});
     try {
       const { globalBrowserManager } = await import('../../core/browser-manager.js');
-      await globalBrowserManager.forceClose();
+      globalBrowserManager.releaseBrowser();
     } catch { /* ignore */ }
   };
 
@@ -69,7 +64,7 @@ export async function handleBatch(
   let skippedPublishCount = 0;
 
   try {
-    const { getBrowser } = await import('../../pdf/browser.js');
+    const { globalBrowserManager } = await import('../../core/browser-manager.js');
 
     const hasMermaidAnywhere = await Promise.all(inputs.map(input => {
       return new Promise<boolean>(resolve => {
@@ -85,18 +80,26 @@ export async function handleBatch(
       });
     })).then(r => r.some(Boolean));
 
-    if (hasMermaidAnywhere) {
-      if (!globalBrowserPromise) {
-        globalBrowserPromise = getBrowser().then(b => { globalBrowser = b; return b; });
+    // Check daemon first to potentially bypass local browser entirely
+    let daemonAlive = false;
+    if (!process.env.MD2PDF_DAEMON) {
+      const { isDaemonAlive } = await import('../../daemon/client.js');
+      daemonAlive = await isDaemonAlive();
+    }
+
+    if (!daemonAlive) {
+      // Acquire and hold a single browser + context for the entire batch
+      const browser = await globalBrowserManager.acquireBrowser();
+      sharedContext = await browser.newContext({ javaScriptEnabled: false });
+
+      if (hasMermaidAnywhere) {
+        mermaidInitPromise = (async () => {
+          sharedMermaidContext = await browser.newContext({ deviceScaleFactor: 2 });
+          globalMermaidPage = await sharedMermaidContext.newPage();
+          const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
+          await initializeMermaid(globalMermaidPage);
+        })();
       }
-      mermaidInitPromise = (async () => {
-        await globalBrowserPromise;
-        if (!globalBrowser) throw new Error('Failed to initialize browser for Mermaid warmup');
-        globalMermaidContext = await globalBrowser.newContext({ deviceScaleFactor: 2 });
-        globalMermaidPage = await globalMermaidContext.newPage();
-        const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
-        await initializeMermaid(globalMermaidPage);
-      })();
     }
 
     const concurrencyLimit = cliFlags.concurrency
@@ -150,15 +153,12 @@ export async function handleBatch(
 
         let output = cliFlags.output;
         if (output) {
-          if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
-            output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-          } else {
-            // In batch mode --output is always the dir
-            output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-          }
+          // Always treat output as a directory in batch mode
+          output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
         } else {
           const orig = originalPaths?.[input];
           if (orig) {
+            // Split file: place next to the original source file
             output = path.join(path.dirname(orig), path.basename(input).replace(/\.md$/i, '.pdf'));
           } else {
             output = input.replace(/\.md$/i, '.pdf');
@@ -213,44 +213,17 @@ export async function handleBatch(
           } catch { /* ignore cache errors */ }
         }
 
-        // Check daemon first to bypass local browser
-        let daemonAlive = false;
-        if (!process.env.MD2PDF_DAEMON) {
-          const { isDaemonAlive } = await import('../../daemon/client.js');
-          daemonAlive = await isDaemonAlive();
+        // Attach the shared context (already verified not closed) so generatePdf
+        // doesn't create/destroy a new context for every file.
+        if (sharedContext) {
+          (convertOptions as any).sharedContext = sharedContext;
+        }
+        if (globalMermaidPage) {
+          convertOptions.sharedMermaidPage = globalMermaidPage;
         }
 
-        if (!daemonAlive && !globalBrowserPromise) {
-          globalBrowserPromise = getBrowser().then(b => { globalBrowser = b; return b; });
-        }
-        if (!daemonAlive) {
-          await globalBrowserPromise;
-
-          if (!globalBrowser) {
-            hasErrors = true;
-            failedCount++;
-            results[i] = { isError: true, error: 'Browser launch failed: globalBrowser is null', code: 'ERR_BROWSER_LAUNCH_FAILED', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-            completedCount++;
-            continue;
-          }
-
-          const hasMermaid = rawContent.includes('```mermaid');
-          if (hasMermaid) {
-            if (!mermaidInitPromise) {
-              mermaidInitPromise = (async () => {
-                globalMermaidContext = await globalBrowser!.newContext({ deviceScaleFactor: 2 });
-                globalMermaidPage = await globalMermaidContext.newPage();
-                const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
-                await initializeMermaid(globalMermaidPage);
-              })();
-            }
-            await mermaidInitPromise;
-          }
-
-          convertOptions.sharedBrowser = globalBrowser;
-          if (globalMermaidPage) {
-            convertOptions.sharedMermaidPage = globalMermaidPage;
-          }
+        if (mermaidInitPromise) {
+          await mermaidInitPromise;
         }
 
         if (fs.existsSync(output as string) && !options.force) {

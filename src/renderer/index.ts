@@ -55,17 +55,22 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
     ${options?.obsidianEnabled !== false ? obsidianCss : ''}
     ${customStyles.join('\n    ')}
     ${options?.watermark ? `
-    .md2pdf-watermark {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      opacity: 0.1;
-      font-size: 100px;
-      color: grey;
-      z-index: 9999;
-      pointer-events: none;
-      white-space: nowrap;
+    @media print {
+      .md2pdf-watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        opacity: 0.12;
+        font-size: 96px;
+        font-weight: bold;
+        color: #999;
+        z-index: 9999;
+        pointer-events: none;
+        white-space: nowrap;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
     ` : ''}
   </style>
