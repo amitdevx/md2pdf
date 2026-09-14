@@ -3,6 +3,14 @@ import type { AnyPlugin } from './plugin.js';
 export interface Md2PdfConfig {
   /** Offline mode: disable outbound network requests */
   offline?: boolean;
+  /** Output file path to merge all batch inputs into */
+  merge?: string;
+  /** Enable watch mode to rebuild PDFs when markdown changes */
+  watch?: boolean;
+  /** Pure CSS watermark text injected into HTML */
+  watermark?: string;
+  /** Split AST by heading depth and export multiple PDFs */
+  splitByHeading?: 1 | 2;
   /** Theme name or path to custom CSS/dir */
   theme?: string;
   /** Paper size. Default: 'A4' */

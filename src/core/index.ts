@@ -374,7 +374,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       obsidianEnabled: !!options.obsidian,
       theme,
       fontSize: options.fontSize,
-      lineHeight: options.lineHeight
+      lineHeight: options.lineHeight,
+      watermark: options.watermark
     });
 
     if (options.sharedBrowser) {

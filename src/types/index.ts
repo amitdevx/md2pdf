@@ -22,6 +22,10 @@ export interface ConvertOptions {
   /** Internal shared Mermaid page for batch processing performance */
   sharedMermaidPage?: any;
   offline?: boolean;
+  watermark?: string;
+  splitByHeading?: 1 | 2;
+  watch?: boolean;
+  merge?: string;
   theme?: string;
   paper?: 'A4' | 'Letter' | 'Legal';
   margin?: string; // e.g., '20mm'

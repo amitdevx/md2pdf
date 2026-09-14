@@ -163,6 +163,14 @@ program
   })
   .option('--no-math', 'Disable KaTeX math rendering for LaTeX equations')
   .option('--offline', 'Disable outbound network requests for remote assets')
+  .option('--merge <output>', 'Combine all converted PDFs into a single file')
+  .option('--watch', 'Watch input files for changes and automatically rebuild')
+  .option('--watermark <text>', 'Inject a pure CSS watermark text into the output')
+  .option('--split-by-heading <level>', 'Split AST at H1 or H2 boundaries (1 or 2)', (val) => {
+    const n = Number(val);
+    if (n !== 1 && n !== 2) throw new InvalidArgumentError('must be 1 or 2');
+    return n as 1 | 2;
+  })
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--stdin', 'Read markdown from stdin instead of files')

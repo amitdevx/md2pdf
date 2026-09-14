@@ -23,6 +23,8 @@ import type { CliOptions } from '../cli/options.js';
 import { validateInputFiles } from '../validation/index.js';
 import { handleSingle } from './handlers/single.js';
 import { handleBatch } from './handlers/batch.js';
+import { watchFiles } from '../features/watch.js';
+import { splitMarkdownByHeading } from '../features/split.js';
 
 export async function runConvert(inputsRaw: string[], options: CliOptions) {
   let inputs: string[] = [];
@@ -69,9 +71,9 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     process.exit(EXIT.USAGE_ERROR);
   }
 
-  const cliFlags = { ...options };
-  if ((cliFlags as any).browser) {
-    process.env.MD2PDF_BROWSER = (cliFlags as any).browser;
+  const cliFlags: any = { ...options };
+  if (cliFlags.browser) {
+    process.env.MD2PDF_BROWSER = cliFlags.browser;
   }
 
   if (process.env.MD2PDF_BROWSER && !fs.existsSync(process.env.MD2PDF_BROWSER)) {
@@ -177,10 +179,52 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     }
   }
 
-  // Do not exit early here! Pass ALL inputs (and errors) into the handlers so they can report them in JSON/Batch summary!
-  if (isBatch) {
-    await handleBatch(inputs, options, cliFlags, resolvedConfig, validationResult);
+  const runHandlers = async () => {
+    try {
+      let finalInputs = inputs;
+    let originalPaths: Record<string, string> | undefined;
+
+    if (cliFlags.splitByHeading) {
+      const scratchDir = path.join(process.cwd(), '.md2pdf-cache', 'splits');
+      fs.mkdirSync(scratchDir, { recursive: true });
+      finalInputs = [];
+      originalPaths = {};
+      
+      for (const input of inputs) {
+        if (input === '-') { finalInputs.push(input); continue; }
+        const content = fs.readFileSync(input, 'utf-8');
+        const splits = splitMarkdownByHeading(content, cliFlags.splitByHeading as 1 | 2);
+        if (splits.length === 1) {
+          finalInputs.push(input);
+        } else {
+          const base = path.basename(input, '.md');
+          splits.forEach((partContent, idx) => {
+            const splitPath = path.join(scratchDir, `${base}-part${idx + 1}.md`);
+            fs.writeFileSync(splitPath, partContent);
+            finalInputs.push(splitPath);
+            originalPaths![splitPath] = input;
+          });
+        }
+      }
+    }
+
+    // Force batch mode if splitting produced multiple files
+    const effectiveBatch = isBatch || finalInputs.length > 1;
+
+    if (effectiveBatch) {
+      await handleBatch(finalInputs, options, cliFlags, resolvedConfig, validationResult, originalPaths);
+    } else {
+      await handleSingle(finalInputs[0], options, cliFlags, resolvedConfig, validationResult);
+    }
+    } catch (e) {
+      console.error('CRASH in runHandlers:', e);
+      process.exit(1);
+    }
+  };
+
+  if (cliFlags.watch) {
+    await watchFiles(inputs, runHandlers);
   } else {
-    await handleSingle(inputs[0], options, cliFlags, resolvedConfig, validationResult);
+    await runHandlers();
   }
 }

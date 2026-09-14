@@ -15,13 +15,15 @@ import { Md2PdfError } from '../../errors/index.js';
 import { detectBrowserError } from '../../errors/detect.js';
 import { computeHash, checkCache } from '../../cache/index.js';
 import { buildVaultIndex, sortDependencies } from '../../core/vault.js';
+import { mergePDFs } from '../../features/merge.js';
 
 export async function handleBatch(
   inputs: string[],
   options: any,
   cliFlags: any,
   resolvedConfig: any,
-  validationResult?: any
+  validationResult?: any,
+  originalPaths?: Record<string, string>
 ): Promise<void> {
   const startTime = Date.now();
   const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
@@ -155,7 +157,12 @@ export async function handleBatch(
             output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
           }
         } else {
-          output = input.replace(/\.md$/i, '.pdf');
+          const orig = originalPaths?.[input];
+          if (orig) {
+            output = path.join(path.dirname(orig), path.basename(input).replace(/\.md$/i, '.pdf'));
+          } else {
+            output = input.replace(/\.md$/i, '.pdf');
+          }
         }
         output = path.resolve(output as string);
 
@@ -349,6 +356,23 @@ export async function handleBatch(
 
     const anyErrors = results.some((r: any) => !r || r.isError);
     if (anyErrors) hasErrors = true;
+
+    if (cliFlags.merge && !hasErrors && successfulCount > 0) {
+      const pathsToMerge = results.filter((r: any) => r && !r.isError && r.outputPath && !r.isSkipped).map((r: any) => r.outputPath);
+      if (pathsToMerge.length > 0) {
+        try {
+          if (!options.quiet) {
+            spinner.text = `Merging ${pathsToMerge.length} PDFs into ${cliFlags.merge}...`;
+            spinner.start();
+          }
+          await mergePDFs(pathsToMerge, cliFlags.merge);
+          if (!options.quiet) spinner.succeed(`Merged output saved to ${cliFlags.merge}`);
+        } catch (err: any) {
+          hasErrors = true;
+          if (!options.quiet) spinner.fail(`Failed to merge PDFs: ${err.message}`);
+        }
+      }
+    }
 
     if (options.jsonErrors) {
       jsonOut({

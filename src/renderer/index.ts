@@ -22,7 +22,7 @@ function escapeHtml(str: string): string {
   }[tag] || tag));
 }
 
-export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null; fontSize?: string; lineHeight?: string | number }): Promise<string> {
+export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null; fontSize?: string; lineHeight?: string | number; watermark?: string }): Promise<string> {
   const mathCss = options?.mathEnabled !== false ? await getKatexCss() : '';
   const safeTitle = escapeHtml(title);
   const bodyClass = options?.cssclass ? ` class="${escapeHtml(options.cssclass)}"` : '';
@@ -54,9 +54,24 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
     ${mathCss}
     ${options?.obsidianEnabled !== false ? obsidianCss : ''}
     ${customStyles.join('\n    ')}
+    ${options?.watermark ? `
+    .md2pdf-watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      opacity: 0.1;
+      font-size: 100px;
+      color: grey;
+      z-index: 9999;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    ` : ''}
   </style>
 </head>
 <body${bodyClass}>
+  ${options?.watermark ? `<div class="md2pdf-watermark">${options.watermark}</div>` : ''}
   <div class="markdown-body">
     ${contentHtml}
   </div>
