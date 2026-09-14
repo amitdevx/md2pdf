@@ -66,7 +66,14 @@ export function checkCache(inputPath: string, hash: string, outputPath: string):
       if (entry.output === outputPath) {
         if (fs.existsSync(outputPath)) return true;
       } else {
-        if (fs.existsSync(entry.output)) {
+        // Security check: validate the path from the cache file before copying
+        const { isSafeOutputPath } = require('../validation/path.js');
+        if (
+          typeof entry.output === 'string' &&
+          entry.output.toLowerCase().endsWith('.pdf') &&
+          isSafeOutputPath(entry.output) &&
+          fs.existsSync(entry.output)
+        ) {
           fs.copyFileSync(entry.output, outputPath);
           updateCache(inputPath, hash, outputPath);
           return true;

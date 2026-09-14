@@ -58,6 +58,9 @@ export function isSafeOutputPath(resolvedPath: string): boolean {
     '/boot',
     '/lib',
     '/lib64',
+    '/var',
+    '/opt',
+    '/srv'
   ];
 
   // On macOS, /etc -> /private/etc etc. Resolve real paths for these too.
@@ -81,8 +84,8 @@ export function isSafeOutputPath(resolvedPath: string): boolean {
   }
 
   // Block writing directly into another user's home directory (not current user)
-  const currentHome = os.homedir();
-  const homeParent = path.dirname(currentHome); // e.g. /home
+  const currentHome = os.homedir().replace(/\\/g, '/');
+  const homeParent = path.dirname(os.homedir()).replace(/\\/g, '/'); // e.g. /home or C:/Users
   if (
     normalized.startsWith(homeParent + '/') &&
     !normalized.startsWith(currentHome + '/') &&

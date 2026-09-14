@@ -130,9 +130,23 @@ export async function parseMarkdown(
       }
     }
 
+    const rehypeSanitize = (await import('rehype-sanitize')).default;
+    const { defaultSchema } = await import('rehype-sanitize');
+    
+    // We want to allow some styling/classes if users use them, but block dangerous things
+    // like meta refresh, iframes, script, object, embed.
+    const customSchema = {
+      ...defaultSchema,
+      attributes: {
+        ...defaultSchema.attributes,
+        '*': ['className', 'style', 'id'], // Allow basic styling
+      }
+    };
+
     proc = proc
       .use(remarkGfm)
-      .use(remarkRehype, { allowDangerousHtml: true });
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeSanitize, customSchema);
 
     if (options?.math?.enabled !== false) {
       proc = proc.use(rehypeKatex as any, {

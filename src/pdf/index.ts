@@ -79,8 +79,23 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
           // Allow os.tmpdir for any temp assets
           allowedDirs.push(os.tmpdir());
 
-          const isAllowed = allowedDirs.some(dir => 
-            fileUrl.startsWith(dir + path.sep) || fileUrl === dir
+          let realFileUrl = fileUrl;
+          try {
+            const fs = await import('node:fs');
+            realFileUrl = fs.realpathSync(fileUrl);
+          } catch {
+            return route.abort('accessdenied'); // If file doesn't exist or can't be resolved
+          }
+
+          const fs = await import('node:fs');
+          const resolveSafeDir = (d: string) => {
+            try { return fs.realpathSync(d); } catch { return d; }
+          };
+
+          const realAllowedDirs = allowedDirs.map(resolveSafeDir);
+
+          const isAllowed = realAllowedDirs.some(dir => 
+            realFileUrl.startsWith(dir + path.sep) || realFileUrl === dir
           );
 
           if (!isAllowed) {

@@ -241,13 +241,16 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     let sizing = '';
     const widthRaw = attrWidth || kramWidth;
     if (widthRaw) {
+      const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (widthRaw.includes('x')) {
         const [w, h] = widthRaw.split('x');
-        sizing = ` width="${w}"${h ? ` height="${h}"` : ''}`;
+        const cleanW = escapeAttr(w.trim());
+        const cleanH = escapeAttr(h.trim());
+        sizing = ` width="${cleanW}"${cleanH ? ` height="${cleanH}"` : ''}`;
       } else {
         sizing = ` width="${widthRaw.replace(/[^0-9%]/g, '')}"`;
       }
-      return `<img src="${fileUrl}" alt="${alt}"${title ? ` title="${title.replace(/['"]/g, '')}"` : ''}${sizing} />`;
+      return `<img src="${escapeAttr(fileUrl)}" alt="${escapeAttr(alt)}"${title ? ` title="${escapeAttr(title.replace(/['"]/g, ''))}"` : ''}${sizing} />`;
     }
     
     return `![${alt}](${fileUrl}${title ? ' ' + title : ''})`;
@@ -361,7 +364,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     
     let finalHtml = parsed.html;
     if (options.title !== false && !/<h1\b[^>]*>/i.test(finalHtml)) {
-      finalHtml = `<h1 class="document-title" style="margin-top: 0; padding-top: 0;">${title}</h1>\n` + finalHtml;
+      const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+      finalHtml = `<h1 class="document-title" style="margin-top: 0; padding-top: 0;">${escapeHtml(title)}</h1>\n` + finalHtml;
     }
 
     html = await renderHtmlTemplate(finalHtml, title, { 

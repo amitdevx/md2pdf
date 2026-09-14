@@ -29,13 +29,16 @@ function verifyChromiumEngine(executablePath: string): void {
     }).toLowerCase();
 
     // ALLOWLIST: If the version string contains any of these, it's safe.
+    // Use word boundaries \b to avoid matching "architecture" (arc) or "environment" (iron)
     const allowed = [
       'chrome', 'chromium', 'edge', 'brave', 'vivaldi', 'opera', 'arc', 'yandex',
       'whale', '360', 'baidu', 'sogou', 'jiosphere', 'thorium', 'ungoogled',
       'cromite', 'iridium', 'maxthon', 'slimjet', 'cent', 'avast', 'avg',
       'ccleaner', 'comodo', 'epic', 'iron', 'chedot', 'orbitum', 'colibri', 'sidekick'
     ];
-    const isChromium = allowed.some(name => output.includes(name));
+    
+    // Check if any allowed name matches as a distinct word in the output
+    const isChromium = allowed.some(name => new RegExp(`\\b${name}\\b`).test(output));
 
     if (!isChromium) {
       throw new Error(`ERR_UNSUPPORTED_ENGINE: The executable at '${executablePath}' does not appear to be a Chromium-based browser.\nOutput: ${output.trim()}\nmd2pdf requires Chromium engines (Chrome, Edge, Brave, etc.) to generate PDFs.`);
@@ -255,16 +258,16 @@ export function getPlatformCandidates(): BrowserEntry[] {
 }
 
 export function discoverBrowser(): { executablePath: string; name: string } | null {
-  // CHROME_PATH / BROWSER_PATH env override
   const envPath = process.env.CHROME_PATH ?? process.env.BROWSER_PATH;
   if (envPath && fs.existsSync(envPath)) {
     try {
+      verifyChromiumEngine(envPath);
       const output = execFileSync(envPath, ['--version'], {
         encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000
       }).trim();
       return { executablePath: envPath, name: output || 'env override' };
     } catch {
-      return { executablePath: envPath, name: 'env override' };
+      // If verification or execution fails, fall through to discovery instead of failing silently or using a bad path
     }
   }
 
@@ -314,9 +317,10 @@ export async function getBrowser(): Promise<Browser> {
   const cached = readCache();
   if (cached?.executablePath) {
     try {
+      verifyChromiumEngine(cached.executablePath);
       return await chromium.launch({ ...launchOpts, executablePath: cached.executablePath });
     } catch (e: any) {
-      if (e.message?.includes('Timeout') || isMissingExecutableError(e)) {
+      if (e.message?.includes('Timeout') || isMissingExecutableError(e) || e.message?.includes('ERR_UNSUPPORTED_ENGINE')) {
         fs.unlinkSync(CACHE_FILE); // Stale, unsupported, or removed binary - clear and rediscover
       } else {
         throw e;

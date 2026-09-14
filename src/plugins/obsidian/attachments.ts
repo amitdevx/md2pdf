@@ -10,34 +10,41 @@ export async function resolveAttachmentPath(
 ): Promise<string | null> {
   const currentDir = path.dirname(currentFilePath);
   
-  const isSafe = (p: string) => {
-    return p.startsWith(vaultRoot + path.sep) || 
-           p.startsWith(currentDir + path.sep) || 
-           p === vaultRoot || 
-           p === currentDir;
+  const resolveSafe = async (d: string) => {
+    try { return await fs.realpath(d); } catch { return d; }
+  };
+  const realVaultRoot = await resolveSafe(vaultRoot);
+  const realCurrentDir = await resolveSafe(currentDir);
+  
+  const isSafe = async (p: string) => {
+    const realP = await resolveSafe(p);
+    return realP.startsWith(realVaultRoot + path.sep) || 
+           realP.startsWith(realCurrentDir + path.sep) || 
+           realP === realVaultRoot || 
+           realP === realCurrentDir;
   };
 
   // 1. Try exact relative path from current file
   let candidate = path.resolve(currentDir, target);
-  if (isSafe(candidate) && await fileExists(candidate)) return candidate;
+  if (await fileExists(candidate) && await isSafe(candidate)) return candidate;
 
   // 2. Try configured attachment folder
   if (attachmentFolder) {
     candidate = path.resolve(vaultRoot, attachmentFolder, target);
-    if (isSafe(candidate) && await fileExists(candidate)) return candidate;
+    if (await fileExists(candidate) && await isSafe(candidate)) return candidate;
   }
 
   // 3. Try common attachment folder names
   const commonFolders = ['assets', 'attachments', 'files', 'Attachments'];
   for (const folder of commonFolders) {
     candidate = path.resolve(vaultRoot, folder, target);
-    if (isSafe(candidate) && await fileExists(candidate)) return candidate;
+    if (await fileExists(candidate) && await isSafe(candidate)) return candidate;
   }
 
   // 4. Fallback: Search anywhere in the vault (simulated by checking root, but a full recursive search is expensive)
   // For now, check vaultRoot root.
   candidate = path.resolve(vaultRoot, target);
-  if (isSafe(candidate) && await fileExists(candidate)) return candidate;
+  if (await fileExists(candidate) && await isSafe(candidate)) return candidate;
 
   // TODO: Full recursive vault search if needed
   return null;
