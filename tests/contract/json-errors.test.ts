@@ -37,10 +37,12 @@ describe('JSON Errors Contract (20 Cases)', () => {
     expect(res.error.code).toBe('ERR_INVALID_INPUT');
   });
 
-  it('directory input', () => {
-    const res = runCliJson(`"${fixturesDir}"`);
+  it('directory input with no markdown', () => {
+    const emptyDir = path.join(__dirname, 'empty-dir');
+    if (!fs.existsSync(emptyDir)) fs.mkdirSync(emptyDir);
+    const res = runCliJson(`"${emptyDir}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_INVALID_INPUT');
+    expect(res.error.code).toBe('ERR_NO_INPUT');
   });
 
   it('wrong extension', () => {

@@ -33,9 +33,9 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
     expect(res.status).toBe(1);
   });
 
-  it('directory input -> exits 1', () => {
+  it('directory input with markdown -> exits 0', () => {
     const res = runCli(fixturesDir);
-    expect(res.status).toBe(1);
+    expect(res.status).toBe(0);
   });
 
   it('txt extension -> exits 1', () => {

@@ -19,10 +19,10 @@ describe('CLI End-to-End Tests', () => {
     expect(result.stderr).toContain("File not found");
   });
 
-  it('should fail on directory input with exit code 1', () => {
+  it('should fail on empty directory input with exit code 1', () => {
     const result = runCli(path.resolve(__dirname, '../../src'));
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Is a directory, not a file');
+    expect(result.stderr).toContain('No input files found matching the provided arguments');
   });
 
   it('should fail on non-.md input with exit code 1', () => {
