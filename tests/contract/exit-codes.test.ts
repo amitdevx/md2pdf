@@ -34,7 +34,7 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
   });
 
   it('directory input with markdown -> exits 0', () => {
-    const res = runCli(fixturesDir);
+    const res = runCli(path.join(fixturesDir, 'batch'));
     expect(res.status).toBe(0);
   });
 

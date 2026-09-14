@@ -518,6 +518,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       headerTemplate,
       footerTemplate,
       browser,
+      sharedContext: (options as any).sharedContext,
       registry,
       renderContext: ctx,
       offline: options.offline
