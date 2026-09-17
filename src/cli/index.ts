@@ -166,7 +166,7 @@ program
   .option('-r, --recursive', 'Recursively process all markdown files in given directories')
   .option('--merge', 'Concatenate multiple converted Markdown files into a single unified output PDF')
   .option('--watch', 'Watch input files for changes and automatically rebuild')
-  .option('--watermark <text>', 'Inject a pure CSS watermark text into the output')
+  .option('--watermark <text>', 'Overlay a diagonal vector watermark across the generated PDF natively')
   .option('--split-by-heading <level>', 'Split AST at H1 or H2 boundaries (1 or 2)', (val) => {
     const n = Number(val);
     if (n !== 1 && n !== 2) throw new InvalidArgumentError('must be 1 or 2');

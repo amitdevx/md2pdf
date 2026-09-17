@@ -2,7 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { isSafeOutputPath } from '../validation/path.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function getCacheDir(): string {
   return process.env.MD2PDF_CACHE_DIR || path.join(os.homedir(), '.md2pdf', 'render-cache');
@@ -44,7 +47,15 @@ export function computeHash(content: string, options: any): string {
   hash.update(JSON.stringify(stableOptions));
   
   // Include global version to bust cache on updates
-  hash.update('v0.9.6');
+  try {
+    const pkgPath1 = path.resolve(__dirname, '../../package.json');
+    const pkgPath2 = path.resolve(__dirname, '../package.json');
+    const pkgPath = fs.existsSync(pkgPath1) ? pkgPath1 : pkgPath2;
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    hash.update(pkg.version);
+  } catch {
+    hash.update('v0.9.7'); // Fallback
+  }
 
   // If theme is a custom local path, hash its contents to invalidate on change
   if (options.theme && options.theme !== 'default' && options.theme !== 'light' && options.theme !== 'dark') {

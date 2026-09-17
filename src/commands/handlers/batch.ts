@@ -141,7 +141,7 @@ export async function handleBatch(
     inputs = sortDependencies(inputs, vaultIndex);
 
   let isDir = false;
-  try { if (options.output) isDir = fs.statSync(options.output).isDirectory(); } catch {}
+  try { if (options.output) isDir = fs.statSync(options.output).isDirectory(); } catch { /* ignore */ }
     const queue = inputs.map((inp, i) => ({ input: inp, i }));
 
     const worker = async () => {

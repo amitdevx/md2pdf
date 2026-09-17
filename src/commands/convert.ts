@@ -121,7 +121,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     let outputStat: fs.Stats | null = null;
     try {
       outputStat = fs.statSync(options.output);
-    } catch {}
+    } catch { /* ignore */ }
     if (outputStat && !outputStat.isDirectory()) {
       if (options.jsonErrors) {
         emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output must be a Directory', `The output path '${options.output}' already exists and is not a directory.`);
