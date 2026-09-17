@@ -163,5 +163,6 @@ export function mergeConfig(
     } as any,
     plugins: merged.plugins,
     cache: cliFlags?.cache !== false,
+    watermark: cliFlags?.watermark || merged.watermark,
   };
 }

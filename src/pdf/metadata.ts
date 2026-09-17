@@ -52,18 +52,33 @@ export async function injectMetadata(
     const pages = pdfDoc.getPages();
     for (const page of pages) {
       const { width, height } = page.getSize();
-      const textSize = 70;
+      
+      const diagonal = Math.sqrt(width * width + height * height);
+      const widthAtSize1 = helveticaFont.widthOfTextAtSize(watermarkText, 1);
+      
+      // Target 75% of the page's diagonal length
+      let textSize = (diagonal * 0.75) / widthAtSize1;
+      if (textSize > 150) textSize = 150; // Cap to prevent absurdly huge single-letter watermarks
+      
       const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, textSize);
       const textHeight = helveticaFont.heightAtSize(textSize);
 
+      // Angle of the diagonal
+      const angleRad = Math.atan2(height, width);
+      const angleDeg = angleRad * (180 / Math.PI);
+
+      // Center the text bounding box exactly in the middle of the page
+      const x = width / 2 - (textWidth / 2) * Math.cos(angleRad) + (textHeight / 2) * Math.sin(angleRad);
+      const y = height / 2 - (textWidth / 2) * Math.sin(angleRad) - (textHeight / 2) * Math.cos(angleRad);
+
       page.drawText(watermarkText, {
-        x: width / 2 - textWidth / 2,
-        y: height / 2 - textHeight / 2,
+        x,
+        y,
         size: textSize,
         font: helveticaFont,
         color: rgb(0.7, 0.7, 0.7),
         opacity: 0.35,
-        rotate: degrees(45),
+        rotate: degrees(angleDeg),
       });
     }
   }
