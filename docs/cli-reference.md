@@ -57,7 +57,7 @@ md2pdf *.md -o ./pdfs/            # Batch convert
 | `--watch` | boolean | false | Watch input files for changes and automatically rebuild |
 | `--merge` | boolean | false | Merge multiple generated PDFs into a single file |
 | `--split-by-heading` | number | - | Split output into multiple PDFs based on heading depth |
-| `--watermark` | string | - | Add custom watermark text to PDF pages |
+| `--watermark` | string | - | Overlay a dynamic diagonal vector watermark across the generated PDF natively |
 
 ## Features
 
