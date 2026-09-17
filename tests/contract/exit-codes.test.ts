@@ -8,9 +8,18 @@ import { runCli } from './helpers';
 
 describe('Exit Code Contract (27 Matrix Rows)', () => {
   afterAll(() => {
-    const toDelete = ['bad-yaml.md', 'bad.md', 'chmod.md', 'complex.md', 'large.md', 'pub-false.md', 'pub.md', 'rce.md', 'test.txt', 'temp.txt', 'temp_skip.md', 'bad_yaml.md', 'basic.pdf', 'bad-yaml.pdf', 'bad.pdf', 'pub-false.pdf', 'pub.pdf', 'complex.pdf', 'rce.pdf', 'large.pdf', 'test.pdf'];
+    const toDelete = ['batch/test.pdf', 'batch/test.md', 'batch', 'bad-yaml.md', 'bad.md', 'chmod.md', 'complex.md', 'large.md', 'pub-false.md', 'pub.md', 'rce.md', 'test.txt', 'temp.txt', 'temp_skip.md', 'bad_yaml.md', 'basic.pdf', 'bad-yaml.pdf', 'bad.pdf', 'pub-false.pdf', 'pub.pdf', 'complex.pdf', 'rce.pdf', 'large.pdf', 'test.pdf'];
     for (const file of toDelete) {
-      try { fs.unlinkSync(path.join(fixturesDir, file)); } catch { /* ignore */ }
+      try { 
+        const p = path.join(fixturesDir, file);
+        if (fs.existsSync(p)) {
+          if (fs.statSync(p).isDirectory()) {
+            fs.rmSync(p, { recursive: true, force: true });
+          } else {
+            fs.unlinkSync(p);
+          }
+        }
+      } catch { /* ignore */ }
     }
   });
   let basicMd = '';
@@ -34,7 +43,12 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
   });
 
   it('directory input with markdown -> exits 0', () => {
-    const res = runCli(path.join(fixturesDir, 'batch'));
+    const batchDir = path.join(fixturesDir, 'batch');
+    if (!fs.existsSync(batchDir)) {
+      fs.mkdirSync(batchDir, { recursive: true });
+      fs.writeFileSync(path.join(batchDir, 'test.md'), '# Hello');
+    }
+    const res = runCli(batchDir);
     expect(res.status).toBe(0);
   });
 
