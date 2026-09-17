@@ -332,7 +332,7 @@ export async function handleBatch(
     const anyErrors = results.some((r: any) => !r || r.isError);
     if (anyErrors) hasErrors = true;
 
-    const finalMergeOutput = options.output ? (options.output.endsWith('/') || isDir ? require('path').join(options.output, 'merged.pdf') : options.output) : 'merged.pdf';
+    const finalMergeOutput = options.output ? (options.output.endsWith('/') || isDir ? path.join(options.output, 'merged.pdf') : options.output) : 'merged.pdf';
 
     if (cliFlags.merge && !hasErrors && (successfulCount > 0 || skippedExistingCount > 0)) {
       // Include skipped files too if they exist!

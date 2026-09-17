@@ -16,13 +16,14 @@ const version = pkg.version as string;
 export async function injectMetadata(
   pdfPath: string, 
   metadata: PdfMetadata,
-  headings?: { level: number; title: string; id: string; pageIndex: number }[]
+  headings?: { level: number; title: string; id: string; pageIndex: number }[],
+  watermarkText?: string
 ): Promise<number> {
   const hasMetadata = metadata.title || metadata.author || metadata.subject
     || metadata.keywords || metadata.creator || metadata.producer || metadata.creationDate;
   const hasHeadings = headings && headings.length > 0;
 
-  if (!hasMetadata && !hasHeadings) {
+  if (!hasMetadata && !hasHeadings && !watermarkText) {
     const pdfBytes = await fs.readFile(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
     return pdfDoc.getPageCount();
@@ -43,6 +44,28 @@ export async function injectMetadata(
   if (hasHeadings) {
     const { injectOutline } = await import('./outline.js');
     injectOutline(pdfDoc, headings!);
+  }
+
+  if (watermarkText) {
+    const { StandardFonts, rgb, degrees } = await import('pdf-lib');
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const pages = pdfDoc.getPages();
+    for (const page of pages) {
+      const { width, height } = page.getSize();
+      const textSize = 70;
+      const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, textSize);
+      const textHeight = helveticaFont.heightAtSize(textSize);
+
+      page.drawText(watermarkText, {
+        x: width / 2 - textWidth / 2,
+        y: height / 2 - textHeight / 2,
+        size: textSize,
+        font: helveticaFont,
+        color: rgb(0.7, 0.7, 0.7),
+        opacity: 0.35,
+        rotate: degrees(45),
+      });
+    }
   }
 
   const modifiedPdfBytes = await pdfDoc.save();

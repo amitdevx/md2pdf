@@ -524,7 +524,12 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       offline: options.offline
     });
     
-    const pageCounts = await injectMetadata(stagePath, metadata, options.outline ? ctx.headings : undefined);
+    const pageCounts = await injectMetadata(
+      stagePath, 
+      metadata, 
+      options.outline ? ctx.headings : undefined,
+      options.watermark
+    );
 
     // Final atomic write to prevent incomplete PDFs
     const fsNode = await import('node:fs');
