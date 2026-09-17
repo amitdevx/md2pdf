@@ -164,7 +164,7 @@ program
   .option('--no-math', 'Disable KaTeX math rendering for LaTeX equations')
   .option('--offline', 'Disable outbound network requests for remote assets')
   .option('-r, --recursive', 'Recursively process all markdown files in given directories')
-  .option('--merge <output>', 'Combine all converted PDFs into a single file')
+  .option('--merge', 'Concatenate multiple converted Markdown files into a single unified output PDF')
   .option('--watch', 'Watch input files for changes and automatically rebuild')
   .option('--watermark <text>', 'Inject a pure CSS watermark text into the output')
   .option('--split-by-heading <level>', 'Split AST at H1 or H2 boundaries (1 or 2)', (val) => {
@@ -242,7 +242,10 @@ if (process.argv.length <= 2) {
   program.outputHelp();
   process.exit(1);
 } else {
-  program.parseAsync(process.argv).finally(() => {
+  program.parseAsync(process.argv).catch((err) => {
+    console.error('\n✖ Unexpected CLI Error:', err);
+    process.exit(1);
+  }).finally(() => {
     process.exit(process.exitCode || 0);
   });
 }

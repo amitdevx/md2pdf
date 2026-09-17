@@ -61,7 +61,7 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(-45deg);
-        opacity: 0.12;
+        opacity: 0.5;
         font-size: 96px;
         font-weight: bold;
         color: #999;

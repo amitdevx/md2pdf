@@ -140,6 +140,8 @@ export async function handleBatch(
     const vaultIndex = buildVaultIndex(cliFlags.vaultRoot as string | undefined, inputs);
     inputs = sortDependencies(inputs, vaultIndex);
 
+  let isDir = false;
+  try { if (options.output) isDir = fs.statSync(options.output).isDirectory(); } catch {}
     const queue = inputs.map((inp, i) => ({ input: inp, i }));
 
     const worker = async () => {
@@ -152,8 +154,8 @@ export async function handleBatch(
         const fileStartTime = Date.now();
 
         let output = cliFlags.output;
-        if (output) {
-          // Always treat output as a directory in batch mode
+        if (output && (!cliFlags.merge || isDir)) {
+          // Always treat output as a directory in batch mode (unless merge is true and output is a file)
           output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
         } else {
           const orig = originalPaths?.[input];
@@ -330,16 +332,19 @@ export async function handleBatch(
     const anyErrors = results.some((r: any) => !r || r.isError);
     if (anyErrors) hasErrors = true;
 
+    const finalMergeOutput = options.output ? (options.output.endsWith('/') || isDir ? require('path').join(options.output, 'merged.pdf') : options.output) : 'merged.pdf';
+
     if (cliFlags.merge && !hasErrors && successfulCount > 0) {
-      const pathsToMerge = results.filter((r: any) => r && !r.isError && r.outputPath && !r.isSkipped).map((r: any) => r.outputPath);
+      // Include skipped files too if they exist!
+      const pathsToMerge = results.filter((r: any) => r && !r.isError && r.outputPath).map((r: any) => r.outputPath);
       if (pathsToMerge.length > 0) {
         try {
           if (!options.quiet) {
-            spinner.text = `Merging ${pathsToMerge.length} PDFs into ${cliFlags.merge}...`;
+            spinner.text = `Merging ${pathsToMerge.length} PDFs into ${finalMergeOutput}...`;
             spinner.start();
           }
-          await mergePDFs(pathsToMerge, cliFlags.merge);
-          if (!options.quiet) spinner.succeed(`Merged output saved to ${cliFlags.merge}`);
+          await mergePDFs(pathsToMerge, finalMergeOutput);
+          if (!options.quiet) spinner.succeed(`Merged output saved to ${finalMergeOutput}`);
         } catch (err: any) {
           hasErrors = true;
           if (!options.quiet) spinner.fail(`Failed to merge PDFs: ${err.message}`);

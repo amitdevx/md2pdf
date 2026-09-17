@@ -45,4 +45,5 @@ export async function watchFiles(files: string[], buildFn: (file?: string) => Pr
       }
     }
   }
+  return new Promise(() => {});
 }

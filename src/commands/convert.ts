@@ -117,19 +117,27 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
 
   const isBatch = inputs.length > 1;
 
-  if (isBatch && options.output) {
-    const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
+  if (isBatch && options.output && !cliFlags.merge) {
+    let outputStat: fs.Stats | null = null;
+    try {
+      outputStat = fs.statSync(options.output);
+    } catch {}
     if (outputStat && !outputStat.isDirectory()) {
       if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_OUTPUT_IS_NOT_DIRECTORY', 'Output Must Be Directory', `Multiple inputs provided, but output '${options.output}' is a file.`);
+        emitJsonErrorAndExit('ERR_INVALID_INPUT', 'Output must be a Directory', `The output path '${options.output}' already exists and is not a directory.`);
       } else {
-        console.error(pc.red(`✖ Output path '${options.output}' is a file, but multiple inputs were provided.`));
+        console.error(pc.red(`✖ The output path '${options.output}' already exists and is not a directory.`));
         console.error(pc.dim('  When converting multiple files, --output must be a directory.'));
         process.exit(EXIT.USAGE_ERROR);
       }
     }
     if (!outputStat && !options.dryRun) {
       fs.mkdirSync(options.output, { recursive: true });
+    }
+  } else if (isBatch && options.output && cliFlags.merge && !options.dryRun) {
+    const outDir = path.dirname(options.output);
+    if (!fs.existsSync(outDir)) {
+      fs.mkdirSync(outDir, { recursive: true });
     }
   } else if (!isBatch && options.output) {
     const outputStat = fs.existsSync(options.output) ? fs.statSync(options.output) : null;
