@@ -21,7 +21,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_BROWSER_MISSING,
       'Browser Missing',
-      'The required Chromium browser executable could not be found.',
+      'Chromium browser executable not found.',
       context,
       error
     );
@@ -36,7 +36,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_MISSING_DEPENDENCIES,
       'Missing System Dependencies',
-      'The browser requires system libraries that are currently missing.',
+      'Browser is missing required system libraries.',
       context,
       error
     );
@@ -47,7 +47,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_SANDBOX,
       'Sandboxing Failed',
-      'The browser failed to start because OS sandboxing is unavailable or restricted.',
+      'Browser failed to start: OS sandboxing is unavailable or restricted.',
       context,
       error
     );
@@ -58,7 +58,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_OUT_OF_MEMORY,
       'Out Of Memory',
-      'The system does not have enough memory to launch the browser.',
+      'Insufficient memory to launch the browser.',
       context,
       error
     );
@@ -72,7 +72,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
       return new Md2PdfError(
         Md2PdfErrorCode.ERR_PERMISSION_DENIED,
         'Permission Denied',
-        `Cannot write to the output file due to restrictive filesystem permissions.`,
+        `Cannot write to the output file: permission denied.`,
         context,
         error
       );
@@ -80,7 +80,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_PERMISSION_DENIED,
       'Permission Denied',
-      'The browser executable cannot be accessed due to restrictive filesystem permissions.',
+      'Cannot access browser executable: permission denied.',
       context,
       error
     );
@@ -91,7 +91,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_UNSUPPORTED_ARCH,
       'Unsupported Architecture',
-      'The downloaded browser binary is incompatible with your CPU architecture.',
+      'Browser binary is incompatible with CPU architecture.',
       context,
       error
     );
@@ -102,7 +102,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_NETWORK_TIMEOUT,
       'Network Connection Failed',
-      'Failed to connect due to network timeout or reset.',
+      'Connection failed: network timeout or reset.',
       context,
       error
     );
@@ -113,7 +113,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED,
       'Browser Launch Failed',
-      'The browser executable was found but crashed or failed to start.',
+      'Browser crashed or failed to start.',
       context,
       error
     );
@@ -133,7 +133,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
   return new Md2PdfError(
     Md2PdfErrorCode.ERR_UNKNOWN,
     'Unknown Error',
-    `An unexpected error occurred during PDF rendering. Details: ${error instanceof Error ? (error.stack || error.message) : String(error)}`,
+    `Unexpected error during PDF rendering. Details: ${error instanceof Error ? (error.stack || error.message) : String(error)}`,
     context,
     error
   );

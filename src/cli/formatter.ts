@@ -36,16 +36,22 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
 
   const rec = getRecommendation(err);
   
-  console.error('\n' + pc.red(`✖  Error: ${err.title}`));
-  console.error(`\n   ${err.reason}`);
+  console.error('');
+  console.error(pc.red(`  ✖ Error: ${err.title}`));
+  
+  const reasonText = err.reason.split('\n').map(l => `    ${l}`).join('\n');
+  console.error(reasonText);
   
   if (rec) {
-    console.error(pc.yellow('\n   Reason:'));
-    console.error(`   ${rec.summary}`);
+    console.error('');
+    console.error(pc.yellow('    Reason:'));
+    const summaryText = rec.summary.split('\n').map(l => `      ${l}`).join('\n');
+    console.error(summaryText);
     
     if (rec.commands.length > 0) {
-      console.error(pc.green('\n   Recommendation:'));
-      rec.commands.forEach(cmd => console.error(`     ${cmd}`));
+      console.error('');
+      console.error(pc.green('    Recommendation:'));
+      rec.commands.forEach(cmd => console.error(`      ${cmd}`));
     }
   }
   

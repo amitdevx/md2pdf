@@ -16,7 +16,7 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
   switch (error.code) {
     case Md2PdfErrorCode.ERR_BROWSER_MISSING:
       return {
-        summary: 'Playwright needs to download the Chromium binary to generate PDFs. Please run `md2pdf init` to install it.',
+        summary: 'Chromium is required to generate PDFs. Run `md2pdf init` to install it.',
         commands: ['npx md2pdf init'],
         docs: 'https://playwright.dev/docs/browsers'
       };
@@ -96,9 +96,9 @@ export function getRecommendation(error: Md2PdfError): Recommendation | null {
       }
 
       return {
-        summary: 'Your configuration file (.md2pdf.json) contains invalid JSON or unsupported options.',
+        summary: 'The configuration file contains invalid JSON or unsupported options.',
         commands: [
-          'Run `md2pdf --init` to generate a fresh configuration file.'
+          'Run `md2pdf init` to generate a fresh configuration file.'
         ]
       };
 

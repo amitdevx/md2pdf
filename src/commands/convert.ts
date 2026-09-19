@@ -84,7 +84,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
           inputs.push(...matches);
         } else {
           if (resolved.toLowerCase().endsWith('.pdf')) {
-            throw new Error(`ERR_INVALID_INPUT: Cannot process PDF file '${raw}' as main input. PDF files can only be used with --cover-page for safety.`);
+            throw new Error(`ERR_INVALID_INPUT: Cannot process PDF file '${raw}' as main input. md2pdf converts Markdown to PDF. Existing PDFs can only be attached as cover pages.`);
           }
           inputs.push(resolved);
         }
@@ -100,7 +100,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
         }
       } else {
         if (resolved.toLowerCase().endsWith('.pdf')) {
-          throw new Error(`ERR_INVALID_INPUT: Cannot process PDF file '${raw}' as main input. PDF files can only be used with --cover-page for safety.`);
+          throw new Error(`ERR_INVALID_INPUT: Cannot process PDF file '${raw}' as main input. md2pdf converts Markdown to PDF. Existing PDFs can only be attached as cover pages.`);
         }
         // Not a glob, just push the resolved path (validation will give proper error)
         inputs.push(resolved);

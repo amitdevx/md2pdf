@@ -240,15 +240,21 @@ export default new Command('doctor')
 
     if (mdError) {
       const rec = getRecommendation(mdError);
-      console.log('\n  ' + pc.red(`✖  Error: ${mdError.title}`));
-      console.log(`     ${mdError.reason}`);
+      console.log('');
+      console.log(pc.red(`  ✖ Error: ${mdError.title}`));
+      
+      const reasonText = mdError.reason.split('\n').map((l: string) => `    ${l}`).join('\n');
+      console.log(reasonText);
       
       if (rec) {
-        console.log(pc.yellow('\n     Recommendation:'));
-        console.log(`     ${rec.summary}`);
+        console.log('');
+        console.log(pc.yellow('    Recommendation:'));
+        const summaryText = rec.summary.split('\n').map((l: string) => `      ${l}`).join('\n');
+        console.log(summaryText);
+        
         if (rec.commands.length > 0) {
           console.log('');
-          rec.commands.forEach((cmd: string) => console.log(`       ${pc.cyan(cmd)}`));
+          rec.commands.forEach((cmd: string) => console.log(`      ${pc.cyan(cmd)}`));
         }
       }
       console.log(pc.dim('────────────────────────────────────────\n'));
