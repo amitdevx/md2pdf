@@ -57,8 +57,13 @@ export async function prependCoverPage(
     const tempPdf = path.join(scratchDir, 'cover.pdf');
     
     try {
+      const subConfig = { ...config } as any;
+      delete subConfig.coverPage; // Prevent infinite recursion
+      delete subConfig.password; // Prevent encrypting the temp cover page
+      delete subConfig.__preparsed; // Prevent recursive rendering of the main document content!
+
       await convert({
-        ...config,
+        ...subConfig,
         input: coverPagePath,
         output: tempPdf,
         // Disable TOC, outline, and page numbers for the cover page itself

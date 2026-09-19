@@ -79,6 +79,9 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
           const matches = await fg(pattern, { cwd: resolved, dot: false, unique: true, onlyFiles: true, absolute: true, followSymbolicLinks: false, ignore: ['**/node_modules/**'] });
           inputs.push(...matches);
         } else {
+          if (resolved.toLowerCase().endsWith('.pdf')) {
+            throw new Error(`ERR_INVALID_INPUT: Cannot process PDF file '${raw}' as main input. PDF files can only be used with --cover-page for safety.`);
+          }
           inputs.push(resolved);
         }
         continue;
@@ -87,8 +90,14 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       if (fg.isDynamicPattern(normalizedPattern)) {
         // Pass explicit cwd so fast-glob resolves against the user's shell dir
         const matches = await fg(normalizedPattern, { cwd: shellCwd, dot: true, unique: true, onlyFiles: true, absolute: true });
-        inputs.push(...matches);
+        for (const match of matches) {
+          if (match.toLowerCase().endsWith('.pdf')) continue;
+          inputs.push(match);
+        }
       } else {
+        if (resolved.toLowerCase().endsWith('.pdf')) {
+          throw new Error(`ERR_INVALID_INPUT: Cannot process PDF file '${raw}' as main input. PDF files can only be used with --cover-page for safety.`);
+        }
         // Not a glob, just push the resolved path (validation will give proper error)
         inputs.push(resolved);
       }

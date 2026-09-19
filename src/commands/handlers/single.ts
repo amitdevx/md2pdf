@@ -39,7 +39,7 @@ export async function handleSingle(
       output += '.pdf';
     }
   } else {
-    output = input.replace(/\.md$/i, '.pdf');
+    output = cliFlags.stdin ? path.resolve(process.cwd(), 'output.pdf') : input.replace(/\.md$/i, '.pdf');
   }
   output = path.resolve(output as string);
 

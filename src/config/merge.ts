@@ -132,7 +132,7 @@ export function mergeConfig(
     mermaid: {
       enabled: typeof merged.mermaid === 'object' ? (merged.mermaid.enabled !== false) : (merged.mermaid !== false),
       theme: typeof merged.mermaid === 'object' ? (merged.mermaid.theme as any || 'auto') : 'auto',
-      timeout: typeof merged.mermaid === 'object' ? merged.mermaid.timeout : 10000,
+      timeout: typeof merged.mermaid === 'object' ? merged.mermaid.timeout : 30000,
       maxWidth: typeof merged.mermaid === 'object' ? merged.mermaid.maxWidth : undefined,
       maxHeight: typeof merged.mermaid === 'object' ? merged.mermaid.maxHeight : undefined,
     },

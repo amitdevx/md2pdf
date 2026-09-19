@@ -446,10 +446,12 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         headerTemplate = options.header.template;
         headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
       } else {
+        const titleHtml = useTitle ? '<span class="title"></span>' : '';
+        const dateHtml = useDate ? `<span>${metadata.author ? metadata.author + ' - ' : ''}<span class="date"></span></span>` : '';
         headerTemplate = `
         <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; border-bottom: 0.5px solid #ccc; margin-bottom: 5mm; padding-bottom: 2mm;">
-          <span class="title"></span>
-          <span>${metadata.author ? metadata.author + ' - ' : ''}<span class="date"></span></span>
+          ${titleHtml}
+          ${dateHtml}
         </div>`;
       }
     } else {
@@ -482,9 +484,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         footerTemplate = options.footer.template;
         footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
       } else {
+        const pageHtml = usePageNumbers ? '<span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>' : '';
         footerTemplate = `
         <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; padding: 0 15mm; display: flex; justify-content: center; border-top: 0.5px solid #ccc; margin-top: 5mm; padding-top: 2mm;">
-          <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+          ${pageHtml}
         </div>`;
       }
     } else {
@@ -545,7 +548,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
 
     if (options.password) {
       const { encryptPdf } = await import('../pdf/encrypt.js');
-      encryptPdf(stagePath, options.password);
+      await encryptPdf(stagePath, options.password);
     }
 
     // Final atomic write to prevent incomplete PDFs

@@ -88,9 +88,8 @@ export async function handleBatch(
     }
 
     if (!daemonAlive) {
-      // Acquire and hold a single browser + context for the entire batch
+      // Acquire and hold a single browser for the entire batch
       const browser = await globalBrowserManager.acquireBrowser();
-      sharedContext = await browser.newContext({ javaScriptEnabled: false });
 
       if (hasMermaidAnywhere) {
         mermaidInitPromise = (async () => {
@@ -154,14 +153,24 @@ export async function handleBatch(
         const fileStartTime = Date.now();
 
         let output = cliFlags.output;
-        if (output && (!cliFlags.merge || isDir)) {
-          // Always treat output as a directory in batch mode (unless merge is true and output is a file)
+        let isTempMergeFile = false;
+        
+        if (cliFlags.merge) {
+          const os = await import('node:os');
+          const crypto = await import('node:crypto');
+          const hash = crypto.randomBytes(6).toString('hex');
+          output = path.join(fs.realpathSync(os.tmpdir()), `md2pdf-merge-${hash}-${path.basename(input).replace(/\.md$/i, '.pdf')}`);
+          isTempMergeFile = true;
+        } else if (output) {
+          // Always treat output as a directory in batch mode
           output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
         } else {
           const orig = originalPaths?.[input];
           if (orig) {
             // Split file: place next to the original source file
             output = path.join(path.dirname(orig), path.basename(input).replace(/\.md$/i, '.pdf'));
+          } else if (cliFlags.stdin) {
+            output = path.resolve(process.cwd(), path.basename(input).replace(/\.md$/i, '.pdf'));
           } else {
             output = input.replace(/\.md$/i, '.pdf');
           }
@@ -215,11 +224,9 @@ export async function handleBatch(
           } catch { /* ignore cache errors */ }
         }
 
-        // Attach the shared context (already verified not closed) so generatePdf
-        // doesn't create/destroy a new context for every file.
-        if (sharedContext) {
-          (convertOptions as any).sharedContext = sharedContext;
-        }
+        // Attach the shared mermaid context so it doesn't reload mermaid.min.js
+        // We INTENTIONALLY DO NOT share the main PDF context because 
+        // Chromium will accumulate massive memory across 50+ large PDFs!
         if (globalMermaidPage) {
           convertOptions.sharedMermaidPage = globalMermaidPage;
         }
@@ -345,6 +352,13 @@ export async function handleBatch(
           }
           await mergePDFs(pathsToMerge, finalMergeOutput);
           if (!options.quiet) spinner.succeed(`Merged output saved to ${finalMergeOutput}`);
+          
+          // Cleanup temporary merge files safely
+          for (const p of pathsToMerge) {
+            if (p.includes('md2pdf-merge-')) {
+              try { fs.unlinkSync(p); } catch {}
+            }
+          }
         } catch (err: any) {
           hasErrors = true;
           if (!options.quiet) spinner.fail(`Failed to merge PDFs: ${err.message}`);
