@@ -11,15 +11,10 @@ function getCacheDir(): string {
   return process.env.MD2PDF_CACHE_DIR || path.join(os.homedir(), '.md2pdf', 'render-cache');
 }
 
-interface CacheEntry {
-  hash: string;
-  output: string;
-}
-
 export function clearCache() {
-  const dir = getCacheDir();
-  if (fs.existsSync(dir)) {
-    fs.rmSync(dir, { recursive: true, force: true });
+  const md2pdfDir = process.env.MD2PDF_CACHE_DIR || path.join(os.homedir(), '.md2pdf');
+  if (fs.existsSync(md2pdfDir)) {
+    fs.rmSync(md2pdfDir, { recursive: true, force: true });
   }
 }
 
@@ -29,13 +24,13 @@ function getCachePath(inputPath: string): string {
     resolvedPath = resolvedPath.toLowerCase();
   }
   const pathHash = crypto.createHash('sha256').update(resolvedPath).digest('hex');
-  return path.join(getCacheDir(), `${pathHash}.json`);
+  return path.join(getCacheDir(), pathHash);
 }
 
 export function computeHash(content: string, options: any): string {
   const hash = crypto.createHash('sha256');
   hash.update(content);
-  // PERF-3: Hash only stable options, not output path or environment details
+  
   const stableOptions = { ...options };
   delete stableOptions.input;
   delete stableOptions.output;
@@ -46,7 +41,6 @@ export function computeHash(content: string, options: any): string {
   
   hash.update(JSON.stringify(stableOptions));
   
-  // Include global version to bust cache on updates
   try {
     const pkgPath1 = path.resolve(__dirname, '../../package.json');
     const pkgPath2 = path.resolve(__dirname, '../package.json');
@@ -54,10 +48,9 @@ export function computeHash(content: string, options: any): string {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
     hash.update(pkg.version);
   } catch {
-    hash.update('v0.9.7'); // Fallback
+    hash.update('v0.9.8');
   }
 
-  // If theme is a custom local path, hash its contents to invalidate on change
   if (options.theme && options.theme !== 'default' && options.theme !== 'light' && options.theme !== 'dark') {
     try {
       if (fs.existsSync(options.theme)) {
@@ -70,29 +63,20 @@ export function computeHash(content: string, options: any): string {
 }
 
 export function checkCache(inputPath: string, hash: string, outputPath: string): boolean {
-  const cacheFile = getCachePath(inputPath);
-  if (!fs.existsSync(cacheFile)) return false;
+  const cacheBase = getCachePath(inputPath);
+  const metaFile = `${cacheBase}.json`;
+  const pdfFile = `${cacheBase}.pdf`;
+
+  if (!fs.existsSync(metaFile) || !fs.existsSync(pdfFile)) return false;
+
   try {
-    const entry: CacheEntry = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+    const entry = JSON.parse(fs.readFileSync(metaFile, 'utf-8'));
     if (entry && entry.hash === hash) {
-      if (entry.output === outputPath) {
-        if (fs.existsSync(outputPath)) return true;
-      } else {
-        // Security check: validate the path from the cache file before copying
-        if (
-          typeof entry.output === 'string' &&
-          entry.output.toLowerCase().endsWith('.pdf') &&
-          isSafeOutputPath(entry.output) &&
-          fs.existsSync(entry.output)
-        ) {
-          fs.copyFileSync(entry.output, outputPath);
-          updateCache(inputPath, hash, outputPath);
-          return true;
-        }
-      }
+      fs.copyFileSync(pdfFile, outputPath);
+      return true;
     }
   } catch {
-    // Ignore invalid cache files
+    // Ignore invalid
   }
   return false;
 }
@@ -102,8 +86,17 @@ export function updateCache(inputPath: string, hash: string, outputPath: string)
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  const cacheFile = getCachePath(inputPath);
-  const tmpFile = cacheFile + '.' + crypto.randomBytes(4).toString('hex') + '.tmp';
-  fs.writeFileSync(tmpFile, JSON.stringify({ hash, output: outputPath }, null, 2), 'utf-8');
-  fs.renameSync(tmpFile, cacheFile);
+  
+  const cacheBase = getCachePath(inputPath);
+  const metaFile = `${cacheBase}.json`;
+  const pdfFile = `${cacheBase}.pdf`;
+
+  const tmpMeta = metaFile + '.' + crypto.randomBytes(4).toString('hex') + '.tmp';
+  const tmpPdf = pdfFile + '.' + crypto.randomBytes(4).toString('hex') + '.tmp';
+
+  fs.copyFileSync(outputPath, tmpPdf);
+  fs.writeFileSync(tmpMeta, JSON.stringify({ hash }, null, 2), 'utf-8');
+  
+  fs.renameSync(tmpPdf, pdfFile);
+  fs.renameSync(tmpMeta, metaFile);
 }

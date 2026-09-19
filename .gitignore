@@ -78,3 +78,8 @@ tests/cli/temp*.txt
 tests/fixtures-exit-codes/
 tests/fixtures-json-errors/
 .md2pdf-cache/
+
+# Extraneous Dirs
+dummy_dir/
+md2pdf-bench/
+md2pdf_audit/

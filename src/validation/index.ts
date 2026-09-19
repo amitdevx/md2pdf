@@ -18,7 +18,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     const dummyPredicted = predictOutputPath('-', options.output, isBatch);
     const outputOnlyErr = validateOutput('-', options.output, dummyPredicted);
     if (outputOnlyErr && outputOnlyErr.code === Md2PdfErrorCode.ERR_PATH_TRAVERSAL) {
-      // Fatal — return immediately
+      // Fatal - return immediately
       return {
         validInputs: [],
         errors: inputs.map(input => ({ input, error: outputOnlyErr, isFatal: true }))

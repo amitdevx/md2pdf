@@ -5,9 +5,9 @@ Every item must be checked before `npm publish`.
 
 ---
 
-## Phase 1 — Before You Write Code
+## Phase 1 - Before You Write Code
 
-- [ ] **Open an Issue** titled `v0.X.Y — <what changes>` and list what will change
+- [ ] **Open an Issue** titled `v0.X.Y - <what changes>` and list what will change
 - [ ] **Identify which bugs from the audit history are being fixed** (see `AUDIT_HISTORY.md`)
 - [ ] **Check if you are adding a new error path** → if yes, it needs exit code + JSON test
 - [ ] **Check if you are touching `convert.ts` cache logic** → if yes, run Gate 7 manually
@@ -15,7 +15,7 @@ Every item must be checked before `npm publish`.
 
 ---
 
-## Phase 2 — During Development
+## Phase 2 - During Development
 
 - [ ] No scratch/test/debug files in the repo root (`.gitignore` pattern: `test_*.js`)
 - [ ] Every new `Md2PdfError` throw has a named `Md2PdfErrorCode` entry
@@ -26,7 +26,7 @@ Every item must be checked before `npm publish`.
 
 ---
 
-## Phase 3 — Pre-Push (Run the Script)
+## Phase 3 - Pre-Push (Run the Script)
 
 ```bash
 bash scripts/pre-publish.sh
@@ -49,7 +49,7 @@ If any gate fails: **fix it first, do not publish**.
 
 ---
 
-## Phase 4 — Manual Spot Checks (5 minutes)
+## Phase 4 - Manual Spot Checks (5 minutes)
 
 These cannot be automated without a live browser but take under 5 minutes:
 
@@ -62,7 +62,7 @@ These cannot be automated without a live browser but take under 5 minutes:
 
 ---
 
-## Phase 5 — CHANGELOG and Version Bump
+## Phase 5 - CHANGELOG and Version Bump
 
 - [ ] `CHANGELOG.md` top entry version matches `package.json`
 - [ ] CHANGELOG entry lists every fixed bug by symptom (not just "fixed exit code")
@@ -74,7 +74,7 @@ These cannot be automated without a live browser but take under 5 minutes:
 
 ---
 
-## Phase 6 — Publish
+## Phase 6 - Publish
 
 ```bash
 # Final check
@@ -94,7 +94,7 @@ git push origin --tags
 
 ---
 
-## Phase 7 — Post-Publish Verification (2 minutes)
+## Phase 7 - Post-Publish Verification (2 minutes)
 
 - [ ] `npm view @amitdevx/md2pdf version` shows the new version
 - [ ] `npm install -g @amitdevx/md2pdf@<new-version>` works in a clean environment

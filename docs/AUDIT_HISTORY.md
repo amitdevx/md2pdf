@@ -1,7 +1,7 @@
 # md2pdf Bug Audit History
 
 This file documents every bug found across all audit sessions.
-Reference this when writing fixes — check if your fix is for a recurring pattern.
+Reference this when writing fixes - check if your fix is for a recurring pattern.
 
 ## Recurring Patterns (Fix These First)
 
@@ -80,7 +80,7 @@ Reference this when writing fixes — check if your fix is for a recurring patte
 | Bug | Description | Severity | Status |
 |-----|-------------|----------|--------|
 | B27 | chmod 000 exits 0 (RP03 still active in root environments) | Medium | Known, non-blocking |
-| B28 | Batch result per-file `code` field still `—` for conversion errors | Low | Known, non-blocking |
+| B28 | Batch result per-file `code` field still `-` for conversion errors | Low | Known, non-blocking |
 
 ---
 

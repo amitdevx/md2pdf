@@ -1,4 +1,4 @@
-# brain.md — Complete Knowledge Base for `@amitdevx/md2pdf`
+# brain.md - Complete Knowledge Base for `@amitdevx/md2pdf`
 
 > **Purpose:** This file contains *every detail* about the md2pdf npm package.
 > Any AI agent reading this file should be able to understand, modify, build, test,
@@ -15,9 +15,9 @@ Last Updated: 2026-09-05
 1. [Identity](#1-identity)
 2. [Architecture & Pipeline](#2-architecture--pipeline)
 3. [Full File Tree](#3-full-file-tree)
-4. [Every Source File — Complete Code](#4-every-source-file--complete-code)
-5. [Every Test File — Complete Code](#5-every-test-file--complete-code)
-6. [Every Config File — Complete Contents](#6-every-config-file--complete-contents)
+4. [Every Source File - Complete Code](#4-every-source-file--complete-code)
+5. [Every Test File - Complete Code](#5-every-test-file--complete-code)
+6. [Every Config File - Complete Contents](#6-every-config-file--complete-contents)
 
 ---
 
@@ -43,7 +43,7 @@ Last Updated: 2026-09-05
 | **Git hooks** | Husky + lint-staged |
 | **PDF engine** | Playwright (headless Chromium) |
 | **Markdown engine** | unified + remark + rehype |
-| **Syntax highlighting** | Shiki (`@shikijs/rehype`) — `github-light` theme |
+| **Syntax highlighting** | Shiki (`@shikijs/rehype`) - `github-light` theme |
 | **Math** | KaTeX |
 | **Mermaid diagrams** | `mermaid` rendered inside Playwright browser context → SVG inlined |
 | **Obsidian Syntax** | Native wiki-links (`[[...]]`), callouts (`> [!info]`), tags (`#tag`), highlights (`==...==`), and embeds (`![[...]]`) |
@@ -700,7 +700,7 @@ md2pdf init     → guided Chromium install wizard
 71 directories, 434 files
 ```
 
-## 4. Every Source File — Complete Code
+## 4. Every Source File - Complete Code
 
 ### `src/assets/css.ts`
 
@@ -2113,7 +2113,7 @@ export interface CliOptions {
 
 ```ts
 /**
- * convert.ts — CLI orchestrator (~100 lines)
+ * convert.ts - CLI orchestrator (~100 lines)
  *
  * Responsibilities:
  *   1. Resolve globs → concrete file paths
@@ -2123,8 +2123,8 @@ export interface CliOptions {
  *   5. Route to handleSingle() or handleBatch()
  *
  * The actual conversion logic lives in:
- *   src/commands/handlers/single.ts  — single file fast-path + cache bypass
- *   src/commands/handlers/batch.ts   — concurrent worker pool
+ *   src/commands/handlers/single.ts  - single file fast-path + cache bypass
+ *   src/commands/handlers/batch.ts   - concurrent worker pool
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -2301,7 +2301,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
 ```ts
 /**
  * Batch conversion handler.
- * Extracted from convert.ts — handles the concurrent worker pool for batch markdown → PDF.
+ * Extracted from convert.ts - handles the concurrent worker pool for batch markdown → PDF.
  * All logic mirrors the original convert.ts batch flow exactly.
  */
 import { fileURLToPath } from 'node:url';
@@ -2734,7 +2734,7 @@ export async function handleBatch(
 ```ts
 /**
  * Single-file conversion handler.
- * Extracted from convert.ts — handles the fast-path for a single markdown → PDF.
+ * Extracted from convert.ts - handles the fast-path for a single markdown → PDF.
  * All logic mirrors the original convert.ts single-file flow exactly.
  */
 import { fileURLToPath } from 'node:url';
@@ -7295,7 +7295,7 @@ export function validateInputFiles(inputs: string[], isBatch: boolean, options: 
     const dummyPredicted = predictOutputPath('-', options.output, isBatch);
     const outputOnlyErr = validateOutput('-', options.output, dummyPredicted);
     if (outputOnlyErr && outputOnlyErr.code === Md2PdfErrorCode.ERR_PATH_TRAVERSAL) {
-      // Fatal — return immediately
+      // Fatal - return immediately
       return {
         validInputs: [],
         errors: inputs.map(input => ({ input, error: outputOnlyErr, isFatal: true }))
@@ -7456,7 +7456,7 @@ export function validateOutput(input: string, outputOption: string | undefined, 
 
 ```
 
-## 5. Every Test File — Complete Code
+## 5. Every Test File - Complete Code
 
 ### `tests/cli/batch.test.ts`
 
@@ -8728,7 +8728,7 @@ describe('Validation: output.ts', () => {
 
 ```
 
-## 6. Every Config File — Complete Contents
+## 6. Every Config File - Complete Contents
 
 ### `package.json`
 
@@ -8988,8 +8988,8 @@ export default defineConfig({
   - `➖` skipped (publish: false, output already exists)
   - `⚠` warning (toc flags without --toc, output extension, SIGINT)
   - `ℹ` info (verbose pipeline steps, init header, doctor header)
-  Previously batch.ts used `[ERR]` / `[INFO]` bracket-style prefixes
-  and formatter.ts used `[ERR]` in the error box header.
+  Previously batch.ts used `✖` / `ℹ` bracket-style prefixes
+  and formatter.ts used `✖` in the error box header.
 - Dead code removed: `--stdout` and `--input` unsupported-option guards
   that were never reachable (those flags were never registered).
 
@@ -9059,8 +9059,8 @@ All notable changes to this project will be documented in this file.
 ## [0.8.9] - 2026-08-22
 
 ### Fixed
-- File >5MB no longer hangs; the size check now correctly exits before the browser starts for single-file mode — missing continue caused the file to enter the pipeline after the check fired (BUG-1)
-- Batch progress counter no longer overflows (e.g. 5/3); completedCount++ was called twice per file — once in the success path and again unconditionally at the bottom of the loop (BUG-6 regression)
+- File >5MB no longer hangs; the size check now correctly exits before the browser starts for single-file mode - missing continue caused the file to enter the pipeline after the check fired (BUG-1)
+- Batch progress counter no longer overflows (e.g. 5/3); completedCount++ was called twice per file - once in the success path and again unconditionally at the bottom of the loop (BUG-6 regression)
 - doc too complex now exits 2 without --json-errors; process.exit was being called inside a try/catch that silently swallowed it (BUG-8)
 - Path traversal error is now rendered through the shared renderCliError formatter with correct box, error code, and run-with-verbose hint (BUG-NEW-3)
 - Browser not found error is now rendered through renderCliError for consistent output (BUG-NEW-3)
@@ -9526,7 +9526,7 @@ dist/
 - Strict mode enabled (`"strict": true`)
 - Target: ES2022, Module: ESNext, moduleResolution: Bundler
 - All imports use `.js` extension (ESM convention, even for `.ts` source files)
-- `@typescript-eslint/no-explicit-any` = `warn` (not yet error — becomes error at v0.9.0)
+- `@typescript-eslint/no-explicit-any` = `warn` (not yet error - becomes error at v0.9.0)
 
 ### Code Style (Prettier)
 - Semicolons: **yes** | Quotes: **single** | Trailing commas: **ES5** | Print width: **100** | Tab: **2**
@@ -9718,10 +9718,10 @@ export class Md2PdfError extends Error {
 ### State (v0.9.1)
 
 CSS is **extracted** from `src/renderer/index.ts` into `src/assets/css.ts` as two exported string constants:
-- `baseCss` — typography, layout, tables, code, images, TOC, footnotes, task lists, details
-- `printCss` — `@media print` overrides + page break classes
+- `baseCss` - typography, layout, tables, code, images, TOC, footnotes, task lists, details
+- `printCss` - `@media print` overrides + page break classes
 
-### CSS Variables (v0.2.0 — fully renamed)
+### CSS Variables (v0.2.0 - fully renamed)
 
 All variables use `--md2pdf-*` prefix. Old `--text-main`, `--bg-main` etc. are gone.
 
@@ -9823,10 +9823,10 @@ tests/diff/      ← pixel-diff images (gitignored)
 ### Version Timeline
 
 ```
-v0.0.1  ✅ Foundation — core pipeline, basic output
-v0.0.2  ✅ Packaging & CI — npm publish, GitHub Actions
+v0.0.1  ✅ Foundation - core pipeline, basic output
+v0.0.2  ✅ Packaging & CI - npm publish, GitHub Actions
 
-v0.1.0  ✅ Professional Rendering — Shiki highlighting, typography, print CSS
+v0.1.0  ✅ Professional Rendering - Shiki highlighting, typography, print CSS
 v0.1.1  ✅ TOC + Footnotes + PDF Metadata (gray-matter, pdf-lib, rehype-slug)
 v0.1.2  ✅ Headers/Footers + Page Breaks (running header, footer, <!-- pagebreak -->)
 v0.1.3  ✅ Headers/Footers polish + HTML escaping + dynamic version
@@ -9834,22 +9834,22 @@ v0.1.4  ✅ postinstall Chromium auto-download (scripts/install-browser.mjs)
 v0.1.5  ✅ postinstall guard fix (npm_config_global check removed)
 v0.1.6  ✅ CLI validation improvements (--paper, --margin, stdin, trailing slash, .md check)
 
-v0.2.0  ✅ Mermaid — all diagram types, SVG HiDPI rendering, per-diagram theme,
+v0.2.0  ✅ Mermaid - all diagram types, SVG HiDPI rendering, per-diagram theme,
               browser reuse, error fallback divs, mermaid-mixed, doctor + init subcommands
 
-v0.2.1  ✅ Mermaid improvements — edge cases, caching, background color fix
+v0.2.1  ✅ Mermaid improvements - edge cases, caching, background color fix
 
-v0.3.0  ✅ KaTeX — inline/display math, numbering, macros, chemistry
+v0.3.0  ✅ KaTeX - inline/display math, numbering, macros, chemistry
 
-v0.4.0  ✅ Obsidian Core — wiki links, callouts, YAML frontmatter extras, tags
-v0.5.0  ✅ Obsidian Embeds — ![[embeds]], transclusion, attachments
+v0.4.0  ✅ Obsidian Core - wiki links, callouts, YAML frontmatter extras, tags
+v0.5.0  ✅ Obsidian Embeds - ![[embeds]], transclusion, attachments
 
-v0.5.0  ✅ Configuration — md2pdf.config.ts, defineConfig, profiles, Zod validation
-v0.6.0  ✅ Themes — 7 built-in themes, custom CSS, CSS custom properties
-v0.7.0  ✅ Plugin Infrastructure — public API for 5 plugin types
-v0.8.0  ✅ Performance — caching, parallelism, browser reuse pool
-v0.9.0  ✅ Stabilization — API freeze, docs completion, test hardening
-v0.9.1  ✅ Fixes — Windows path traversal, OOM guards, 30MB sizes, unified UX
+v0.5.0  ✅ Configuration - md2pdf.config.ts, defineConfig, profiles, Zod validation
+v0.6.0  ✅ Themes - 7 built-in themes, custom CSS, CSS custom properties
+v0.7.0  ✅ Plugin Infrastructure - public API for 5 plugin types
+v0.8.0  ✅ Performance - caching, parallelism, browser reuse pool
+v0.9.0  ✅ Stabilization - API freeze, docs completion, test hardening
+v0.9.1  ✅ Fixes - Windows path traversal, OOM guards, 30MB sizes, unified UX
 v0.9.x  📋 Bug fix patch releases
 v1.0.0  📋 Stable release
 ```
@@ -9867,7 +9867,7 @@ v1.0.0  📋 Stable release
 
 ---
 
-## 16. Dependencies — What Each Does
+## 16. Dependencies - What Each Does
 
 ### `unified@^11.0.4`
 Core processing pipeline. Chains parsers, transformers, and compilers.
@@ -9897,16 +9897,16 @@ AST traversal utility used by all custom rehype plugins (TOC, page-breaks, Merma
 Strips and parses YAML frontmatter from Markdown. Returns `{ data, content }`.
 
 ### `mermaid@^11.16.0`
-Diagram rendering library. NOT bundled into the output — loaded at runtime inside a Playwright browser page via `require.resolve('mermaid/dist/mermaid.min.js')` + `page.addScriptTag`. Supports all diagram types: flowchart, sequence, class, ER, state, Gantt, pie, etc.
+Diagram rendering library. NOT bundled into the output - loaded at runtime inside a Playwright browser page via `require.resolve('mermaid/dist/mermaid.min.js')` + `page.addScriptTag`. Supports all diagram types: flowchart, sequence, class, ER, state, Gantt, pie, etc.
 
 ### `pdf-lib@^1.17.1`
 Post-processes the written PDF to inject metadata (title, author, subject, keywords, creator, producer, creationDate). Also used to count pages.
 
 ### `playwright@^1.40.0`
 Headless Chromium. Used for:
-1. Mermaid rendering (`renderMermaidBlocks` — separate HiDPI page context)
-2. PDF generation (`generatePdf` — `page.pdf()` via Chrome's print engine)
-3. `md2pdf doctor` — validates browser health
+1. Mermaid rendering (`renderMermaidBlocks` - separate HiDPI page context)
+2. PDF generation (`generatePdf` - `page.pdf()` via Chrome's print engine)
+3. `md2pdf doctor` - validates browser health
 
 ### `commander@^11.1.0`
 CLI framework. Parses args, defines options, registers subcommands.
@@ -10017,7 +10017,7 @@ Or via GitHub Release → `release.yml` runs automatically.
 ## 21. Key Design Decisions
 
 ### Why Playwright (not pdfkit, puppeteer, or wkhtmltopdf)?
-- Chrome's native print engine handles any CSS — flexbox, grid, web fonts, `@page`, `@media print`
+- Chrome's native print engine handles any CSS - flexbox, grid, web fonts, `@page`, `@media print`
 - Mermaid requires a real browser DOM for SVG `getBBox()` text measurement
 - `page.pdf()` gives pixel-perfect output
 
@@ -10031,7 +10031,7 @@ Or via GitHub Release → `release.yml` runs automatically.
 - Separate mdast/hast stages allow plugins at each layer
 
 ### Why mermaid is injected into browser context (not pre-rendered Node-side)?
-- Mermaid depends on `getBBox()` for SVG text layout — only available in a real browser DOM
+- Mermaid depends on `getBBox()` for SVG text layout - only available in a real browser DOM
 - JSDOM cannot handle it
 - This is the same approach used by Mermaid's own CLI tool
 
@@ -10065,12 +10065,12 @@ Or via GitHub Release → `release.yml` runs automatically.
 
 ### Key Technical Findings
 
-1. **Mermaid requires a real browser** — JSDOM can't do `getBBox()` SVG text measurement
-2. **`page.pdf()` is the best PDF engine** — Chrome's native print is unmatched
-3. **`unified` is the right parser** — AST-based, huge plugin ecosystem
-4. **Obsidian extends GFM** — wiki links, callouts need custom remark plugins
-5. **KaTeX > MathJax for PDF** — synchronous rendering, smaller output
-6. **Google Fonts CDN fails gracefully** — 3s timeout, `domcontentloaded` fast path
+1. **Mermaid requires a real browser** - JSDOM can't do `getBBox()` SVG text measurement
+2. **`page.pdf()` is the best PDF engine** - Chrome's native print is unmatched
+3. **`unified` is the right parser** - AST-based, huge plugin ecosystem
+4. **Obsidian extends GFM** - wiki links, callouts need custom remark plugins
+5. **KaTeX > MathJax for PDF** - synchronous rendering, smaller output
+6. **Google Fonts CDN fails gracefully** - 3s timeout, `domcontentloaded` fast path
 
 ---
 
@@ -10089,7 +10089,7 @@ Or via GitHub Release → `release.yml` runs automatically.
 1. `npm install rehype-<name>`
 2. Edit `src/parser/index.ts`
 3. Add `.use(rehypePlugin)` after `remarkRehype`, before `rehypeShiki` or `rehypeStringify`
-4. Plugin order matters — see plugin chain in section 4
+4. Plugin order matters - see plugin chain in section 4
 
 ### "I need to change the CSS"
 1. Edit `src/assets/css.ts`

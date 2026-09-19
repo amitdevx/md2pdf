@@ -6,7 +6,7 @@ import os from 'node:os';
  * Checks if the resolved output path is safe to write to.
  *
  * Strategy: allow any path the user owns EXCEPT known OS-critical system directories.
- * We do NOT restrict to process.cwd() — users must be able to write output anywhere
+ * We do NOT restrict to process.cwd() - users must be able to write output anywhere
  * they have permission (e.g. ~/Documents, /tmp, custom output dirs, etc).
  */
 export function isSafeOutputPath(resolvedPath: string): boolean {

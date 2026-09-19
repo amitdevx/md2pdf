@@ -22,7 +22,7 @@ export interface PdfOptions {
   offline?: boolean;
 }
 
-// DNS result cache — avoids blocking per-request DNS lookups that cause the 50x
+// DNS result cache - avoids blocking per-request DNS lookups that cause the 50x
 // performance regression when --offline is used or for large batch conversions.
 const dnsCache = new Map<string, string>();
 
@@ -131,7 +131,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       try {
         await page.waitForLoadState('networkidle', { timeout: 3000 });
       } catch {
-        // Font CDN timed out — PDF renders with fallback fonts
+        // Font CDN timed out - PDF renders with fallback fonts
       }
 
       if (options.registry && options.renderContext) {
@@ -170,7 +170,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     await fs.writeFile(options.outputPath, pdfBuffer);
   } finally {
     await page.close().catch(() => {});
-    // Only close the context if we created it — don't destroy a shared context
+    // Only close the context if we created it - don't destroy a shared context
     if (ownedContext && context) {
       await context.close().catch(() => {});
     }

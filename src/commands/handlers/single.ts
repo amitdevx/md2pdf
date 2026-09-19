@@ -1,6 +1,6 @@
 /**
  * Single-file conversion handler.
- * Extracted from convert.ts — handles the fast-path for a single markdown → PDF.
+ * Extracted from convert.ts - handles the fast-path for a single markdown → PDF.
  * All logic mirrors the original convert.ts single-file flow exactly.
  */
 import { fileURLToPath } from 'node:url';

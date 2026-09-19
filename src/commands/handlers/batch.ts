@@ -1,6 +1,6 @@
 /**
  * Batch conversion handler.
- * Extracted from convert.ts — handles the concurrent worker pool for batch markdown → PDF.
+ * Extracted from convert.ts - handles the concurrent worker pool for batch markdown → PDF.
  * All logic mirrors the original convert.ts batch flow exactly.
  */
 import fs from 'node:fs';
@@ -159,7 +159,10 @@ export async function handleBatch(
           const os = await import('node:os');
           const crypto = await import('node:crypto');
           const hash = crypto.randomBytes(6).toString('hex');
-          output = path.join(fs.realpathSync(os.tmpdir()), `md2pdf-merge-${hash}-${path.basename(input).replace(/\.md$/i, '.pdf')}`);
+          
+          const tempDir = path.join(os.homedir(), '.md2pdf', 'temp');
+          fs.mkdirSync(tempDir, { recursive: true });
+          output = path.join(tempDir, `md2pdf-merge-${hash}-${path.basename(input).replace(/\.md$/i, '.pdf')}`);
           isTempMergeFile = true;
         } else if (output) {
           // Always treat output as a directory in batch mode

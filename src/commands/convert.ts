@@ -1,5 +1,5 @@
 /**
- * convert.ts — CLI orchestrator (~100 lines)
+ * convert.ts - CLI orchestrator (~100 lines)
  *
  * Responsibilities:
  *   1. Resolve globs → concrete file paths
@@ -9,8 +9,8 @@
  *   5. Route to handleSingle() or handleBatch()
  *
  * The actual conversion logic lives in:
- *   src/commands/handlers/single.ts  — single file fast-path + cache bypass
- *   src/commands/handlers/batch.ts   — concurrent worker pool
+ *   src/commands/handlers/single.ts  - single file fast-path + cache bypass
+ *   src/commands/handlers/batch.ts   - concurrent worker pool
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,13 +53,17 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     if (chunks.length === 1) {
       // Just write to one scratch file so core doesn't hang trying to read exhausted stdin
       const os = await import('node:os');
-      const scratchDir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'md2pdf-stdin-'));
+      const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+      if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
+      const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-stdin-'));
       const tempPath = path.join(scratchDir, 'stdin.md');
       fs.writeFileSync(tempPath, chunks[0]);
       inputs = [tempPath];
     } else if (chunks.length > 1) {
       const os = await import('node:os');
-      const scratchDir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'md2pdf-stdin-'));
+      const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+      if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
+      const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-stdin-'));
       inputs = chunks.map((chunk, idx) => {
         const tempPath = path.join(scratchDir, `stdin-part${idx + 1}.md`);
         fs.writeFileSync(tempPath, chunk);
@@ -285,6 +289,20 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       await handleBatch(finalInputs, options, cliFlags, resolvedConfig, validationResult, originalPaths);
     } else {
       await handleSingle(finalInputs[0], options, cliFlags, resolvedConfig, validationResult);
+    }
+
+    if (cliFlags.splitByHeading) {
+      const scratchDir = path.join(os.homedir(), '.md2pdf', 'splits');
+      if (fs.existsSync(scratchDir)) {
+        fs.rmSync(scratchDir, { recursive: true, force: true });
+      }
+    }
+
+    if (cliFlags.splitByHeading) {
+      const scratchDir = path.join(os.homedir(), '.md2pdf', 'splits');
+      if (fs.existsSync(scratchDir)) {
+        fs.rmSync(scratchDir, { recursive: true, force: true });
+      }
     }
     } catch (e) {
       console.error('CRASH in runHandlers:', e);
