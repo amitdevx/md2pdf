@@ -1,4 +1,4 @@
-import { chromium } from 'playwright-core';
+
 import type { Browser, LaunchOptions } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -287,6 +287,7 @@ export function isMissingExecutableError(err: any): boolean {
 }
 
 export async function getBrowser(): Promise<Browser> {
+  const { chromium } = await import('playwright-core');
   const isCI    = !!process.env.CI || !!process.env.DOCKER;
   const isRoot  = typeof process.getuid === 'function' && process.getuid() === 0;
   const noSandbox = !!process.env.MD2PDF_NO_SANDBOX;

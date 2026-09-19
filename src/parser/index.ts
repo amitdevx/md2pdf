@@ -1,34 +1,13 @@
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkGfm from 'remark-gfm';
-import remarkRehype from 'remark-rehype';
-import rehypeSlug from 'rehype-slug';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-
-import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
-import { getSingletonHighlighter, bundledLanguages, Highlighter } from 'shiki';
-import rehypeStringify from 'rehype-stringify';
-import rehypeToc from '../plugins/layout/toc.js';
-import rehypeOutline from '../plugins/layout/outline.js';
-import rehypePageBreaks from '../plugins/layout/page-breaks.js';
-import remarkBlockRefs from '../plugins/obsidian/block-refs.js';
-
-import remarkWikiLinks from '../plugins/obsidian/wiki-links.js';
-import remarkTags from '../plugins/obsidian/tags.js';
-import remarkHighlight from '../plugins/obsidian/highlight.js';
-import rehypeCallouts from '../plugins/obsidian/callouts.js';
-
-import { rehypeMermaidDetector, MermaidBlock } from '../plugins/mermaid/index.js';
-import { visit } from 'unist-util-visit';
+import type { MermaidBlock } from '../plugins/mermaid/index.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 
-let shikiHighlighter: Highlighter | null = null;
+let shikiHighlighter: any | null = null;
 // Cache the pre-shiki pipeline (everything up to but not including the mermaid detector + shiki)
 const processorCache = new Map<string, any>();
 
 function rehypeExpandDetails() {
-  return (tree: any) => {
+  return async (tree: any) => {
+    const { visit } = await import('unist-util-visit');
     visit(tree, 'element', (node) => {
       if (node.tagName === 'details') {
         node.properties = node.properties || {};
@@ -68,6 +47,8 @@ export async function parseMarkdown(
   const warnings: string[] = [];
   const mermaidBlocks = options?.mermaidBlocks || [];
   
+  const { getSingletonHighlighter, bundledLanguages } = await import('shiki');
+
   // Dynamically detect languages used in the markdown (excluding mermaid, handled separately)
   const codeBlockRegex = /(?:```|~~~)([a-zA-Z0-9_\-+]+)/g;
   const matches = [...markdown.matchAll(codeBlockRegex)];
@@ -111,6 +92,38 @@ export async function parseMarkdown(
   }
 
   if (!baseProcessor) {
+    const [
+      { unified },
+      { default: remarkParse },
+      { default: remarkBlockRefs },
+      { default: remarkWikiLinks },
+      { default: remarkTags },
+      { default: remarkHighlight },
+      { default: remarkMath },
+      { default: remarkGfm },
+      { default: remarkRehype },
+      { default: rehypePageBreaks },
+      { default: rehypeKatex },
+      { default: rehypeSlug },
+      { default: rehypeCallouts },
+      { default: rehypeToc }
+    ] = await Promise.all([
+      import('unified'),
+      import('remark-parse'),
+      import('../plugins/obsidian/block-refs.js'),
+      import('../plugins/obsidian/wiki-links.js'),
+      import('../plugins/obsidian/tags.js'),
+      import('../plugins/obsidian/highlight.js'),
+      import('remark-math'),
+      import('remark-gfm'),
+      import('remark-rehype'),
+      import('../plugins/layout/page-breaks.js'),
+      import('rehype-katex'),
+      import('rehype-slug'),
+      import('../plugins/obsidian/callouts.js'),
+      import('../plugins/layout/toc.js')
+    ]);
+
     let proc: any = unified()
       .use(remarkParse)
       .use(remarkBlockRefs)
@@ -226,6 +239,18 @@ export async function parseMarkdown(
 
   let file;
   try {
+    const [
+      { rehypeMermaidDetector },
+      { default: rehypeShikiFromHighlighter },
+      { default: rehypeOutline },
+      { default: rehypeStringify }
+    ] = await Promise.all([
+      import('../plugins/mermaid/index.js'),
+      import('@shikijs/rehype/core'),
+      import('../plugins/layout/outline.js'),
+      import('rehype-stringify')
+    ]);
+
     file = await baseProcessor()
       .use(rehypeMermaidDetector, { blocks: mermaidBlocks })
       .use(() => rehypeShikiFromHighlighter(shikiHighlighter!, {

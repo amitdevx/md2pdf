@@ -154,12 +154,8 @@ export default new Command('doctor')
         }
 
         try {
-          const { fileURLToPath } = await import('node:url');
-          let mermaidPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
-          if (!fs.existsSync(mermaidPath)) {
-            const pkgUrl = import.meta.resolve('mermaid/package.json');
-            mermaidPath = path.resolve(path.dirname(fileURLToPath(pkgUrl)), 'dist/mermaid.min.js');
-          }
+          const { getProjectRoot } = await import('../utils/path.js');
+          const mermaidPath = path.join(getProjectRoot(), 'assets/mermaid.min.js');
           await page.setContent('<!DOCTYPE html><html><body><div class="mermaid">graph TD;\nA-->B;</div></body></html>');
           await page.addScriptTag({ path: mermaidPath });
           await page.evaluate(() => (window as any).mermaid.initialize({ startOnLoad: true }));

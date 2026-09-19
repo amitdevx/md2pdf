@@ -23,19 +23,14 @@ export async function initializeMermaid(page: Page): Promise<void> {
   if (cachedMermaidScriptPath === null) {
     let resolvedPath: string;
     try {
-      const { fileURLToPath } = await import('node:url');
+      const { getProjectRoot } = await import('../../utils/path.js');
       const path = await import('node:path');
       const fs = await import('node:fs');
-      const { createRequire } = await import('node:module');
-      const require = createRequire(import.meta.url);
       
-      // Try local bundled asset first (if we ever bundle it)
-      resolvedPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/mermaid.min.js');
+      resolvedPath = path.join(getProjectRoot(), 'assets/mermaid.min.js');
       
       if (!fs.existsSync(resolvedPath)) {
-        // Fallback to node module resolution
-        const pkgPath = require.resolve('mermaid/package.json');
-        resolvedPath = path.resolve(path.dirname(pkgPath), 'dist/mermaid.min.js');
+        throw new Error('Could not find mermaid library. Ensure it is installed.');
       }
     } catch {
       throw new Error('Could not find mermaid library. Ensure it is installed.');

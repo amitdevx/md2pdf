@@ -7,6 +7,7 @@ export default defineConfig({
   sourcemap: false,
   clean: true,
   treeshake: true,
+  minify: true,
   outDir: 'dist',
   noExternal: [
     'unified', 'remark-parse', 'remark-rehype', 'rehype-stringify',
