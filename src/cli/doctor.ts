@@ -191,16 +191,18 @@ export default new Command('doctor')
       }
 
       
-      const tmpPath = path.join(os.tmpdir(), '.md2pdf-doctor-test.pdf');
+      const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+      if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
+      const tmpPath = path.join(baseTemp, '.md2pdf-doctor-test.pdf');
       try {
         fs.writeFileSync(tmpPath, 'test-content');
         fs.unlinkSync(tmpPath);
         results.checks.filesystem = true;
-        checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: true });
+        checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in ~/.md2pdf/temp)', status: true });
         
         if (spinner) {
           spinner.stop();
-          console.log('  ' + pc.green('✔') + ' ' + 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)');
+          console.log('  ' + pc.green('✔') + ' ' + 'Filesystem write (tested .md2pdf-doctor-test.pdf in ~/.md2pdf/temp)');
         }
       } catch (err: any) {
         throw new Md2PdfError(
@@ -228,7 +230,7 @@ export default new Command('doctor')
       else if (!results.checks.browserLaunch) checks.push({ name: 'Browser launch', status: false });
       else if (!results.checks.htmlRender) checks.push({ name: 'HTML render', status: false });
       else if (!results.checks.pdfGenerate) checks.push({ name: 'PDF generate', status: false });
-      else if (!results.checks.filesystem) checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in tmpdir)', status: false });
+      else if (!results.checks.filesystem) checks.push({ name: 'Filesystem write (tested .md2pdf-doctor-test.pdf in ~/.md2pdf/temp)', status: false });
     } finally {
       if (browser) await browser.close();
     }

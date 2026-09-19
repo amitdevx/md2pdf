@@ -53,7 +53,9 @@ export async function prependCoverPage(
     });
   } else if (ext === '.md') {
     // Generate PDF from Markdown cover page
-    const scratchDir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'md2pdf-cover-'));
+    const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+    if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
+    const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-cover-'));
     const tempPdf = path.join(scratchDir, 'cover.pdf');
     
     try {
