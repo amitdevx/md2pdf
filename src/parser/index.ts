@@ -92,37 +92,22 @@ export async function parseMarkdown(
   }
 
   if (!baseProcessor) {
-    const [
-      { unified },
-      { default: remarkParse },
-      { default: remarkBlockRefs },
-      { default: remarkWikiLinks },
-      { default: remarkTags },
-      { default: remarkHighlight },
-      { default: remarkMath },
-      { default: remarkGfm },
-      { default: remarkRehype },
-      { default: rehypePageBreaks },
-      { default: rehypeKatex },
-      { default: rehypeSlug },
-      { default: rehypeCallouts },
-      { default: rehypeToc }
-    ] = await Promise.all([
-      import('unified'),
-      import('remark-parse'),
-      import('../plugins/obsidian/block-refs.js'),
-      import('../plugins/obsidian/wiki-links.js'),
-      import('../plugins/obsidian/tags.js'),
-      import('../plugins/obsidian/highlight.js'),
-      import('remark-math'),
-      import('remark-gfm'),
-      import('remark-rehype'),
-      import('../plugins/layout/page-breaks.js'),
-      import('rehype-katex'),
-      import('rehype-slug'),
-      import('../plugins/obsidian/callouts.js'),
-      import('../plugins/layout/toc.js')
-    ]);
+    
+      const { unified } = await import('unified');
+      const { default: remarkParse } = await import('remark-parse');
+      const { default: remarkBlockRefs } = await import('../plugins/obsidian/block-refs.js');
+      const { default: remarkWikiLinks } = await import('../plugins/obsidian/wiki-links.js');
+      const { default: remarkTags } = await import('../plugins/obsidian/tags.js');
+      const { default: remarkHighlight } = await import('../plugins/obsidian/highlight.js');
+      const { default: remarkMath } = await import('remark-math');
+      const { default: remarkGfm } = await import('remark-gfm');
+      const { default: remarkRehype } = await import('remark-rehype');
+      const { default: rehypePageBreaks } = await import('../plugins/layout/page-breaks.js');
+      const { default: rehypeKatex } = await import('rehype-katex');
+      const { default: rehypeSlug } = await import('rehype-slug');
+      const { default: rehypeCallouts } = await import('../plugins/obsidian/callouts.js');
+      const { default: rehypeToc } = await import('../plugins/layout/toc.js');
+
 
     let proc: any = unified()
       .use(remarkParse)
@@ -239,17 +224,12 @@ export async function parseMarkdown(
 
   let file;
   try {
-    const [
-      { rehypeMermaidDetector },
-      { default: rehypeShikiFromHighlighter },
-      { default: rehypeOutline },
-      { default: rehypeStringify }
-    ] = await Promise.all([
-      import('../plugins/mermaid/index.js'),
-      import('@shikijs/rehype/core'),
-      import('../plugins/layout/outline.js'),
-      import('rehype-stringify')
-    ]);
+    
+      const { rehypeMermaidDetector } = await import('../plugins/mermaid/index.js');
+      const { default: rehypeShikiFromHighlighter } = await import('@shikijs/rehype/core');
+      const { default: rehypeOutline } = await import('../plugins/layout/outline.js');
+      const { default: rehypeStringify } = await import('rehype-stringify');
+
 
     file = await baseProcessor()
       .use(rehypeMermaidDetector, { blocks: mermaidBlocks })

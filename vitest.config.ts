@@ -7,7 +7,12 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     testTimeout: 120000,
     pool: 'threads',
+    fileParallelism: false,
     poolOptions: {
+      threads: {
+        maxThreads: 2,
+        minThreads: 1
+      },
       forks: {
         singleFork: true
       }
