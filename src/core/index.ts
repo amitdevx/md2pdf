@@ -375,7 +375,9 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       theme,
       fontSize: options.fontSize,
       lineHeight: options.lineHeight,
-      watermark: options.watermark
+      watermark: options.watermark,
+      noLinkUnderline: options.noLinkUnderline,
+      linkColor: options.linkColor
     });
 
     if (options.sharedBrowser) {
@@ -524,15 +526,29 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       offline: options.offline
     });
     
-    const pageCounts = await injectMetadata(
+    let pageCounts = await injectMetadata(
       stagePath, 
       metadata, 
       options.outline ? ctx.headings : undefined,
       options.watermark
     );
 
-    // Final atomic write to prevent incomplete PDFs
     const fsNode = await import('node:fs');
+
+    if (options.coverPage) {
+      const { prependCoverPage } = await import('../features/cover.js');
+      const pdfBytes = fsNode.readFileSync(stagePath);
+      const newPdfBytes = await prependCoverPage(pdfBytes, options.coverPage, options as any);
+      fsNode.writeFileSync(stagePath, newPdfBytes);
+      // We don't recalculate pageCounts here accurately because it's just for stats, but we could
+    }
+
+    if (options.password) {
+      const { encryptPdf } = await import('../pdf/encrypt.js');
+      encryptPdf(stagePath, options.password);
+    }
+
+    // Final atomic write to prevent incomplete PDFs
     fsNode.renameSync(stagePath, outputPath);
 
     if (options.cache !== false && cacheHash) {

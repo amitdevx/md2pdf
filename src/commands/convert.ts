@@ -30,7 +30,44 @@ import { splitMarkdownByHeading } from '../features/split.js';
 export async function runConvert(inputsRaw: string[], options: CliOptions) {
   let inputs: string[] = [];
   if (options.stdin) {
-    inputs = ['-'];
+    const rawMarkdown = await new Promise<string>((resolve, reject) => {
+      let data = '';
+      let byteCount = 0;
+      const MAX_STDIN_BYTES = 100 * 1024 * 1024; // 100MB for batch piping
+      process.stdin.setEncoding('utf-8');
+      process.stdin.on('data', chunk => {
+        byteCount += Buffer.byteLength(chunk, 'utf-8');
+        if (byteCount > MAX_STDIN_BYTES) {
+          process.stdin.destroy();
+          reject(new Error('ERR_FILE_TOO_LARGE: Stdin input exceeds maximum size.'));
+          return;
+        }
+        data += chunk;
+      });
+      process.stdin.on('end', () => resolve(data));
+      process.stdin.on('error', reject);
+    });
+
+    const chunks = rawMarkdown.split(/(?:\0|\n---\n)/).filter(s => s.trim().length > 0);
+    
+    if (chunks.length === 1) {
+      // Just write to one scratch file so core doesn't hang trying to read exhausted stdin
+      const os = await import('node:os');
+      const scratchDir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'md2pdf-stdin-'));
+      const tempPath = path.join(scratchDir, 'stdin.md');
+      fs.writeFileSync(tempPath, chunks[0]);
+      inputs = [tempPath];
+    } else if (chunks.length > 1) {
+      const os = await import('node:os');
+      const scratchDir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'md2pdf-stdin-'));
+      inputs = chunks.map((chunk, idx) => {
+        const tempPath = path.join(scratchDir, `stdin-part${idx + 1}.md`);
+        fs.writeFileSync(tempPath, chunk);
+        return tempPath;
+      });
+    } else {
+      inputs = ['-']; // empty stdin fallback
+    }
   } else {
     const shellCwd = process.cwd();
     for (const raw of inputsRaw) {

@@ -27,6 +27,10 @@ export interface ConvertOptions {
   watch?: boolean;
   merge?: string;
   recursive?: boolean;
+  password?: string;
+  coverPage?: string;
+  noLinkUnderline?: boolean;
+  linkColor?: string;
   theme?: string;
   paper?: 'A4' | 'Letter' | 'Legal';
   margin?: string; // e.g., '20mm'

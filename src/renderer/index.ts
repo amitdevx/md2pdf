@@ -22,7 +22,7 @@ function escapeHtml(str: string): string {
   }[tag] || tag));
 }
 
-export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null; fontSize?: string; lineHeight?: string | number; watermark?: string }): Promise<string> {
+export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null; fontSize?: string; lineHeight?: string | number; watermark?: string; noLinkUnderline?: boolean; linkColor?: string; }): Promise<string> {
   const mathCss = options?.mathEnabled !== false ? await getKatexCss() : '';
   const safeTitle = escapeHtml(title);
   const bodyClass = options?.cssclass ? ` class="${escapeHtml(options.cssclass)}"` : '';
@@ -36,6 +36,13 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
   if (options?.lineHeight) {
     const cleanHeight = String(options.lineHeight).replace(/[^0-9.]/g, '');
     customStyles.push(`:root { --md2pdf-line-height: ${cleanHeight} !important; }`);
+  }
+  if (options?.noLinkUnderline || options?.linkColor) {
+    let linkCss = 'a {';
+    if (options?.noLinkUnderline) linkCss += ' text-decoration: none !important;';
+    if (options?.linkColor) linkCss += ` color: ${escapeHtml(options.linkColor.replace(/[^a-zA-Z0-9#(),.\s%-]/g, ''))} !important;`;
+    linkCss += ' }';
+    customStyles.push(linkCss);
   }
   
   return `<!DOCTYPE html>

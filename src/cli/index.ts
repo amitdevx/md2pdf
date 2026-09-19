@@ -165,6 +165,10 @@ program
   .option('--offline', 'Disable outbound network requests for remote assets')
   .option('-r, --recursive', 'Recursively process all markdown files in given directories')
   .option('--merge', 'Concatenate multiple converted Markdown files into a single unified output PDF')
+  .option('--password <pass>', 'Encrypt the generated PDF with an AES-256 password')
+  .option('--cover-page <file>', 'Prepend an image, PDF, or Markdown file as a cover page')
+  .option('--no-link-underline', 'Remove underlines from hyperlinks')
+  .option('--link-color <color>', 'Custom CSS color for hyperlinks')
   .option('--watch', 'Watch input files for changes and automatically rebuild')
   .option('--watermark <text>', 'Overlay a diagonal vector watermark across the generated PDF natively')
   .option('--split-by-heading <level>', 'Split AST at H1 or H2 boundaries (1 or 2)', (val) => {

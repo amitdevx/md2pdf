@@ -11,6 +11,14 @@ export interface Md2PdfConfig {
   watermark?: string;
   /** Split AST by heading depth and export multiple PDFs */
   splitByHeading?: 1 | 2;
+  /** Encrypt the PDF with an AES-256 password */
+  password?: string;
+  /** Prepend an image, PDF, or Markdown file as a cover page */
+  coverPage?: string;
+  /** Remove underlines from hyperlinks */
+  noLinkUnderline?: boolean;
+  /** Custom CSS color for hyperlinks */
+  linkColor?: string;
   /** Theme name or path to custom CSS/dir */
   theme?: string;
   /** Paper size. Default: 'A4' */

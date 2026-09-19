@@ -164,5 +164,9 @@ export function mergeConfig(
     plugins: merged.plugins,
     cache: cliFlags?.cache !== false,
     watermark: cliFlags?.watermark || merged.watermark,
+    password: cliFlags?.password || merged.password,
+    coverPage: cliFlags?.coverPage || merged.coverPage,
+    noLinkUnderline: cliFlags?.noLinkUnderline || merged.noLinkUnderline,
+    linkColor: cliFlags?.linkColor || merged.linkColor,
   };
 }

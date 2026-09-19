@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PDFDocument } from 'pdf-lib';
-import { generatePdf } from '../core/index.js';
+import { convert } from '../core/index.js';
 import type { Md2PdfConfig } from '../types/config.js';
 
 /**
@@ -57,7 +57,7 @@ export async function prependCoverPage(
     const tempPdf = path.join(scratchDir, 'cover.pdf');
     
     try {
-      await generatePdf({
+      await convert({
         ...config,
         input: coverPagePath,
         output: tempPdf,
@@ -67,7 +67,7 @@ export async function prependCoverPage(
         pageNumbers: false,
         header: false,
         footer: false,
-      });
+      } as any);
       
       const coverBytes = fs.readFileSync(tempPdf);
       const coverDoc = await PDFDocument.load(coverBytes);
