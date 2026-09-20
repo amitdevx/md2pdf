@@ -1,3 +1,21 @@
+## [0.9.8] - 2026-09-20
+
+### Added
+- Added PDF AES-256 password encryption via `--password`.
+- Added cover page prepending capabilities for generating PDFs with title documents (`--cover-page`).
+- Added hyperlink styling configurations (`--link-color`, `--no-link-underline`).
+- Added `--stdin` batch parsing support for continuous pipeline integration.
+
+### Fixed
+- Fixed Vitest module loader deadlocks and concurrent Chromium Playwright crashing issues by rebuilding dynamic AST import pipelines.
+- Fixed batch PDF merging memory leaks and recursive cover page rendering bugs.
+- Fixed CLI formatting alignment and improved accuracy of OS-level error reporting.
+- Restored precise ASCII CLI markers and fixed emoji stripping behaviors.
+- Enforced strict temporary filesystem sandboxing directly under `~/.md2pdf/temp` for all processing logic.
+
+### Performance
+- Massively optimized boot speed by decoupling a 15MB Mermaid JS dependency and minifying the core engine bundle.
+
 ## [0.9.7] - 2026-09-14
 
 ### Security

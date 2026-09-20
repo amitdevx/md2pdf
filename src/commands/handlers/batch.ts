@@ -30,7 +30,7 @@ export async function handleBatch(
     ? noopSpinner
     : ora('Starting batch conversion...').start() as unknown as SpinnerLike;
 
-  let sharedContext: any = null;
+  const sharedContext: any = null;
   let sharedMermaidContext: any = null;
   let globalMermaidPage: any = null;
   let mermaidInitPromise: Promise<void> | null = null;
@@ -153,7 +153,7 @@ export async function handleBatch(
         const fileStartTime = Date.now();
 
         let output = cliFlags.output;
-        let isTempMergeFile = false;
+        
         
         if (cliFlags.merge) {
           const os = await import('node:os');
@@ -163,7 +163,7 @@ export async function handleBatch(
           const tempDir = path.join(os.homedir(), '.md2pdf', 'temp');
           fs.mkdirSync(tempDir, { recursive: true });
           output = path.join(tempDir, `md2pdf-merge-${hash}-${path.basename(input).replace(/\.md$/i, '.pdf')}`);
-          isTempMergeFile = true;
+          
         } else if (output) {
           // Always treat output as a directory in batch mode
           output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
@@ -359,7 +359,7 @@ export async function handleBatch(
           // Cleanup temporary merge files safely
           for (const p of pathsToMerge) {
             if (p.includes('md2pdf-merge-')) {
-              try { fs.unlinkSync(p); } catch {}
+              try { fs.unlinkSync(p); } catch { /* ignore */ }
             }
           }
         } catch (err: any) {

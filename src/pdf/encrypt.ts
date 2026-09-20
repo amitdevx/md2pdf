@@ -4,7 +4,7 @@ import * as pdfLib from 'pdf-lib';
 let configured = false;
 
 export async function encryptPdf(pdfPath: string, password: string): Promise<void> {
-  // @ts-ignore
+  // @ts-expect-error - No types available for pdf-lib-encrypt
   const { lock, configure } = await import('pdf-lib-encrypt');
   if (!configured) {
     configure(pdfLib);

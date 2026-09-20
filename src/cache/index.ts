@@ -3,7 +3,6 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { isSafeOutputPath } from '../validation/path.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

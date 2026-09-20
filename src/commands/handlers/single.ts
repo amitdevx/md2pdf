@@ -3,7 +3,6 @@
  * Extracted from convert.ts - handles the fast-path for a single markdown → PDF.
  * All logic mirrors the original convert.ts single-file flow exactly.
  */
-import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
 import ora from 'ora';

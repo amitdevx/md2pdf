@@ -529,7 +529,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       offline: options.offline
     });
     
-    let pageCounts = await injectMetadata(
+    const pageCounts = await injectMetadata(
       stagePath, 
       metadata, 
       options.outline ? ctx.headings : undefined,
