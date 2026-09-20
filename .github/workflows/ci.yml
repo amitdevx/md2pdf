@@ -76,10 +76,10 @@ jobs:
         
         echo "# Chunk 1" > chunk1.md
         echo "# Chunk 2" > chunk2.md
-        md2pdf chunk1.md chunk2.md --merge e2e_merge.pdf
+        md2pdf chunk1.md chunk2.md --merge -o e2e_merge.pdf
         node -e "if (!require('node:fs').existsSync('e2e_merge.pdf')) process.exit(1);"
         
-        echo -e "# Stdin Batch 1\n---\n# Stdin Batch 2" | md2pdf --stdin --merge e2e_stdin.pdf
+        echo -e "# Stdin Batch 1\n---\n# Stdin Batch 2" | md2pdf --stdin --merge -o e2e_stdin.pdf
         node -e "if (!require('node:fs').existsSync('e2e_stdin.pdf')) process.exit(1);"
         
       shell: bash
