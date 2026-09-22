@@ -59,13 +59,25 @@ export async function parseMarkdown(
   // Initialise the Shiki singleton once (expensive - loads grammar bundles)
   if (!shikiHighlighter) {
     shikiHighlighter = await getSingletonHighlighter({
-      themes: ['github-light', 'github-dark', 'dracula', 'nord'],
+      themes: ['github-light', 'github-dark', 'dracula', 'nord', 'one-light', 'one-dark-pro'],
       langs: []
     });
   }
 
   if (shikiLangs.length > 0) {
     await shikiHighlighter.loadLanguage(...(shikiLangs as any));
+  }
+
+
+  if (options?.shikiTheme && !shikiHighlighter.getLoadedThemes().includes(options.shikiTheme)) {
+    try {
+      const { bundledThemes } = await import('shiki');
+      if (options.shikiTheme in bundledThemes) {
+        await shikiHighlighter.loadTheme(bundledThemes[options.shikiTheme as keyof typeof bundledThemes]);
+      }
+    } catch (e) {
+      warnings.push(`Failed to load shiki theme '${options.shikiTheme}'`);
+    }
   }
 
   const markdownPluginNames = options?.registry?.getMarkdownPlugins().map(p => p.name).join(',') || '';

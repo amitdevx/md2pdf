@@ -435,9 +435,9 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     };
 
 
-    const useDate = options.addDate || options.documentMeta;
-    const useTitle = options.addFilename || options.documentMeta;
-    const usePageNumbers = options.pageNumbers || options.documentMeta;
+    const useDate = options.addDate ?? options.documentMeta ?? (!!options.header);
+    const useTitle = options.addFilename ?? options.documentMeta ?? (!!options.header);
+    const usePageNumbers = options.pageNumbers ?? options.documentMeta ?? (!!options.footer);
     const pageNumPos = typeof options.pageNumbers === 'string' ? options.pageNumbers : 'bottom-center';
 
     if (headerEnabled && options.header !== undefined) {
