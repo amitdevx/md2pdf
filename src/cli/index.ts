@@ -247,7 +247,17 @@ if (process.argv.length <= 2) {
   process.exit(1);
 } else {
   program.parseAsync(process.argv).catch((err) => {
-    console.error('\n✖ Unexpected CLI Error:', err);
+    if (err.name === 'Md2PdfError' || (err.code && typeof err.code === 'string' && err.code.startsWith('ERR_'))) {
+      console.error(pc.red(`\n✖ Error: ${err.title || 'CLI Error'}`));
+      console.error(`  ${err.reason || err.message}`);
+    } else {
+      console.error(pc.red('\n✖ Unexpected CLI Error: ') + (err.message || err));
+      if (process.argv.includes('--debug') || process.argv.includes('--verbose')) {
+        console.error(pc.dim(err.stack));
+      } else {
+        console.error(pc.dim('\n   Run with --verbose or --debug for more information.'));
+      }
+    }
     process.exit(1);
   }).finally(() => {
     process.exit(process.exitCode || 0);

@@ -33,7 +33,7 @@ jobs:
       shell: bash
 
     - name: Security Audit
-      run: npm audit --audit-level=high || true
+      run: npm audit --audit-level=high
       shell: bash
 
     - name: Typecheck
@@ -41,7 +41,7 @@ jobs:
       shell: bash
 
     - name: Lint
-      run: npm run lint || true
+      run: npm run lint
       shell: bash
 
     - name: Build
@@ -57,7 +57,7 @@ jobs:
       shell: bash
 
     - name: Benchmark
-      run: npm run bench || true
+      run: npm run bench
       shell: bash
 
     - name: Test Global Install & E2E CLI (Core + v0.9.8 Features)
@@ -81,6 +81,55 @@ jobs:
         
         echo -e "# Stdin Batch 1\n---\n# Stdin Batch 2" | md2pdf --stdin --merge -o e2e_stdin.pdf
         node -e "if (!require('node:fs').existsSync('e2e_stdin.pdf')) process.exit(1);"
+
+        echo "============================================="
+        echo "Running Comprehensive CLI Audit"
+        echo "============================================="
+        
+        # Setup files
+        echo "# Valid Markdown" > valid.md
+        echo "" > empty.md
+        dd if=/dev/urandom of=corrupt.md bs=1024 count=1 2>/dev/null || head -c 1024 /dev/urandom > corrupt.md
+        echo -e "---\nbroken yaml\n--\n# Test" > broken.md
+        mkdir -p somedir
+        
+        run_test() {
+          local desc="$1"
+          local cmd="$2"
+          local expected_code="$3"
+          echo "Test: $desc"
+          eval "$cmd" > /dev/null 2>&1
+          local exit_code=$?
+          if [ "$exit_code" -ne "$expected_code" ]; then
+            echo "FAILED: Expected $expected_code, got $exit_code"
+            exit 1
+          fi
+          echo "PASS"
+        }
+        
+        run_test "1. No arguments" "md2pdf" 1
+        run_test "2. Missing file" "md2pdf missing.md" 1
+        run_test "3. Basic valid conversion" "md2pdf valid.md" 0
+        run_test "4. Empty file" "md2pdf empty.md" 0
+        run_test "5. Corrupted binary file as markdown" "md2pdf corrupt.md" 0
+        run_test "6. Broken frontmatter" "md2pdf broken.md" 0
+        run_test "7. Output to non-existent directory" "md2pdf valid.md -o /root/forbidden.pdf" 1
+        run_test "8. Output flag is a directory" "md2pdf valid.md -o ." 1
+        run_test "9. Non-existent theme" "md2pdf valid.md --theme unknown-theme" 2
+        run_test "10. Invalid split-by-heading depth" "md2pdf valid.md --split-by-heading -1" 1
+        run_test "11. Cover page missing" "md2pdf valid.md --cover-page nonexistent.pdf" 0
+        run_test "12. Output to same file (self-referential cover)" "md2pdf valid.md --cover-page valid.md.pdf" 0
+        run_test "13. Merge without inputs" "md2pdf --merge" 1
+        run_test "14. Merge with single file" "md2pdf valid.md --merge" 0
+        run_test "15. Merge with missing file" "md2pdf valid.md missing.md --merge" 1
+        run_test "16. PDF as main input" "md2pdf valid.pdf" 1
+        run_test "17. Stdin piped correctly" "echo '# Piped' | md2pdf --stdin -o piped.pdf" 0
+        run_test "18. Stdin empty pipe" "cat /dev/null | md2pdf --stdin" 0
+        run_test "19. Missing required argument for flag" "md2pdf valid.md --watermark" 1
+        run_test "20. Directory as input" "md2pdf somedir" 1
+        
+        echo "CLI Audit Complete"
+
         
       shell: bash
 
