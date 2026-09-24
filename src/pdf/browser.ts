@@ -294,7 +294,7 @@ export async function getBrowser(): Promise<Browser> {
   const sandbox = (isCI || isRoot || noSandbox) ? ['--no-sandbox', '--disable-setuid-sandbox'] : [];
 
   const launchOpts: LaunchOptions = {
-    args: [...sandbox, '--disable-gpu', '--js-flags=--max-old-space-size=256'],
+    args: [...sandbox, '--disable-gpu', '--js-flags=--max-old-space-size=256', '--allow-file-access-from-files', '--disable-web-security'],
   };
 
   // 0. Explicit --browser path

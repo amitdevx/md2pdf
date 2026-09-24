@@ -22,7 +22,7 @@ function escapeHtml(str: string): string {
   }[tag] || tag));
 }
 
-export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null; fontSize?: string; lineHeight?: string | number; watermark?: string; noLinkUnderline?: boolean; linkColor?: string; }): Promise<string> {
+export async function renderHtmlTemplate(contentHtml: string, title: string = 'Document', options?: { cssclass?: string; mathEnabled?: boolean; obsidianEnabled?: boolean; theme?: Theme | null; fontSize?: string; lineHeight?: string | number; watermark?: string; noLinkUnderline?: boolean; linkColor?: string; basePath?: string; }): Promise<string> {
   const mathCss = options?.mathEnabled !== false ? await getKatexCss() : '';
   const safeTitle = escapeHtml(title);
   const bodyClass = options?.cssclass ? ` class="${escapeHtml(options.cssclass)}"` : '';
@@ -49,7 +49,7 @@ export async function renderHtmlTemplate(contentHtml: string, title: string = 'D
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>${safeTitle}</title>
+  <title>${safeTitle}</title>\n  ${options?.basePath ? `<base href="${escapeHtml(options.basePath)}">` : ''}
   ${themeLinks}
   <!-- Bundled local fonts (Inter, JetBrains Mono) -->
   <style>
