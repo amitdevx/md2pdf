@@ -28,6 +28,8 @@ import { watchFiles } from '../features/watch.js';
 import { splitMarkdownByHeading } from '../features/split.js';
 
 export async function runConvert(inputsRaw: string[], options: CliOptions) {
+  let scratchDirToCleanup: string | undefined;
+  try {
   let inputs: string[] = [];
   if (options.stdin) {
     const rawMarkdown = await new Promise<string>((resolve, reject) => {
@@ -44,26 +46,27 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
         }
         data += chunk;
       });
-      process.stdin.on('end', () => resolve(data));
       process.stdin.on('error', reject);
     });
 
     const chunks = rawMarkdown.split(/(?:\0|\n---\n)/).filter(s => s.trim().length > 0);
     
-    if (chunks.length === 1) {
+    if (chunks.length === 1 || chunks.length === 0) {
       // Just write to one scratch file so core doesn't hang trying to read exhausted stdin
       const os = await import('node:os');
       const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
       if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
       const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-stdin-'));
+      scratchDirToCleanup = scratchDir;
       const tempPath = path.join(scratchDir, 'stdin.md');
-      fs.writeFileSync(tempPath, chunks[0]);
+      fs.writeFileSync(tempPath, chunks.length > 0 ? chunks[0] : '');
       inputs = [tempPath];
     } else if (chunks.length > 1) {
       const os = await import('node:os');
       const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
       if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
       const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-stdin-'));
+      scratchDirToCleanup = scratchDir;
       inputs = chunks.map((chunk, idx) => {
         const tempPath = path.join(scratchDir, `stdin-part${idx + 1}.md`);
         fs.writeFileSync(tempPath, chunk);
@@ -314,5 +317,11 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     await watchFiles(inputs, runHandlers);
   } else {
     await runHandlers();
+    process.exit(process.exitCode || 0);
+  }
+  } finally {
+    if (scratchDirToCleanup) {
+      try { fs.rmSync(scratchDirToCleanup, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
   }
 }

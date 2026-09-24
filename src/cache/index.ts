@@ -11,7 +11,7 @@ function getCacheDir(): string {
 }
 
 export function clearCache() {
-  const md2pdfDir = process.env.MD2PDF_CACHE_DIR || path.join(os.homedir(), '.md2pdf');
+  const md2pdfDir = getCacheDir();
   if (fs.existsSync(md2pdfDir)) {
     fs.rmSync(md2pdfDir, { recursive: true, force: true });
   }
