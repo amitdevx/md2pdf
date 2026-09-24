@@ -42,27 +42,25 @@ export async function handleSingle(
   }
   output = path.resolve(output as string);
 
+
   const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
 
-  if (convertOptions.cache !== false) {
-    try {
-      const rawContent = fs.readFileSync(input, 'utf-8');
-      if (rawContent) {
-        const fileHash = computeHash(rawContent, convertOptions);
-        if (checkCache(input, fileHash, output)) {
-          if (options.jsonErrors) {
-            jsonOut({ success: true, results: [{ input, output, pages: 0, timeMs: 0, warnings: [] }] });
-          } else if (!options.quiet) {
-            console.log(pc.green(`✔ ${path.basename(output)} (cached)`));
-          }
-          process.exitCode = EXIT.OK;
-          return;
-        }
-      }
-    } catch {
-      // Silent fallback to full render path
-    }
+  try {
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+  } catch (dirErr: any) {
+    if (dirErr.code !== 'EEXIST') throw dirErr;
   }
+
+  if (fs.existsSync(output) && !options.force) {
+    if (options.jsonErrors) {
+      jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'output exists' }] });
+    } else if (!options.quiet) {
+      console.info(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
+    }
+    process.exitCode = EXIT.OK;
+    return;
+  }
+
 
   // Early validation: parse YAML and check publish:false BEFORE launching the browser
   // This ensures ERR_CONFIG_ERROR / ERR_PUBLISH_SKIPPED are not shadowed by ERR_BROWSER_MISSING.
@@ -129,9 +127,28 @@ export async function handleSingle(
       }
 
       if (parsed) {
-        // Cache the parsed frontmatter to avoid double-parsing in core
         options = { ...options, __preparsed: { data: parsed.data, content: parsed.content } };
       }
+    }
+  }
+
+  if (convertOptions.cache !== false) {
+    try {
+      const rawContent = fs.readFileSync(input, 'utf-8');
+      if (rawContent) {
+        const fileHash = computeHash(rawContent, convertOptions);
+        if (checkCache(input, fileHash, output)) {
+          if (options.jsonErrors) {
+            jsonOut({ success: true, results: [{ input, output, status: 'success', pages: 0, timeMs: 0, warnings: [] }] });
+          } else if (!options.quiet) {
+            console.log(pc.green(`✔ ${path.basename(output)} (cached)`));
+          }
+          process.exitCode = EXIT.OK;
+          return;
+        }
+      }
+    } catch {
+      // Silent fallback
     }
   }
 
@@ -170,21 +187,8 @@ export async function handleSingle(
 
   try {
 
-    // Ensure output directory exists
-    try {
-      fs.mkdirSync(path.dirname(output), { recursive: true });
-    } catch (dirErr: any) {
-      if (dirErr.code !== 'EEXIST') throw dirErr;
-    }
 
-    // Check if output exists (--force not set)
-    if (fs.existsSync(output) && !options.force) {
-      if (!options.jsonErrors && !options.quiet) {
-        console.warn(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
-      }
-      process.exitCode = EXIT.OK;
-      return;
-    }
+
 
     // Read raw content for mermaid check
     let rawContent = '';

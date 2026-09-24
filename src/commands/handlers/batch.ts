@@ -25,20 +25,18 @@ export async function handleBatch(
   validationResult?: any,
   originalPaths?: Record<string, string>
 ): Promise<void> {
-  const startTime = Date.now();
   const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
     ? noopSpinner
     : ora('Starting batch conversion...').start() as unknown as SpinnerLike;
 
-  const sharedContext: any = null;
+  const startTime = Date.now();
+  let sharedContext: any = null;
   let sharedMermaidContext: any = null;
   let globalMermaidPage: any = null;
-  let mermaidInitPromise: Promise<void> | null = null;
   let isShuttingDown = false;
 
   const cleanup = async () => {
     isShuttingDown = true;
-    if (mermaidInitPromise) await mermaidInitPromise.catch(() => {});
     if (globalMermaidPage) await globalMermaidPage.close().catch(() => {});
     if (sharedMermaidContext) await sharedMermaidContext.close().catch(() => {});
     if (sharedContext) await sharedContext.close().catch(() => {});
@@ -50,7 +48,10 @@ export async function handleBatch(
 
   const sigintHandler = async () => {
     isShuttingDown = true;
-    console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
+    if (!options.quiet && !options.jsonErrors) {
+      console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
+    }
+    spinner.stop();
     await cleanup();
     process.exitCode = 130;
     return;
@@ -62,208 +63,224 @@ export async function handleBatch(
   let failedCount = 0;
   let skippedExistingCount = 0;
   let skippedPublishCount = 0;
+  const preValidationErrors: string[] = [];
+
+  interface BatchRecord {
+    originalIndex: number;
+    input: string;
+    output: string;
+    isSkipped: boolean;
+    isError: boolean;
+    error?: string;
+    code?: string;
+    skipReason?: string;
+    pageCounts: number;
+    renderTimeMs: number;
+    warnings: string[];
+    fromCache: boolean;
+    hasMermaid: boolean;
+  }
 
   try {
-    const { globalBrowserManager } = await import('../../core/browser-manager.js');
+    // 1. Initialize stable records
+    let records: BatchRecord[] = inputs.map((input, originalIndex) => ({
+      originalIndex,
+      input,
+      output: '-',
+      isSkipped: false,
+      isError: false,
+      pageCounts: 0,
+      renderTimeMs: 0,
+      warnings: [],
+      fromCache: false,
+      hasMermaid: false
+    }));
 
-    const hasMermaidAnywhere = await Promise.all(inputs.map(input => {
-      return new Promise<boolean>(resolve => {
-        const stream = fs.createReadStream(input, { encoding: 'utf-8', highWaterMark: 65536 });
-        stream.on('data', chunk => {
-          if ((chunk as string).includes('```mermaid')) {
-            stream.destroy();
-            resolve(true);
-          }
-        });
-        stream.once('error', () => resolve(false));
-        stream.once('end', () => resolve(false));
-      });
-    })).then(r => r.some(Boolean));
+    // 2. Pre-Validation Errors
+    if (validationResult?.errors) {
+      for (const err of validationResult.errors) {
+        const rec = records.find(r => r.input === err.input);
+        if (rec) {
+          rec.isError = true;
+          rec.error = err.error.reason || err.error.message;
+          rec.code = err.error.code || 'ERR_VALIDATION';
+          failedCount++;
+          hasErrors = true;
+          preValidationErrors.push(`✖ ${err.input} - ${rec.error}`);
+        }
+      }
+    }
 
-    // Check daemon first to potentially bypass local browser entirely
+    // 3. Dependency Sorting (for vault links)
+    const vaultIndex = buildVaultIndex(cliFlags.vaultRoot as string | undefined, inputs);
+    const sortedInputs = sortDependencies(inputs, vaultIndex);
+    records.sort((a, b) => sortedInputs.indexOf(a.input) - sortedInputs.indexOf(b.input));
+
+    let isDir = false;
+    try { if (options.output) isDir = fs.statSync(options.output).isDirectory(); } catch { /* ignore */ }
+    
+    // 4. Preflight Phase: Calculate Output, Validate Frontmatter, Output Exists, Cache Hash Setup
+    for (const rec of records) {
+      if (rec.isError) continue;
+
+      let output = cliFlags.output;
+      if (output) {
+        if (isDir) {
+          output = path.join(output, cliFlags.merge ? `md2pdf-merge-${Date.now()}-${path.basename(rec.input)}`.replace(/\.md$/i, '.pdf') : path.basename(rec.input).replace(/\.md$/i, '.pdf'));
+        } else if (cliFlags.merge) {
+          output = path.join(path.dirname(output), `md2pdf-merge-${Date.now()}-${path.basename(rec.input)}`.replace(/\.md$/i, '.pdf'));
+        } else {
+          output = output.toLowerCase().endsWith('.pdf') ? output : output + '.pdf';
+        }
+      } else {
+        output = rec.input.replace(/\.md$/i, '.pdf');
+      }
+      rec.output = path.resolve(output as string);
+
+      try {
+        fs.mkdirSync(path.dirname(rec.output), { recursive: true });
+      } catch (dirErr: any) {
+        if (dirErr.code !== 'EEXIST') {
+          rec.isError = true;
+          rec.code = 'ERR_FS_MKDIR';
+          rec.error = `Cannot create output directory: ${dirErr.message}`;
+          failedCount++;
+          hasErrors = true;
+          continue;
+        }
+      }
+
+      if (fs.existsSync(rec.output) && !options.force) {
+        rec.isSkipped = true;
+        rec.skipReason = 'Existing PDF (use --force to overwrite)';
+        skippedExistingCount++;
+        continue;
+      }
+
+      let rawContent = '';
+      try {
+        rawContent = fs.readFileSync(rec.input, 'utf-8');
+      } catch {
+        rec.isError = true;
+        rec.code = 'ERR_PERMISSION_DENIED';
+        rec.error = `Cannot read file '${rec.input}': Permission denied.`;
+        failedCount++;
+        hasErrors = true;
+        continue;
+      }
+      
+      rec.hasMermaid = rawContent.includes('```mermaid');
+
+      const matter = (await import('gray-matter')).default;
+      let parsed: any;
+      try {
+        const blockEngine = () => { throw new Error('JavaScript/CoffeeScript frontmatter engines are disabled.'); };
+        parsed = matter(rawContent, { engines: { js: blockEngine, javascript: blockEngine, coffee: blockEngine, coffeescript: blockEngine, cson: blockEngine } });
+        if (parsed?.data?.publish === false) {
+          rec.isSkipped = true;
+          rec.skipReason = 'publish: false';
+          skippedPublishCount++;
+          continue;
+        }
+        (rec as any).__preparsed = { data: parsed.data, content: parsed.content };
+        
+        const SAFE_THEME_NAME = /^[a-zA-Z0-9_-]+$/;
+        const rawFrontmatterTheme = parsed.data?.theme ? String(parsed.data.theme) : undefined;
+        const safeFrontmatterTheme = rawFrontmatterTheme && SAFE_THEME_NAME.test(rawFrontmatterTheme) ? rawFrontmatterTheme : undefined;
+        const themeName: string = safeFrontmatterTheme || options.theme || 'default';
+        const { loadTheme } = await import('../../themes/loader.js');
+        await loadTheme(themeName);
+      } catch (yamlErr: any) {
+        rec.isError = true;
+        rec.code = yamlErr.message?.includes('Theme Load Error') || yamlErr.message?.includes('Failed to load theme') ? 'ERR_INVALID_THEME' : 'ERR_CONFIG_ERROR';
+        rec.error = `Frontmatter/Theme error: ${yamlErr.message || String(yamlErr)}`;
+        failedCount++;
+        hasErrors = true;
+        continue;
+      }
+    }
+
+    const queue = records.filter(r => !r.isError && !r.isSkipped);
+    
+    // 5. Browser Startup Phase
     let daemonAlive = false;
     if (!process.env.MD2PDF_DAEMON) {
       const { isDaemonAlive } = await import('../../daemon/client.js');
       daemonAlive = await isDaemonAlive();
     }
 
-    if (!daemonAlive) {
-      // Acquire and hold a single browser for the entire batch
+    if (queue.length > 0 && !daemonAlive) {
+      const { globalBrowserManager } = await import('../../core/browser-manager.js');
       const browser = await globalBrowserManager.acquireBrowser();
-
+      const hasMermaidAnywhere = queue.some(r => r.hasMermaid);
+      
       if (hasMermaidAnywhere) {
-        mermaidInitPromise = (async () => {
-          sharedMermaidContext = await browser.newContext({ deviceScaleFactor: 2 });
-          globalMermaidPage = await sharedMermaidContext.newPage();
-          const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
-          await initializeMermaid(globalMermaidPage);
-        })();
+        sharedMermaidContext = await browser.newContext({ deviceScaleFactor: 2 });
+        globalMermaidPage = await sharedMermaidContext.newPage();
+        const { initializeMermaid } = await import('../../plugins/mermaid/runtime.js');
+        await initializeMermaid(globalMermaidPage);
       }
     }
 
-    const concurrencyLimit = cliFlags.concurrency
-      ? Math.max(1, Number(cliFlags.concurrency) || 1)
-      : Math.min(2, os.cpus().length);
-
-    let completedCount = 0;
-    const preValidationErrors: string[] = [];
-    const results: any[] = new Array(inputs.length);
-    if (validationResult?.errors) {
-      for (const err of validationResult.errors) {
-        const i = inputs.indexOf(err.input);
-        if (i !== -1) {
-          hasErrors = true;
-          failedCount++;
-          results[i] = { isError: true, error: err.error.reason || err.error.message, code: err.error.code || 'ERR_VALIDATION', outputPath: '-', pageCounts: 0, renderTimeMs: 0, warnings: [] };
-          preValidationErrors.push(`✖ ${err.input} - ${err.error.reason || err.error.message}`);
-          completedCount++;
-        }
-      }
-    }
+    let completedCount = records.length - queue.length;
     const updateSpinner = () => {
       if (!options.jsonErrors && !options.quiet) {
-        const percent = Math.round((completedCount / inputs.length) * 100);
-        const elapsed = Date.now() - startTime;
-        const avg = completedCount > 0 ? elapsed / completedCount : 0;
-        const remainMs = avg * (inputs.length - completedCount);
-        let remainStr = '';
-        if (completedCount > 0) {
-          if (remainMs > 60000) remainStr = ` ~${Math.round(remainMs / 60000)}m remaining`;
-          else remainStr = ` ~${Math.round(remainMs / 1000)}s remaining`;
-        }
-        spinner.text = `Converting (${completedCount}/${inputs.length}) files [${percent}%]${remainStr}`;
+        const percent = records.length > 0 ? Math.round((completedCount / records.length) * 100) : 100;
+        spinner.text = `Converting (${completedCount}/${records.length}) files [${percent}%]`;
       }
     };
     updateSpinner();
 
-    const vaultIndex = buildVaultIndex(cliFlags.vaultRoot as string | undefined, inputs);
-    inputs = sortDependencies(inputs, vaultIndex);
-
-  let isDir = false;
-  try { if (options.output) isDir = fs.statSync(options.output).isDirectory(); } catch { /* ignore */ }
-    const queue = inputs.map((inp, i) => ({ input: inp, i }));
+    // 6. Execution Phase
+    const os = await import('node:os');
+    const concurrencyLimit = cliFlags.concurrency ? Math.max(1, Number(cliFlags.concurrency) || 1) : Math.min(2, os.cpus().length);
 
     const worker = async () => {
       while (queue.length > 0 && !isShuttingDown) {
-        if (results[queue[0].i]) {
-          queue.shift();
-          continue;
-        }
-        const { input, i } = queue.shift()!;
+        const rec = queue.shift()!;
         const fileStartTime = Date.now();
-
-        let output = cliFlags.output;
+        const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input: rec.input, output: rec.output });
         
-        
-        if (cliFlags.merge) {
-          const os = await import('node:os');
-          const crypto = await import('node:crypto');
-          const hash = crypto.randomBytes(6).toString('hex');
-          
-          const tempDir = path.join(os.homedir(), '.md2pdf', 'temp');
-          fs.mkdirSync(tempDir, { recursive: true });
-          output = path.join(tempDir, `md2pdf-merge-${hash}-${path.basename(input).replace(/\.md$/i, '.pdf')}`);
-          
-        } else if (output) {
-          // Always treat output as a directory in batch mode
-          output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
-        } else {
-          const orig = originalPaths?.[input];
-          if (orig) {
-            // Split file: place next to the original source file
-            output = path.join(path.dirname(orig), path.basename(input).replace(/\.md$/i, '.pdf'));
-          } else if (cliFlags.stdin) {
-            output = path.resolve(process.cwd(), path.basename(input).replace(/\.md$/i, '.pdf'));
-          } else {
-            output = input.replace(/\.md$/i, '.pdf');
-          }
+        if ((rec as any).__preparsed) {
+          (convertOptions as any).__preparsed = (rec as any).__preparsed;
         }
-        output = path.resolve(output as string);
-
-        try {
-          fs.mkdirSync(path.dirname(output), { recursive: true });
-        } catch (dirErr: any) {
-          if (dirErr.code !== 'EEXIST') {
-            hasErrors = true;
-            failedCount++;
-            if (!options.jsonErrors && !options.quiet) {
-              spinner.stop();
-              console.error(pc.red(`✖ ${path.basename(input)} - Cannot create output directory: ${dirErr.message}`));
-              spinner.start();
-            }
-            results[i] = { isError: true, error: `Cannot create output directory: ${dirErr.message}`, code: 'ERR_FS_MKDIR', outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
-            completedCount++;
-            updateSpinner();
-            continue;
-          }
-        }
-
-        const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input, output });
 
         const useCache = convertOptions.cache !== false;
-        let rawContent = '';
-        try {
-          rawContent = fs.readFileSync(input, 'utf-8');
-        } catch {
-          const { Md2PdfError: E, Md2PdfErrorCode } = await import('../../errors/index.js');
-          throw new E(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', `Cannot read file '${input}': Permission denied.`, { markdownFile: input });
-        }
-
-        if (useCache && rawContent) {
+        if (useCache && (rec as any).__preparsed?.content) {
           try {
-            const fileHash = computeHash(rawContent, convertOptions);
-            if (checkCache(input, fileHash, output as string)) {
-              results[i] = { fromCache: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [] };
+            const fileHash = computeHash((rec as any).__preparsed.content, convertOptions);
+            if (checkCache(rec.input, fileHash, rec.output)) {
+              rec.fromCache = true;
               if (!options.jsonErrors && !options.quiet) {
-                completedCount++;
-                updateSpinner();
                 spinner.stop();
-                console.log(pc.green(`✔ ${path.basename(output as string)} (cached)`));
+                console.log(pc.green(`✔ ${path.basename(rec.output)} (cached)`));
                 spinner.start();
               }
               successfulCount++;
+              completedCount++;
+              updateSpinner();
               continue;
             }
           } catch { /* ignore cache errors */ }
         }
 
-        // Attach the shared mermaid context so it doesn't reload mermaid.min.js
-        // We INTENTIONALLY DO NOT share the main PDF context because 
-        // Chromium will accumulate massive memory across 50+ large PDFs!
         if (globalMermaidPage) {
           convertOptions.sharedMermaidPage = globalMermaidPage;
-        }
-
-        if (mermaidInitPromise) {
-          await mermaidInitPromise;
-        }
-
-        if (fs.existsSync(output as string) && !options.force) {
-          skippedExistingCount++;
-          results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: [], skipReason: 'Existing PDF (use --force to overwrite)' };
-          if (!options.jsonErrors && !options.quiet) {
-            completedCount++;
-            updateSpinner();
-          }
-          continue;
         }
 
         try {
           if (options.verbose && !options.jsonErrors) {
             spinner.stop();
-            console.log(pc.dim(`\nℹ Starting conversion pipeline for: ${input}`));
-            console.log(pc.dim(`ℹ Output target: ${output}`));
+            console.log(pc.dim(`\nℹ Starting conversion pipeline for: ${rec.input}`));
+            console.log(pc.dim(`ℹ Output target: ${rec.output}`));
             spinner.start();
           }
 
           const result = await convert(convertOptions as any);
-          result.renderTimeMs = Date.now() - fileStartTime;
-
-          if (options.verbose && !options.jsonErrors) {
-            spinner.stop();
-            console.log(pc.dim(`ℹ Conversion completed in ${result.renderTimeMs}ms (Pages: ${result.pageCounts})`));
-            spinner.start();
-          }
+          rec.renderTimeMs = Date.now() - fileStartTime;
+          rec.pageCounts = result.pageCounts;
+          rec.warnings = result.warnings || [];
+          rec.output = result.outputPath;
 
           if (!options.jsonErrors && result.warnings.length > 0) {
             spinner.stop();
@@ -272,31 +289,14 @@ export async function handleBatch(
           }
 
           if (!options.jsonErrors && !options.quiet) {
-            completedCount++;
             spinner.stop();
-            const timing = result.fromCache ? '(cached)' : `${result.renderTimeMs}ms`;
-            console.log(pc.green(`✔ ${path.basename(result.outputPath)} (${timing})`));
-            updateSpinner();
+            console.log(pc.green(`✔ ${path.basename(rec.output)} (${rec.renderTimeMs}ms)`));
             spinner.start();
           }
 
           successfulCount++;
-          results[i] = result;
         } catch (err: any) {
           if (isShuttingDown) break;
-
-          if (err?.code === 'ERR_PUBLISH_SKIPPED') {
-            skippedPublishCount++;
-            results[i] = { isSkipped: true, outputPath: output, pageCounts: 0, renderTimeMs: 0, warnings: ['Skipped: publish: false'], skipReason: 'publish: false' };
-            if (!options.jsonErrors && !options.quiet) {
-              spinner.stop();
-              console.error(pc.dim(`➖ Skipped ${path.basename(input)} (publish: false)`));
-              spinner.start();
-              completedCount++;
-              updateSpinner();
-            }
-            continue;
-          }
 
           hasErrors = true;
           failedCount++;
@@ -305,33 +305,23 @@ export async function handleBatch(
 
           if (!options.jsonErrors && !options.quiet) {
             spinner.stop();
-            console.error(pc.red(`✖ ${path.basename(input)} - ${cleanMsg}`));
+            console.error(pc.red(`✖ ${path.basename(rec.input)} - ${cleanMsg}`));
             spinner.start();
           }
 
-          const md2Error = detectBrowserError(err, { markdownFile: input });
-          // Use exact fallback logic requested
-          const resolvedCode = (err as any).errorCode ?? (err as NodeJS.ErrnoException).code ?? md2Error?.code ?? 'ERR_UNKNOWN';
-          
-          results[i] = {
-            isError: true,
-            error: cleanMsg,
-            code: resolvedCode,
-            outputPath: output,
-            pageCounts: 0,
-            renderTimeMs: 0,
-            warnings: []
-          };
-
-          if (!options.jsonErrors && !options.quiet) {
-            completedCount++;
-            updateSpinner();
-          }
+          const { detectBrowserError } = await import('../../errors/detect.js');
+          const md2Error = detectBrowserError(err, { markdownFile: rec.input });
+          rec.isError = true;
+          rec.error = cleanMsg;
+          rec.code = (err as any).errorCode ?? (err as NodeJS.ErrnoException).code ?? md2Error?.code ?? 'ERR_UNKNOWN';
         }
+
+        completedCount++;
+        updateSpinner();
       }
     };
 
-    const workers = Array.from({ length: Math.min(concurrencyLimit, inputs.length) }, () => worker());
+    const workers = Array.from({ length: Math.min(concurrencyLimit, queue.length) }, () => worker());
     const settledResults = await Promise.allSettled(workers);
     
     const rejectedWorker = settledResults.find(r => r.status === 'rejected');
@@ -339,24 +329,22 @@ export async function handleBatch(
       throw (rejectedWorker as PromiseRejectedResult).reason;
     }
 
-    const anyErrors = results.some((r: any) => !r || r.isError);
-    if (anyErrors) hasErrors = true;
+    records.sort((a, b) => a.originalIndex - b.originalIndex);
 
     const finalMergeOutput = options.output ? (options.output.endsWith('/') || isDir ? path.join(options.output, 'merged.pdf') : options.output) : 'merged.pdf';
 
     if (cliFlags.merge && !hasErrors && (successfulCount > 0 || skippedExistingCount > 0)) {
-      // Include skipped files too if they exist!
-      const pathsToMerge = results.filter((r: any) => r && !r.isError && r.outputPath).map((r: any) => r.outputPath);
+      const pathsToMerge = records.filter(r => !r.isError && !r.isSkipped && r.output).map(r => r.output);
       if (pathsToMerge.length > 0) {
         try {
           if (!options.quiet) {
             spinner.text = `Merging ${pathsToMerge.length} PDFs into ${finalMergeOutput}...`;
             spinner.start();
           }
+          const { mergePDFs } = await import('../../features/merge.js');
           await mergePDFs(pathsToMerge, finalMergeOutput);
           if (!options.quiet) spinner.succeed(`Merged output saved to ${finalMergeOutput}`);
           
-          // Cleanup temporary merge files safely
           for (const p of pathsToMerge) {
             if (p.includes('md2pdf-merge-')) {
               try { fs.unlinkSync(p); } catch { /* ignore */ }
@@ -372,22 +360,20 @@ export async function handleBatch(
     if (options.jsonErrors) {
       jsonOut({
         success: !hasErrors && (successfulCount > 0 || skippedExistingCount > 0 || skippedPublishCount > 0),
-        ...(skippedExistingCount + skippedPublishCount > 0
-          ? { skipped: skippedExistingCount + skippedPublishCount }
-          : {}),
-        results: results.map((r, index) => {
+        ...(skippedExistingCount + skippedPublishCount > 0 ? { skipped: skippedExistingCount + skippedPublishCount } : {}),
+        results: records.map(r => {
           const out: any = {
-            input: inputs[index],
-            output: r?.outputPath || '-',
-            status: r?.isError ? 'error' : (r?.isSkipped ? 'skipped' : 'success'),
-            pages: r?.pageCounts || 0,
-            timeMs: r?.renderTimeMs || 0,
-            warnings: r?.warnings || []
+            input: r.input,
+            output: r.output || '-',
+            status: r.isError ? 'error' : (r.isSkipped ? 'skipped' : 'success'),
+            pages: r.pageCounts || 0,
+            timeMs: r.renderTimeMs || 0,
+            warnings: r.warnings || []
           };
-          if (r?.isError) {
-            out.error = { code: r?.code || 'ERR_UNKNOWN', reason: r?.error, title: 'Conversion Failed' };
+          if (r.isError) {
+            out.error = { code: r.code || 'ERR_UNKNOWN', reason: r.error, title: 'Conversion Failed' };
           }
-          if (r?.isSkipped) out.skipReason = r?.skipReason;
+          if (r.isSkipped) out.skipReason = r.skipReason;
           return out;
         })
       });
@@ -407,7 +393,19 @@ export async function handleBatch(
       }
     }
 
-    if (hasErrors) process.exitCode = EXIT.USAGE_ERROR;
+    if (hasErrors) {
+      let maxCode = EXIT.USAGE_ERROR;
+      for (const r of records) {
+        if (r.isError) {
+          if (r.code === 'ERR_FILE_TOO_LARGE' || r.code === 'ERR_DOCUMENT_TOO_COMPLEX' || r.code === 'ERR_BROWSER_MISSING' || r.code === 'ERR_PERMISSION_DENIED') {
+            maxCode = EXIT.ENVIRONMENT_ERROR;
+          }
+        }
+      }
+      process.exitCode = maxCode;
+    } else {
+      process.exitCode = EXIT.OK;
+    }
 
   } catch (err: any) {
     hasErrors = true;
@@ -421,11 +419,6 @@ export async function handleBatch(
       } else {
         spinner.stop();
         console.error(pc.red('✖') + ' ' + pc.red(err.message));
-        const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME'
-          || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
-        if (!isUserError) {
-          console.error(pc.yellow('\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n'));
-        }
         if (options.debug && err.stack) console.error(pc.dim(err.stack));
         process.exitCode = EXIT.USAGE_ERROR;
       }
