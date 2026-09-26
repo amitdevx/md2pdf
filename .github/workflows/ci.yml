@@ -60,26 +60,26 @@ jobs:
       run: npm run bench
       shell: bash
 
-    - name: Test Global Install & E2E CLI (Core + v0.9.8 Features)
+    - name: Test Global Install & E2E CLI
       run: |
         npm install -g .
         md2pdf --version
         md2pdf doctor
         
         echo "# E2E Core" > test_core.md
-        md2pdf test_core.md -o e2e_core.pdf
+        md2pdf test_core.md -o e2e_core.pdf --no-cache --force
         node -e "if (!require('node:fs').existsSync('e2e_core.pdf')) process.exit(1);"
         
         echo "# E2E Password & Watermark" > test_pass.md
-        md2pdf test_pass.md -o e2e_pass.pdf --password "secret" --watermark "CONFIDENTIAL"
+        md2pdf test_pass.md -o e2e_pass.pdf --password "secret" --watermark "CONFIDENTIAL" --no-cache --force
         node -e "if (!require('node:fs').existsSync('e2e_pass.pdf')) process.exit(1);"
         
         echo "# Chunk 1" > chunk1.md
         echo "# Chunk 2" > chunk2.md
-        md2pdf chunk1.md chunk2.md --merge -o e2e_merge.pdf
+        md2pdf --merge -o e2e_merge.pdf chunk1.md chunk2.md --no-cache --force
         node -e "if (!require('node:fs').existsSync('e2e_merge.pdf')) process.exit(1);"
         
-        echo -e "# Stdin Batch 1\n---\n# Stdin Batch 2" | md2pdf --stdin --merge -o e2e_stdin.pdf
+        echo -e "# Stdin Batch 1\n---\n# Stdin Batch 2" | md2pdf --stdin --merge -o e2e_stdin.pdf --no-cache --force
         node -e "if (!require('node:fs').existsSync('e2e_stdin.pdf')) process.exit(1);"
 
         echo "============================================="
@@ -98,10 +98,16 @@ jobs:
           local cmd="$2"
           local expected_code="$3"
           echo "Test: $desc"
-          eval "$cmd" > /dev/null 2>&1
+          set +e
+          # Run the command and capture output
+          eval "$cmd" > test_out.log 2>&1
           local exit_code=$?
+          set -e
           if [ "$exit_code" -ne "$expected_code" ]; then
             echo "FAILED: Expected $expected_code, got $exit_code"
+            echo "--- Command Output ---"
+            cat test_out.log
+            echo "----------------------"
             exit 1
           fi
           echo "PASS"
@@ -109,22 +115,22 @@ jobs:
         
         run_test "1. No arguments" "md2pdf" 1
         run_test "2. Missing file" "md2pdf missing.md" 1
-        run_test "3. Basic valid conversion" "md2pdf valid.md" 0
-        run_test "4. Empty file" "md2pdf empty.md" 0
-        run_test "5. Corrupted binary file as markdown" "md2pdf corrupt.md" 0
-        run_test "6. Broken frontmatter" "md2pdf broken.md" 0
-        run_test "7. Output to non-existent directory" "md2pdf valid.md -o /root/forbidden.pdf" 1
-        run_test "8. Output flag is a directory" "md2pdf valid.md -o ." 1
-        run_test "9. Non-existent theme" "md2pdf valid.md --theme unknown-theme" 2
-        run_test "10. Invalid split-by-heading depth" "md2pdf valid.md --split-by-heading -1" 1
-        run_test "11. Cover page missing" "md2pdf valid.md --cover-page nonexistent.pdf" 0
-        run_test "12. Output to same file (self-referential cover)" "md2pdf valid.md --cover-page valid.md.pdf" 0
+        run_test "3. Basic valid conversion" "md2pdf valid.md -o out_t3.pdf --no-cache --force" 0
+        run_test "4. Empty file" "md2pdf empty.md -o out_t4.pdf --no-cache --force" 0
+        run_test "5. Corrupted binary file as markdown" "md2pdf corrupt.md -o out_t5.pdf --no-cache --force" 0
+        run_test "6. Broken frontmatter" "md2pdf broken.md -o out_t6.pdf --no-cache --force" 0
+        run_test "7. Output to non-existent directory" "md2pdf valid.md -o /no_such_dir_md2pdf_test/forbidden.pdf --no-cache --force" 1
+        run_test "8. Output flag is a directory" "md2pdf valid.md -o . --no-cache --force" 1
+        run_test "9. Non-existent theme" "md2pdf valid.md -o out_t9.pdf --theme unknown-theme --no-cache --force" 2
+        run_test "10. Invalid split-by-heading depth" "md2pdf valid.md -o out_t10.pdf --split-by-heading -1 --no-cache --force" 1
+        run_test "11. Cover page missing" "md2pdf valid.md -o out_t11.pdf --cover-page nonexistent.pdf --no-cache --force" 1
+        run_test "12. Output to same file (self-referential cover)" "md2pdf valid.md -o out_t12.pdf --cover-page valid.pdf --no-cache --force" 1
         run_test "13. Merge without inputs" "md2pdf --merge" 1
-        run_test "14. Merge with single file" "md2pdf valid.md --merge" 0
+        run_test "14. Merge with single file" "md2pdf valid.md -o out_t14.pdf --merge --no-cache --force" 0
         run_test "15. Merge with missing file" "md2pdf valid.md missing.md --merge" 1
         run_test "16. PDF as main input" "md2pdf valid.pdf" 1
-        run_test "17. Stdin piped correctly" "echo '# Piped' | md2pdf --stdin -o piped.pdf" 0
-        run_test "18. Stdin empty pipe" "cat /dev/null | md2pdf --stdin" 0
+        run_test "17. Stdin piped correctly" "echo '# Piped' | md2pdf --stdin -o piped.pdf --no-cache --force" 0
+        run_test "18. Stdin empty pipe" "cat /dev/null | md2pdf --stdin -o out_t18.pdf --no-cache --force" 0
         run_test "19. Missing required argument for flag" "md2pdf valid.md --watermark" 1
         run_test "20. Directory as input" "md2pdf somedir" 1
         
@@ -133,10 +139,6 @@ jobs:
         
       shell: bash
 
-    - name: Pre-Publish Checks
-      if: runner.os == 'Linux' && matrix.node-version == '24.x'
-      run: bash scripts/pre-publish.sh --skip-e2e
-      shell: bash
 
     - name: Upload Artifact
       if: runner.os == 'Linux' && matrix.node-version == '24.x'

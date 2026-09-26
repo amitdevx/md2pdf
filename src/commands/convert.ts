@@ -47,6 +47,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
         data += chunk;
       });
       process.stdin.on('error', reject);
+      process.stdin.on('end', () => resolve(data));
     });
 
     const chunks = rawMarkdown.split(/(?:\0|\n---\n)/).filter(s => s.trim().length > 0);
@@ -142,7 +143,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     } else {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
       renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_MISSING, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options as any);
-      process.exit(EXIT.USAGE_ERROR);
+      process.exit(EXIT.ENVIRONMENT_ERROR);
     }
   }
 
@@ -243,11 +244,11 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     
     if (err.isFatal) {
       if (options.jsonErrors) {
-        jsonOut({ success: false, error: { code: err.error.code as string, title: err.error.title || 'Error', reason: err.error.reason || err.error.message } });
+        jsonOut({ success: false, error: { code: (err.error || err).code as string, title: (err.error || err).title || 'Error', reason: (err.error || err).reason || (err.error || err).message } });
       } else {
-        renderCliError(err.error, options as any);
+        renderCliError(err.error || err, options as any);
       }
-      process.exitCode = err.error.code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
+      process.exitCode = (err.error || err).code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
       process.exit(process.exitCode);
     }
   }
@@ -289,7 +290,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     const effectiveBatch = isBatch || finalInputs.length > 1;
 
     if (effectiveBatch) {
-      await handleBatch(finalInputs, options, cliFlags, resolvedConfig, validationResult, originalPaths);
+      await handleBatch(finalInputs, options, cliFlags, resolvedConfig, validationResult);
     } else {
       await handleSingle(finalInputs[0], options, cliFlags, resolvedConfig, validationResult);
     }
@@ -317,7 +318,6 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     await watchFiles(inputs, runHandlers);
   } else {
     await runHandlers();
-    process.exit(process.exitCode || 0);
   }
   } finally {
     if (scratchDirToCleanup) {

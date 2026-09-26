@@ -12,7 +12,7 @@ describe('Image Sandbox and Loading', () => {
   const outputFile = path.join(insideDir, 'test.pdf');
 
   afterAll(() => {
-    try { fs.rmSync(scratchDir, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(scratchDir, { recursive: true, force: true }); } catch (e: any) { console.error(e.message || ""); }
   });
 
   it('should successfully convert markdown with deeply nested local images', async () => {

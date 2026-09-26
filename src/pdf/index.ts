@@ -113,7 +113,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
           const resolveSafeDir = (d: string) => {
             try { return fs.realpathSync(d); } catch { return d; }
           };
-          const realAllowedDirs = allowedDirs.map(resolveSafeDir);
+          const realAllowedDirs = allowedDirs.map(resolveSafeDir); console.log(realFileUrl, realAllowedDirs);
           // Sandbox relaxed for local usage\n          const isAllowed = true;
         } catch {
           return route.abort('accessdenied');

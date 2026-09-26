@@ -5,17 +5,17 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+
 import ora from 'ora';
 import pc from 'picocolors';
 import { convert } from '../../core/index.js';
 import { mergeConfig } from '../../config/merge.js';
 import { EXIT, jsonOut, renderCliError, SpinnerLike, noopSpinner, emitJsonErrorAndExit } from '../../cli/formatter.js';
 import { Md2PdfError } from '../../errors/index.js';
-import { detectBrowserError } from '../../errors/detect.js';
+
 import { computeHash, checkCache } from '../../cache/index.js';
 import { buildVaultIndex, sortDependencies } from '../../core/vault.js';
-import { mergePDFs } from '../../features/merge.js';
+
 
 export async function handleBatch(
   inputs: string[],
@@ -23,14 +23,14 @@ export async function handleBatch(
   cliFlags: any,
   resolvedConfig: any,
   validationResult?: any,
-  originalPaths?: Record<string, string>
+  /* originalPaths?: Record<string, string> */
 ): Promise<void> {
   const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
     ? noopSpinner
     : ora('Starting batch conversion...').start() as unknown as SpinnerLike;
 
   const startTime = Date.now();
-  let sharedContext: any = null;
+  const sharedContext: any = null;
   let sharedMermaidContext: any = null;
   let globalMermaidPage: any = null;
   let isShuttingDown = false;
@@ -83,7 +83,7 @@ export async function handleBatch(
 
   try {
     // 1. Initialize stable records
-    let records: BatchRecord[] = inputs.map((input, originalIndex) => ({
+    const records: BatchRecord[] = inputs.map((input, originalIndex) => ({
       originalIndex,
       input,
       output: '-',

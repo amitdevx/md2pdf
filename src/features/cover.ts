@@ -14,7 +14,12 @@ export async function prependCoverPage(
   config: Md2PdfConfig
 ): Promise<Uint8Array> {
   if (!fs.existsSync(coverPagePath)) {
-    throw new Error(`Cover page file not found: ${coverPagePath}`);
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_INVALID_INPUT,
+      'Cover Page Not Found',
+      `Cover page file not found: ${coverPagePath}`
+    );
   }
 
   const ext = path.extname(coverPagePath).toLowerCase();
@@ -22,10 +27,19 @@ export async function prependCoverPage(
   
   if (ext === '.pdf') {
     const coverBytes = fs.readFileSync(coverPagePath);
-    const coverDoc = await PDFDocument.load(coverBytes);
-    const copiedPages = await mainDoc.copyPages(coverDoc, coverDoc.getPageIndices());
-    for (let i = copiedPages.length - 1; i >= 0; i--) {
-      mainDoc.insertPage(0, copiedPages[i]);
+    try {
+      const coverDoc = await PDFDocument.load(coverBytes);
+      const copiedPages = await mainDoc.copyPages(coverDoc, coverDoc.getPageIndices());
+      for (let i = copiedPages.length - 1; i >= 0; i--) {
+        mainDoc.insertPage(0, copiedPages[i]);
+      }
+    } catch (err: any) {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_INVALID_INPUT,
+        'Invalid Cover PDF',
+        `Failed to parse cover PDF: ${err.message}`
+      );
     }
   } else if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
     const coverBytes = fs.readFileSync(coverPagePath);
@@ -86,7 +100,12 @@ export async function prependCoverPage(
       fs.rmSync(scratchDir, { recursive: true, force: true });
     }
   } else {
-    throw new Error(`Unsupported cover page format: ${ext}. Supported formats: .pdf, .png, .jpg, .md`);
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_INVALID_INPUT,
+      'Unsupported Cover Format',
+      `Unsupported cover page format: ${ext}. Supported formats: .pdf, .png, .jpg, .md`
+    );
   }
 
   return await mainDoc.save();

@@ -34,7 +34,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
   it('missing file', () => {
     const res = runCliJson('nonexistent.md');
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_INVALID_INPUT');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_INVALID_INPUT');
   });
 
   it('directory input with no markdown', () => {
@@ -42,7 +42,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
     if (!fs.existsSync(emptyDir)) fs.mkdirSync(emptyDir);
     const res = runCliJson(`"${emptyDir}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_NO_INPUT');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_NO_INPUT');
   });
 
   it('wrong extension', () => {
@@ -50,7 +50,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
     if (!fs.existsSync(txt)) fs.writeFileSync(txt, 'test');
     const res = runCliJson(`"${txt}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_INVALID_INPUT');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_INVALID_INPUT');
   });
 
   it('publish false', () => {
@@ -76,25 +76,25 @@ describe('JSON Errors Contract (20 Cases)', () => {
   it.skipIf(process.platform === 'win32')('traversal cold', () => {
     const res = runCliJson(`"${basicMd}" -o /etc/out.pdf --no-cache`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_PATH_TRAVERSAL');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_PATH_TRAVERSAL');
   });
 
   it.skipIf(process.platform === 'win32')('traversal warm', () => {
     const res = runCliJson(`"${basicMd}" -o /etc/out.pdf`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_PATH_TRAVERSAL');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_PATH_TRAVERSAL');
   });
 
   it('browser not found', () => {
     const res = runCliJson(`"${basicMd}" --browser /does/not/exist --no-cache`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_INVALID_BROWSER');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_INVALID_BROWSER');
   });
 
   it('browser warm', () => {
     const res = runCliJson(`"${basicMd}" --browser /does/not/exist`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_INVALID_BROWSER');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_INVALID_BROWSER');
   });
 
   it('rce ---js attack', () => {
@@ -110,7 +110,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
     fs.writeFileSync(complex, '> '.repeat(201) + 'test');
     const res = runCliJson(`"${complex}" --no-cache`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_DOCUMENT_TOO_COMPLEX');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_DOCUMENT_TOO_COMPLEX');
   });
 
   it('doc too complex warm', () => {
@@ -118,7 +118,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
     fs.writeFileSync(complex, '> '.repeat(201) + 'test');
     const res = runCliJson(`"${complex}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_DOCUMENT_TOO_COMPLEX');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_DOCUMENT_TOO_COMPLEX');
   });
 
   it('invalid theme', () => {
@@ -130,7 +130,7 @@ describe('JSON Errors Contract (20 Cases)', () => {
   it('no args', () => {
     const res = runCliJson('');
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_NO_INPUT');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_NO_INPUT');
   });
 
   it('success', () => {
@@ -150,13 +150,29 @@ describe('JSON Errors Contract (20 Cases)', () => {
     fs.chmodSync(chmod, 0o000);
     const res = runCliJson(`"${chmod}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_PERMISSION_DENIED');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_PERMISSION_DENIED');
   });
   it('file too large', () => {
     const largeMd = path.join(fixturesDir, 'large.md');
     fs.writeFileSync(largeMd, 'a'.repeat(31 * 1024 * 1024));
     const res = runCliJson(`"${largeMd}"`);
     expect(res.success).toBe(false);
-    expect(res.error.code).toBe('ERR_FILE_TOO_LARGE');
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_FILE_TOO_LARGE');
   });
 });
+  it('no arguments with --json-errors --quiet', () => {
+    const res = helperRunCliJson('-q');
+    expect(res.json.success).toBe(false);
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_NO_INPUT');
+    // Ensure stderr is completely empty when -q is passed
+    expect(res.stderr.trim()).toBe('');
+  });
+
+  it('no arguments only --json-errors', () => {
+    const res = runCliJson('');
+    expect(res.success).toBe(false);
+    expect(res.json ? res.json.error.code : (res as any).error?.code).toBe('ERR_NO_INPUT');
+    
+  });
+
+  

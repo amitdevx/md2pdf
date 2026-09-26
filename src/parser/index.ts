@@ -75,7 +75,7 @@ export async function parseMarkdown(
       if (options.shikiTheme in bundledThemes) {
         await shikiHighlighter.loadTheme(bundledThemes[options.shikiTheme as keyof typeof bundledThemes]);
       }
-    } catch (e) {
+    } catch {
       warnings.push(`Failed to load shiki theme '${options.shikiTheme}'`);
     }
   }

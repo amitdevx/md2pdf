@@ -29,6 +29,8 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
     let code = EXIT.ENVIRONMENT_ERROR;
     if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
     if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
+  if (err.code === Md2PdfErrorCode.ERR_BROWSER_MISSING || err.code === Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED || err.code === 'ERR_PERMISSION_DENIED' || err.code === 'ERR_INVALID_THEME') code = EXIT.ENVIRONMENT_ERROR;
+    if (err.code === Md2PdfErrorCode.ERR_BROWSER_MISSING || err.code === Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED || err.code === 'ERR_PERMISSION_DENIED' || err.code === 'ERR_INVALID_THEME') code = EXIT.ENVIRONMENT_ERROR;
     
     process.exitCode = code;
     return;
@@ -80,6 +82,7 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
   let code = EXIT.ENVIRONMENT_ERROR;
   if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
   if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
+  if (err.code === Md2PdfErrorCode.ERR_BROWSER_MISSING || err.code === Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED || err.code === 'ERR_PERMISSION_DENIED' || err.code === 'ERR_INVALID_THEME') code = EXIT.ENVIRONMENT_ERROR;
   
   process.exitCode = code;
 }
@@ -111,7 +114,7 @@ export function emitJsonErrorAndExit(code: string, title: string, reason: string
   if (
     code === 'ERR_PERMISSION_DENIED' ||
     code === 'ERR_FILE_TOO_LARGE' ||
-    code === 'ERR_DOCUMENT_TOO_COMPLEX'
+    code === 'ERR_DOCUMENT_TOO_COMPLEX' || code === 'ERR_INVALID_BROWSER' || code === 'ERR_BROWSER_MISSING' || code === 'ERR_BROWSER_LAUNCH_FAILED'
   ) {
     exitCode = EXIT.ENVIRONMENT_ERROR;
   }

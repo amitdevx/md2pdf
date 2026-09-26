@@ -38,7 +38,7 @@ export function runCli(args: string): CliResult {
       env.CHROME_PATH = CHROME_PATH;
     }
     const cliPath = path.resolve(process.cwd(), 'dist/cli/index.js');
-    const stdout = execSync(`"${process.execPath}" "${cliPath}" ${args}`, {
+    const stdout = execSync(`"${process.execPath}" "${cliPath}" ${args} --no-cache --force`, {
       encoding: 'utf-8',
       env
     });
@@ -63,7 +63,7 @@ export function runCliJson(args: string, envOverrides?: Record<string, string>):
       env.CHROME_PATH = CHROME_PATH;
     }
     const cliPath = path.resolve(process.cwd(), 'dist/cli/index.js');
-    const stdout = execSync(`"${process.execPath}" "${cliPath}" ${args} --json-errors`, {
+    const stdout = execSync(`"${process.execPath}" "${cliPath}" ${args} --json-errors --no-cache --force`, {
       encoding: 'utf-8',
       env
     });

@@ -10,9 +10,9 @@ const files = fs.readdirSync(batchDir).filter(f => f.endsWith('.md')).map(f => p
 
 describe('Batch Concurrency', () => {
   bench('1 worker', async () => {
-    await runConvert(files, { concurrency: 1, quiet: true, output: './md2pdf-bench' } as any);
+    await runConvert(files, { concurrency: 1, quiet: true, cache: false, force: true, output: './md2pdf-bench' } as any);
   });
   bench('4 workers', async () => {
-    await runConvert(files, { concurrency: 4, quiet: true, output: './md2pdf-bench' } as any);
+    await runConvert(files, { concurrency: 4, quiet: true, cache: false, force: true, output: './md2pdf-bench' } as any);
   });
 });

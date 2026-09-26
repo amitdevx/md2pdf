@@ -51,17 +51,6 @@ export async function handleSingle(
     if (dirErr.code !== 'EEXIST') throw dirErr;
   }
 
-  if (fs.existsSync(output) && !options.force) {
-    if (options.jsonErrors) {
-      jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'output exists' }] });
-    } else if (!options.quiet) {
-      console.info(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
-    }
-    process.exitCode = EXIT.OK;
-    return;
-  }
-
-
   // Early validation: parse YAML and check publish:false BEFORE launching the browser
   // This ensures ERR_CONFIG_ERROR / ERR_PUBLISH_SKIPPED are not shadowed by ERR_BROWSER_MISSING.
   {
@@ -130,6 +119,17 @@ export async function handleSingle(
         options = { ...options, __preparsed: { data: parsed.data, content: parsed.content } };
       }
     }
+  }
+
+
+  if (fs.existsSync(output) && !options.force) {
+    if (options.jsonErrors) {
+      jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'output exists' }] });
+    } else if (!options.quiet) {
+      console.info(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
+    }
+    process.exitCode = EXIT.OK;
+    return;
   }
 
   if (convertOptions.cache !== false) {

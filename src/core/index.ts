@@ -511,9 +511,14 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       if (!headerTemplate) headerTemplate = '<span></span>';
       if (!footerTemplate) footerTemplate = '<span></span>';
     }
+
+    // ponytail: Inject base URL so Playwright resolves local images & assets correctly without page.goto
+    const baseUrl = (await import('node:url')).pathToFileURL((await import('node:path')).default.dirname((await import('node:path')).default.resolve(input === '-' ? process.cwd() : input))).href + '/';
+    const finalProcessedHtml = processedHtml.replace('<head>', '<head>\n  <base href="' + baseUrl + '">');
+
     const stagePath = outputPath + '.stage';
     await generatePdf({  
-      html: processedHtml, 
+      html: finalProcessedHtml, 
       outputPath: stagePath, 
       format: paper, 
       margin,

@@ -58,7 +58,13 @@ export function isSafeOutputPath(resolvedPath: string): boolean {
     '/boot',
     '/lib',
     '/lib64',
-    '/var',
+    // We only block specific /var subdirectories rather than all of /var, 
+    // to allow /var/tmp and macOS /var/folders/ (which os.tmpdir() uses).
+    '/var/log',
+    '/var/run',
+    '/var/spool',
+    '/var/cache',
+    '/var/lib',
     '/opt',
     '/srv'
   ];

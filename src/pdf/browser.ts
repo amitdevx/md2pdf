@@ -258,7 +258,7 @@ export function getPlatformCandidates(): BrowserEntry[] {
 }
 
 export function discoverBrowser(): { executablePath: string; name: string } | null {
-  const envPath = process.env.CHROME_PATH ?? process.env.BROWSER_PATH;
+  const envPath = process.env.MD2PDF_BROWSER ?? process.env.CHROME_PATH ?? process.env.BROWSER_PATH;
   if (envPath && fs.existsSync(envPath)) {
     try {
       verifyChromiumEngine(envPath);
@@ -310,7 +310,8 @@ export async function getBrowser(): Promise<Browser> {
       if (err.message.includes('Timeout')) {
         throw new Error(`ERR_CDP_TIMEOUT: Failed to connect to the browser at '${cliPath}'. Ensure it is a valid, Chromium-based browser.`);
       }
-      throw err;
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED, 'Browser Launch Failed', err.message);
     }
   }
 
@@ -320,12 +321,8 @@ export async function getBrowser(): Promise<Browser> {
     try {
       verifyChromiumEngine(cached.executablePath);
       return await chromium.launch({ ...launchOpts, executablePath: cached.executablePath });
-    } catch (e: any) {
-      if (e.message?.includes('Timeout') || isMissingExecutableError(e) || e.message?.includes('ERR_UNSUPPORTED_ENGINE')) {
-        fs.unlinkSync(CACHE_FILE); // Stale, unsupported, or removed binary - clear and rediscover
-      } else {
-        throw e;
-      }
+    } catch {
+      fs.unlinkSync(CACHE_FILE); // Ponytail: If cached binary fails to launch for ANY reason, nuke it and rediscover.
     }
   }
 

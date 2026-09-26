@@ -1,4 +1,4 @@
-## [0.9.8] - 2026-09-20
+## [0.9.9] - 2026-09-20
 
 ### Added
 - Added PDF AES-256 password encryption via `--password`.
