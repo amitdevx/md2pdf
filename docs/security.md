@@ -8,8 +8,16 @@ File access via local URLs (e.g., `file://`) is strictly limited to:
 - The current working directory (`process.cwd()`).
 - The directory containing the input Markdown file.
 - The explicitly configured Obsidian vault root (if provided).
+- The system temporary directory (used for caching).
 
-Any markdown images or external assets attempting to traverse outside of these directories (e.g., `![hack](/etc/passwd)`) will be blocked and replaced with a broken image icon.
+**Base64 Image Injection:**
+To eliminate Chromium security risks and event-loop deadlocks, all local images and remote HTTP/HTTPS images are now pre-fetched and converted to Base64 data URIs securely within the Node.js context before being passed to Chromium. Chromium is restricted from making any outbound requests.
+
+**SSRF Protection:**
+Server-Side Request Forgery (SSRF) bypasses are prevented by a background DNS resolver that actively blocks HTTP requests to cloud metadata endpoints (e.g. AWS `169.254.x.x`), local loopbacks (`localhost`, `127.0.0.1`), and private IP ranges before they are fetched.
+
+**Raw HTML Sanitization:**
+Raw HTML nodes in Markdown are passed through `rehype-sanitize` to allow basic inline styling while aggressively stripping dangerous tags like `<script>`, `<iframe>`, `<object>`, and `<embed>`. Any markdown images or external assets attempting to traverse outside of the allowed directories (e.g., `![hack](/etc/passwd)`) will be strictly blocked.
 
 ## Output Path Restrictions
 The CLI enforces strict validation on output paths. Output generation will fail if the destination targets restricted system folders (such as `/etc`, `/tmp`, `/var/run`, or Windows equivalents like `C:\Windows`). This prevents malicious scripts from overwriting critical system files.

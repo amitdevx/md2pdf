@@ -1,20 +1,18 @@
-## [0.9.9] - 2026-09-20
+## [0.9.9] - 2026-09-27
 
 ### Added
-- Added PDF AES-256 password encryption via `--password`.
-- Added cover page prepending capabilities for generating PDFs with title documents (`--cover-page`).
-- Added hyperlink styling configurations (`--link-color`, `--no-link-underline`).
-- Added `--stdin` batch parsing support for continuous pipeline integration.
+- Native support for raw HTML image tags (`<img src="...">`) alongside standard Markdown images.
+- Full base64 inline conversion for local markdown images, completely bypassing the unreliable `file://` protocol.
+- Strict `rehype-sanitize` pass during parsing to safely handle raw HTML and strip dangerous tags (like `<script>`, `<iframe>`).
 
 ### Fixed
-- Fixed Vitest module loader deadlocks and concurrent Chromium Playwright crashing issues by rebuilding dynamic AST import pipelines.
-- Fixed batch PDF merging memory leaks and recursive cover page rendering bugs.
-- Fixed CLI formatting alignment and improved accuracy of OS-level error reporting.
-- Restored precise ASCII CLI markers and fixed emoji stripping behaviors.
-- Enforced strict temporary filesystem sandboxing directly under `~/.md2pdf/temp` for all processing logic.
-
-### Performance
-- Massively optimized boot speed by decoupling a 15MB Mermaid JS dependency and minifying the core engine bundle.
+- Fixed critical 120-second engine hangs caused by remote images (e.g. GitHub avatars) being blocked or rate-limited by fetching them directly in Node.js with a strict 5-second timeout.
+- Fixed dark themes (e.g., `obsidian-dark`, `dracula`) printing invertly or invisibly; they now correctly render as light pages in PDFs while preserving syntax structure.
+- Fixed a rendering bug with a corrupted `Inter` font file causing unreadable title text.
+- Fixed HTML title injection and correctly respected the `--no-title` flag.
+- Fixed inline images being forcibly converted to block-level elements in the output PDF.
+- Fixed user-facing errors (e.g., file not found, invalid arguments) to display clean, actionable messages instead of raw stack traces.
+- Improved CI reliability and restricted cache clearing strictly to the `.md2pdf-cache` directory.
 
 ## [0.9.7] - 2026-09-14
 
