@@ -20,6 +20,7 @@ export interface PdfOptions {
   registry?: import('../plugins/registry.js').PluginRegistry;
   renderContext?: import('../types/context.js').RenderContext;
   offline?: boolean;
+  warnings?: string[];
 }
 
 // DNS result cache - avoids blocking per-request DNS lookups that cause the 50x
@@ -113,8 +114,11 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
           const resolveSafeDir = (d: string) => {
             try { return fs.realpathSync(d); } catch { return d; }
           };
-          const realAllowedDirs = allowedDirs.map(resolveSafeDir); console.log(realFileUrl, realAllowedDirs);
-          // Sandbox relaxed for local usage\n          const isAllowed = true;
+          const realAllowedDirs = allowedDirs.map(resolveSafeDir);
+          const isAllowed = realAllowedDirs.some(dir => realFileUrl.startsWith(dir) || realFileUrl === dir);
+          if (!isAllowed) {
+            return route.abort('accessdenied');
+          }
         } catch {
           return route.abort('accessdenied');
         }
@@ -133,6 +137,24 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
 
       if (options.registry && options.renderContext) {
         await options.registry.executeAfterPageLoad(page, options.renderContext);
+      }
+
+      // Wait for images to load and check for broken ones
+      const brokenImages = await page.evaluate(async () => {
+        const images = Array.from(document.querySelectorAll('img'));
+        await Promise.all(images.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        }));
+        return images
+          .filter(img => img.naturalWidth === 0)
+          .map(img => img.src || img.getAttribute('src') || 'unknown');
+      });
+      if (brokenImages.length > 0 && options.warnings) {
+        brokenImages.forEach(src => options.warnings!.push(`Failed to load image: ${src}`));
       }
 
       const marginValue = options.margin || '20mm';

@@ -157,6 +157,10 @@ export async function parseMarkdown(
     const customSchema = {
       ...defaultSchema,
       tagNames: [...(defaultSchema.tagNames || []), 'span'],
+      protocols: {
+        ...(defaultSchema.protocols || {}),
+        src: ['http', 'https', 'data', 'file'],
+      },
       attributes: {
         ...cleanAttributes,
         '*': [...(cleanAttributes['*'] || []), 'className', 'style', 'id'],

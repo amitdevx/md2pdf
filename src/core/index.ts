@@ -225,7 +225,22 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   }
 
   const dir = path.dirname(inputPath);
-  let processedMarkdown = markdown.replace(/!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)(?:\{width=([^}]+)\}|\s*=([\dx]+))?/g, (match, alt, fullSrc, attrWidth, kramWidth) => {
+  const warnings: string[] = [];
+
+  const asyncReplace = async (str: string, regex: RegExp, replacer: (...args: any[]) => Promise<string>) => {
+    const promises: Promise<string>[] = [];
+    str.replace(regex, (match, ...args) => {
+      promises.push(replacer(match, ...args));
+      return match;
+    });
+    const replacements = await Promise.all(promises);
+    return str.replace(regex, () => replacements.shift()!);
+  };
+
+  const fsNode = await import('node:fs/promises');
+  const mime = (await import('mime-types')).default;
+  
+  let processedMarkdown = await asyncReplace(markdown, /!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)(?:\{width=([^}]+)\}|\s*=([\dx]+))?/g, async (match, alt, fullSrc, attrWidth, kramWidth) => {
     let src = fullSrc.trim();
     let title = '';
     const titleMatch = src.match(/\s+((['"])(.*)\2|\((.*)\))$/);
@@ -234,9 +249,29 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       src = src.slice(0, -titleMatch[0].length).trim();
     }
     
-    // Preserve local file:// URIs; Playwright securely loads them in the headless context.
     const absPath = path.resolve(dir, decodeURIComponent(src));
-    const fileUrl = pathToFileURL(absPath).href;
+    let finalUri = match;
+    try {
+      const realPath = await fsNode.realpath(absPath);
+      
+      // Sandbox validation
+      const allowedDirs = [dir];
+      if (options.obsidian?.vaultRoot) {
+        allowedDirs.push(path.resolve(options.obsidian.vaultRoot));
+      }
+      const isAllowed = allowedDirs.some(d => realPath.startsWith(d) || realPath === d);
+      if (!isAllowed) {
+        warnings.push(`Security block: Attempted to load image outside allowed directories: ${absPath}`);
+        return match;
+      }
+      
+      const data = await fsNode.readFile(realPath);
+      const mimeType = mime.lookup(realPath) || 'application/octet-stream';
+      finalUri = `data:${mimeType};base64,${data.toString('base64')}`;
+    } catch {
+      warnings.push(`Failed to read local image: ${absPath}`);
+      return match; // fallback to original on failure
+    }
     
     let sizing = '';
     const widthRaw = attrWidth || kramWidth;
@@ -250,13 +285,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       } else {
         sizing = ` width="${widthRaw.replace(/[^0-9%]/g, '')}"`;
       }
-      return `<img src="${escapeAttr(fileUrl)}" alt="${escapeAttr(alt)}"${title ? ` title="${escapeAttr(title.replace(/['"]/g, ''))}"` : ''}${sizing} />`;
+      return `<img src="${finalUri}" alt="${escapeAttr(alt)}"${title ? ` title="${escapeAttr(title.replace(/['"]/g, ''))}"` : ''}${sizing} />`;
     }
     
-    return `![${alt}](${fileUrl}${title ? ' ' + title : ''})`;
+    return `![${alt}](${finalUri}${title ? ' ' + title : ''})`;
   });
-
-  const warnings: string[] = [];
   
   // Resolve Obsidian Embeds
   processedMarkdown = await resolveObsidianEmbeds(
@@ -377,7 +410,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       lineHeight: options.lineHeight,
       watermark: options.watermark,
       noLinkUnderline: options.noLinkUnderline,
-      linkColor: options.linkColor
+      linkColor: options.linkColor,
+      basePath: pathToFileURL(dir).href + '/'
     });
 
     if (options.sharedBrowser) {
@@ -531,7 +565,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       sharedContext: (options as any).sharedContext,
       registry,
       renderContext: ctx,
-      offline: options.offline
+      offline: options.offline,
+      warnings
     });
     
     const pageCounts = await injectMetadata(
