@@ -148,8 +148,6 @@ img {
   height: auto;
   box-sizing: content-box;
   page-break-inside: avoid;
-  display: block;
-  margin: auto;
 }
 
 figure {
