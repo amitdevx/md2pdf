@@ -144,10 +144,13 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
         const images = Array.from(document.querySelectorAll('img'));
         await Promise.all(images.map(img => {
           if (img.complete) return Promise.resolve();
-          return new Promise(resolve => {
-            img.onload = resolve;
-            img.onerror = resolve;
-          });
+          return Promise.race([
+            new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve;
+            }),
+            new Promise(resolve => setTimeout(resolve, 5000))
+          ]);
         }));
         return images
           .filter(img => img.naturalWidth === 0)
