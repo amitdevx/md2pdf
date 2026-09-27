@@ -119,6 +119,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
           if (!isAllowed) {
             return route.abort('accessdenied');
           }
+          return route.fulfill({ path: fileUrl });
         } catch {
           return route.abort('accessdenied');
         }

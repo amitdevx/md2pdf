@@ -141,6 +141,7 @@ export async function parseMarkdown(
     }
 
     const rehypeSanitize = (await import('rehype-sanitize')).default;
+    const rehypeRaw = (await import('rehype-raw')).default;
     const { defaultSchema } = await import('rehype-sanitize');
     
     // We want to allow some styling/classes if users use them, but block dangerous things
@@ -159,7 +160,7 @@ export async function parseMarkdown(
       tagNames: [...(defaultSchema.tagNames || []), 'span'],
       protocols: {
         ...(defaultSchema.protocols || {}),
-        src: ['http', 'https', 'data', 'file'],
+        src: ['http', 'https', 'data', 'file', ''],
       },
       attributes: {
         ...cleanAttributes,
@@ -172,6 +173,7 @@ export async function parseMarkdown(
     proc = proc
       .use(remarkGfm)
       .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
       .use(rehypePageBreaks, options?.pageBreaks)
       .use(rehypeSanitize, customSchema);
 
