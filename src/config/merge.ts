@@ -163,7 +163,7 @@ export function mergeConfig(
     } as any,
     plugins: merged.plugins,
     cache: cliFlags?.cache !== false,
-    title: cliFlags?.title === false ? false : undefined,
+    title: cliFlags?.title !== undefined ? cliFlags.title : merged.metadata?.title,
     watermark: cliFlags?.watermark || merged.watermark,
     password: cliFlags?.password || merged.password,
     coverPage: cliFlags?.coverPage || merged.coverPage,

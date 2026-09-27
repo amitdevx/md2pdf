@@ -179,6 +179,7 @@ program
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--stdin', 'Read markdown from stdin instead of files')
+  .option('--title <string>', 'Explicitly set the document title')
   .option('--no-title', 'Disable automatic document title injection from frontmatter/filename')
   .option('--json-errors', 'Output errors in JSON format')
   .option('--hide-tags', 'Hide inline Obsidian tags in PDF output')

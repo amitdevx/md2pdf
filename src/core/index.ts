@@ -255,10 +255,20 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       const realPath = await fsNode.realpath(absPath);
       
       // Sandbox validation
-      const allowedDirs = [dir];
+      let allowedDirs = [dir];
       if (options.obsidian?.vaultRoot) {
         allowedDirs.push(path.resolve(options.obsidian.vaultRoot));
       }
+      
+      // Resolve real paths for allowed directories to prevent symlink bypasses or false positives (e.g. macOS /var vs /private/var or Windows 8.3 paths)
+      allowedDirs = await Promise.all(allowedDirs.map(async d => {
+        try {
+          return await fsNode.realpath(d);
+        } catch {
+          return d;
+        }
+      }));
+      
       const isAllowed = allowedDirs.some(d => realPath.startsWith(d) || realPath === d);
       if (!isAllowed) {
         warnings.push(`Security block: Attempted to load image outside allowed directories: ${absPath}`);
@@ -393,10 +403,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       renderContext: ctx,
     });
 
-    title = options.metadata?.title || frontmatter.title || (input === '-' ? 'Untitled Document' : path.basename(input, path.extname(input)));
+    title = (typeof options.title === 'string' ? options.title : false) || options.metadata?.title || frontmatter.title || (input === '-' ? 'Untitled Document' : path.basename(input, path.extname(input)));
     
     let finalHtml = parsed.html;
-    if (options.title !== false && !/<h1\b[^>]*>/i.test(finalHtml)) {
+    if (options.title !== false && (typeof options.title === 'string' || !/<h1\b[^>]*>/i.test(finalHtml))) {
       const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
       finalHtml = `<h1 class="document-title" style="margin-top: 0; padding-top: 0;">${escapeHtml(title)}</h1>\n` + finalHtml;
     }
