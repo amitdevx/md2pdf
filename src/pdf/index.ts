@@ -31,7 +31,10 @@ async function resolveHostnameIp(hostname: string): Promise<string | null> {
   if (dnsCache.has(hostname)) return dnsCache.get(hostname)!;
   try {
     const dns = await import('node:dns/promises');
-    const result = await dns.lookup(hostname);
+    const result = await Promise.race([
+      dns.lookup(hostname),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DNS timeout')), 2000))
+    ]) as { address: string };
     dnsCache.set(hostname, result.address);
     return result.address;
   } catch {
@@ -125,6 +128,23 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
         }
       }
 
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        let isSettled = false;
+        try {
+          const response = await Promise.race([
+            route.fetch(),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+          ]);
+          isSettled = true;
+          return route.fulfill({ response });
+        } catch (error) {
+          if (!isSettled) {
+            return route.abort('failed');
+          }
+        }
+        return;
+      }
+
       route.continue();
     });
 
@@ -153,9 +173,21 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
             new Promise(resolve => setTimeout(resolve, 5000))
           ]);
         }));
-        return images
-          .filter(img => img.naturalWidth === 0)
-          .map(img => img.src || img.getAttribute('src') || 'unknown');
+        
+        // Abort any pending network requests (like rate-limited remote images)
+        // so that Chromium doesn't hang indefinitely during page.pdf()
+        window.stop();
+
+        const broken = images.filter(img => img.naturalWidth === 0);
+        const brokenSrcs = broken.map(img => img.src || img.getAttribute('src') || 'unknown');
+
+        // Physically remove src from hanging/broken images so page.pdf() doesn't wait for them
+        broken.forEach(img => {
+          img.src = ''; // force network abort
+          img.removeAttribute('src');
+        });
+
+        return brokenSrcs;
       });
       if (brokenImages.length > 0 && options.warnings) {
         brokenImages.forEach(src => options.warnings!.push(`Failed to load image: ${src}`));
