@@ -165,8 +165,8 @@ export async function parseMarkdown(
       attributes: {
         ...cleanAttributes,
         '*': [...(cleanAttributes['*'] || []), 'className', 'style', 'id'],
-        'a': [...(cleanAttributes.a || []), 'data-target', 'data-unresolved'],
-        'div': [...(cleanAttributes.div || []), 'data-type'],
+        'a': [...(cleanAttributes.a || []), 'dataTarget', 'dataUnresolved'],
+        'div': [...(cleanAttributes.div || []), 'dataType'],
       }
     };
 

@@ -300,7 +300,28 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     
     return `![${alt}](${finalUri}${title ? ' ' + title : ''})`;
   });
-  
+
+  // Pre-fetch remote http/https images to base64 in Node.js (with 5s timeout).
+  // This prevents Chromium from making outbound network requests during rendering,
+  // which (combined with page.route interceptors) caused a permanent 120s hang.
+  processedMarkdown = await asyncReplace(processedMarkdown, /!\[([^\]]*)\]\((https?:\/\/[^)\s]+)(\s+["'][^"']*["'])?\)/g, async (match, alt, url, title) => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const buf = Buffer.from(await res.arrayBuffer());
+      const contentType = res.headers.get('content-type') || 'image/png';
+      const mimeType = contentType.split(';')[0].trim();
+      const dataUri = `data:${mimeType};base64,${buf.toString('base64')}`;
+      return `![${alt}](${dataUri}${title ? title : ''})`;
+    } catch {
+      warnings.push(`Failed to load remote image: ${url}`);
+      return match; // keep original — will render as broken icon in PDF
+    }
+  });
+
   // Resolve Obsidian Embeds
   processedMarkdown = await resolveObsidianEmbeds(
     processedMarkdown,

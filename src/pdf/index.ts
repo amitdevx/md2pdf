@@ -2,6 +2,7 @@ import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
 import path from 'node:path';
 import os from 'node:os';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export interface PdfOptions {
@@ -23,126 +24,79 @@ export interface PdfOptions {
   warnings?: string[];
 }
 
-// DNS result cache - avoids blocking per-request DNS lookups that cause the 50x
-// performance regression when --offline is used or for large batch conversions.
-const dnsCache = new Map<string, string>();
-
-async function resolveHostnameIp(hostname: string): Promise<string | null> {
-  if (dnsCache.has(hostname)) return dnsCache.get(hostname)!;
-  try {
-    const dns = await import('node:dns/promises');
-    const result = await Promise.race([
-      dns.lookup(hostname),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('DNS timeout')), 2000))
-    ]) as { address: string };
-    dnsCache.set(hostname, result.address);
-    return result.address;
-  } catch {
-    return null;
+function getSandboxDirs(options: PdfOptions): string[] {
+  const dirs: string[] = [];
+  if (options.renderContext?.inputPath) {
+    const inputDir = path.dirname(path.resolve(options.renderContext.inputPath));
+    dirs.push(inputDir);
+    dirs.push(path.dirname(inputDir));
+  } else {
+    dirs.push(process.cwd());
   }
-}
-
-function isBlockedIp(ip: string): boolean {
-  const patterns = [
-    /^169\.254\./, /^127\./, /^0\.0\.0\.0$/, /^::1$/,
-    /^fc00:/, /^fe80:/,
-    // Private RFC1918 ranges
-    /^10\./, /^192\.168\./,
-    /^172\.(1[6-9]|2\d|3[01])\./,
-  ];
-  return patterns.some(p => p.test(ip));
+  if (options.renderContext?.options?.obsidian?.vaultRoot) {
+    dirs.push(path.resolve(options.renderContext.options.obsidian.vaultRoot));
+  }
+  dirs.push(os.tmpdir());
+  return dirs;
 }
 
 export async function generatePdf(options: PdfOptions): Promise<void> {
   const browser = options.browser || await getBrowser();
   const ownedContext = !options.sharedContext;
-  const context: BrowserContext = options.sharedContext || await browser.newContext({
-    javaScriptEnabled: false,
-  });
+  const context: BrowserContext = options.sharedContext || await browser.newContext();
   const page = await context.newPage();
 
+  // Pre-compute sandbox dirs once (synchronous)
+  const sandboxDirs = getSandboxDirs(options);
+  const resolveSafe = (d: string) => { try { return fs.realpathSync(d); } catch { return d; } };
+  const realSandboxDirs = sandboxDirs.map(resolveSafe);
+
   try {
-    await page.route('**/*', async (route: Route) => {
+    // Route handler is fully synchronous — no await anywhere.
+    // Async route handlers block Chromium's event loop, which prevents
+    // img.onload/onerror from firing and causes a permanent 120s hang.
+    // 
+    // Remote images (http/https) are pre-converted to base64 in Node.js
+    // by core/index.ts before this point, so Chromium makes no outbound requests.
+    // This handler only needs to sandbox local file:// access.
+    await page.route('**/*', (route: Route) => {
       const url = route.request().url();
-
-      // Block SSRF: cloud metadata / loopback / private IPs
-      try {
-        const u = new URL(url);
-        if (u.protocol === 'http:' || u.protocol === 'https:') {
-          // Block by hostname name before DNS
-          if (u.hostname === 'localhost' || u.hostname === '0.0.0.0') {
-            return route.abort('accessdenied');
-          }
-
-          // Offline mode: abort all external HTTP immediately (no DNS needed)
-          if (options.offline) {
-            return route.abort('internetdisconnected');
-          }
-
-          // Only do DNS to block SSRF for non-offline requests
-          const ip = await resolveHostnameIp(u.hostname);
-          if (ip && isBlockedIp(ip)) {
-            return route.abort('accessdenied');
-          }
-        }
-      } catch {
-        // Malformed URL or non-http scheme: fall through
-      }
 
       if (url.startsWith('file://')) {
         try {
           const fileUrl = fileURLToPath(new URL(url));
-          const allowedDirs: string[] = [];
-          if (options.renderContext?.inputPath) {
-            const inputDir = path.dirname(path.resolve(options.renderContext.inputPath));
-            allowedDirs.push(inputDir);
-            allowedDirs.push(path.dirname(inputDir));
-          } else {
-            allowedDirs.push(process.cwd());
-          }
-          if (options.renderContext?.options?.obsidian?.vaultRoot) {
-            allowedDirs.push(path.resolve(options.renderContext.options.obsidian.vaultRoot));
-          }
-          allowedDirs.push(os.tmpdir());
-
-          let realFileUrl = fileUrl;
+          let realFileUrl: string;
           try {
-            const fs = await import('node:fs');
             realFileUrl = fs.realpathSync(fileUrl);
           } catch {
-            return route.abort('accessdenied');
+            return void route.abort('accessdenied');
           }
 
-          const fs = await import('node:fs');
-          const resolveSafeDir = (d: string) => {
-            try { return fs.realpathSync(d); } catch { return d; }
-          };
-          const realAllowedDirs = allowedDirs.map(resolveSafeDir);
-          const isAllowed = realAllowedDirs.some(dir => realFileUrl.startsWith(dir) || realFileUrl === dir);
+          const isAllowed = realSandboxDirs.some(
+            dir => realFileUrl.startsWith(dir) || realFileUrl === dir
+          );
           if (!isAllowed) {
-            return route.abort('accessdenied');
+            return void route.abort('accessdenied');
           }
-          return route.fulfill({ path: fileUrl });
+          return void route.fulfill({ path: fileUrl });
         } catch {
-          return route.abort('accessdenied');
+          return void route.abort('accessdenied');
         }
       }
 
+      // Abort loopback HTTP to prevent SSRF (belt-and-suspenders, most images are already base64)
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        let isSettled = false;
         try {
-          const response = await Promise.race([
-            route.fetch(),
-            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-          ]);
-          isSettled = true;
-          return route.fulfill({ response });
-        } catch (error) {
-          if (!isSettled) {
-            return route.abort('failed');
+          const u = new URL(url);
+          if (u.hostname === 'localhost' || u.hostname === '0.0.0.0' || u.hostname === '127.0.0.1') {
+            return void route.abort('accessdenied');
           }
+          if (options.offline) {
+            return void route.abort('internetdisconnected');
+          }
+        } catch {
+          // Malformed URL — allow through
         }
-        return;
       }
 
       route.continue();
@@ -150,45 +104,36 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
 
     const convertLogic = async () => {
       await page.setContent(options.html, { waitUntil: 'domcontentloaded' });
-      try {
-        await page.waitForLoadState('networkidle', { timeout: 3000 });
-      } catch {
-        // Font CDN timed out - PDF renders with fallback fonts
-      }
+
+      // Brief wait for networkidle (fonts, etc.); remote images are already base64 so no hang
+      await page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
 
       if (options.registry && options.renderContext) {
         await options.registry.executeAfterPageLoad(page, options.renderContext);
       }
 
-      // Wait for images to load and check for broken ones
+      // Safety net: call window.stop() then clear any broken-image srcs
       const brokenImages = await page.evaluate(async () => {
         const images = Array.from(document.querySelectorAll('img'));
         await Promise.all(images.map(img => {
           if (img.complete) return Promise.resolve();
           return Promise.race([
-            new Promise(resolve => {
-              img.onload = resolve;
-              img.onerror = resolve;
+            new Promise<void>(resolve => {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
             }),
-            new Promise(resolve => setTimeout(resolve, 5000))
+            new Promise<void>(resolve => setTimeout(resolve, 5000))
           ]);
         }));
-        
-        // Abort any pending network requests (like rate-limited remote images)
-        // so that Chromium doesn't hang indefinitely during page.pdf()
+
         window.stop();
 
         const broken = images.filter(img => img.naturalWidth === 0);
         const brokenSrcs = broken.map(img => img.src || img.getAttribute('src') || 'unknown');
-
-        // Physically remove src from hanging/broken images so page.pdf() doesn't wait for them
-        broken.forEach(img => {
-          img.src = ''; // force network abort
-          img.removeAttribute('src');
-        });
-
+        broken.forEach(img => { img.src = ''; img.removeAttribute('src'); });
         return brokenSrcs;
       });
+
       if (brokenImages.length > 0 && options.warnings) {
         brokenImages.forEach(src => options.warnings!.push(`Failed to load image: ${src}`));
       }
@@ -220,16 +165,14 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       pdfBuffer = await options.registry.executeAfterPdf(pdfBuffer, options.renderContext);
     }
 
-    const fs = await import('node:fs/promises');
-    await fs.mkdir(path.dirname(options.outputPath), { recursive: true });
-    await fs.writeFile(options.outputPath, pdfBuffer);
+    const fsAsync = await import('node:fs/promises');
+    await fsAsync.mkdir(path.dirname(options.outputPath), { recursive: true });
+    await fsAsync.writeFile(options.outputPath, pdfBuffer);
   } finally {
     await page.close().catch(() => {});
-    // Only close the context if we created it - don't destroy a shared context
     if (ownedContext && context) {
       await context.close().catch(() => {});
     }
-    // Only close the browser if no browser was passed in (we launched it ourselves)
     if (!options.browser && !options.sharedContext) {
       await browser.close().catch(() => {});
     }

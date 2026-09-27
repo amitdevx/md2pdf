@@ -16,9 +16,9 @@ export default function rehypePageBreaks(options: PageBreakOptions = {}) {
       if (!parent || typeof index !== 'number') return;
 
       // Handle <!-- pagebreak --> comments
-      if (node.type === 'raw') {
-        const raw = node as unknown as { type: 'raw'; value: string };
-        if (raw.value.trim() === '<!-- pagebreak -->') {
+      if (node.type === 'raw' || node.type === 'comment') {
+        const value = (node as any).value;
+        if (value && (value.trim() === '<!-- pagebreak -->' || value.trim() === 'pagebreak')) {
           const pageBreakElement: Element = {
             type: 'element',
             tagName: 'div',
