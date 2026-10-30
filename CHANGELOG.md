@@ -16,7 +16,9 @@
 - Published error taxonomy and exit code catalog in `docs/errors.md` with automated synchronization contract tests.
 
 ### Robustness & Performance
-- Empty or whitespace-only stdin now exits 1 with clean `ERR_NO_INPUT` error.
+- Piped empty stdin now produces a blank PDF and exits 0, matching empty file conversion behavior.
+- Upgraded vitest to 4.1.12 and resolved all high-severity audit advisories across dependencies.
+- Updated KaTeX to 0.19.1 with refreshed stylesheet assets.
 - Implemented unified process shutdown registry handling SIGINT, SIGTERM, and SIGHUP with an unreferenced 3-second force-exit timer.
 - Added configurable conversion deadline (`MD2PDF_TIMEOUT_MS` / `timeout`, default 120s) with `ERR_NETWORK_TIMEOUT` (exit 2).
 - Added `MD2PDF_HOME` environment variable support to isolate runtime state and caches during tests.
