@@ -9,18 +9,20 @@ const shutdownHooks = new Set<ShutdownHook>();
 let signalsInitialized = false;
 let isShuttingDown = false;
 
-function onSignal(): void {
+function onSignal(signal: 'SIGINT' | 'SIGTERM' | 'SIGHUP'): void {
   if (isShuttingDown) return;
   isShuttingDown = true;
 
+  const exitCode = signal === 'SIGTERM' ? 143 : signal === 'SIGHUP' ? 129 : 130;
+
   // Unreferenced 3-second force-exit timer to prevent hanging during teardown
   const forceTimer = setTimeout(() => {
-    process.exit(130);
+    process.exit(exitCode);
   }, 3000);
   forceTimer.unref();
 
   executeShutdown().finally(() => {
-    process.exit(130);
+    process.exit(exitCode);
   });
 }
 
@@ -28,9 +30,9 @@ function initSignalListeners(): void {
   if (signalsInitialized) return;
   signalsInitialized = true;
 
-  process.once('SIGINT', () => onSignal());
-  process.once('SIGTERM', () => onSignal());
-  process.once('SIGHUP', () => onSignal());
+  process.once('SIGINT', () => onSignal('SIGINT'));
+  process.once('SIGTERM', () => onSignal('SIGTERM'));
+  process.once('SIGHUP', () => onSignal('SIGHUP'));
 }
 
 /**

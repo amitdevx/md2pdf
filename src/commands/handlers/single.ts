@@ -49,7 +49,17 @@ export async function handleSingle(
   try {
     fs.mkdirSync(path.dirname(output), { recursive: true });
   } catch (dirErr: any) {
-    if (dirErr.code !== 'EEXIST') throw dirErr;
+    if (dirErr.code !== 'EEXIST') {
+      const { Md2PdfError: DirError, Md2PdfErrorCode: DirErrorCode } = await import('../../errors/index.js');
+      const err = new DirError(
+        dirErr.code === 'EACCES' ? DirErrorCode.ERR_PERMISSION_DENIED : DirErrorCode.ERR_OUTPUT_DIR_MISSING,
+        'Cannot Create Output Directory',
+        `Failed to create output directory '${path.dirname(output)}': ${dirErr.message}`,
+        { outputPath: output }
+      );
+      renderCliError(err, options as any);
+      process.exit(EXIT.USAGE_ERROR);
+    }
   }
 
   // Early validation: parse YAML and check publish:false BEFORE launching the browser

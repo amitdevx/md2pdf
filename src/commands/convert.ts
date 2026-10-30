@@ -307,16 +307,20 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     } else {
       await handleSingle(finalInputs[0], options, cliFlags, resolvedConfig, validationResult);
     }
-
-    if (cliFlags.splitByHeading) {
-      const scratchDir = path.join(getMd2PdfHome(), 'splits');
-      if (fs.existsSync(scratchDir)) {
-        fs.rmSync(scratchDir, { recursive: true, force: true });
-      }
-    }
     } catch (e) {
-      console.error('CRASH in runHandlers:', e);
-      process.exit(1);
+      if (options.jsonErrors) {
+        emitJsonErrorAndExit('ERR_UNKNOWN', 'Internal Error', e instanceof Error ? e.message : String(e));
+      } else {
+        console.error(pc.red(e instanceof Error ? e.message : String(e)));
+        process.exit(EXIT.INTERNAL_BUG);
+      }
+    } finally {
+      if (cliFlags.splitByHeading) {
+        const scratchDir = path.join(getMd2PdfHome(), 'splits');
+        if (fs.existsSync(scratchDir)) {
+          fs.rmSync(scratchDir, { recursive: true, force: true });
+        }
+      }
     }
   };
 
