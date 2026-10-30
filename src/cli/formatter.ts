@@ -10,8 +10,54 @@ export const EXIT = {
   INTERNAL_BUG: 3,
 };
 
-export function jsonOut(data: object) {
-  const str = JSON.stringify(data, null, 2);
+export function jsonOut(data: {
+  schemaVersion?: number;
+  success: boolean;
+  results?: any[];
+  error?: any;
+  skipped?: number;
+  [key: string]: any;
+}) {
+  const schemaVersion = 1;
+  const success = data.success;
+  
+  // Format results array
+  let results = data.results;
+  if (!results) {
+    if (data.error) {
+      results = [{
+        input: data.error.context?.markdownFile || null,
+        output: data.error.context?.outputPath || null,
+        error: data.error.reason || data.error.message || data.error,
+        code: data.error.code || 'ERR_UNKNOWN'
+      }];
+    } else {
+      results = [];
+    }
+  }
+
+  // Format error object
+  let error = data.error;
+  if (!error && !success && results.length > 0) {
+    const firstErr = results.find(r => r.error || r.code);
+    if (firstErr) {
+      error = {
+        code: firstErr.code || 'ERR_UNKNOWN',
+        title: firstErr.code || 'Error',
+        reason: firstErr.error || 'An error occurred during conversion'
+      };
+    }
+  }
+
+  const payload: any = {
+    schemaVersion,
+    success,
+    results,
+    ...(error ? { error } : {}),
+    ...(data.skipped !== undefined ? { skipped: data.skipped } : {})
+  };
+
+  const str = JSON.stringify(payload, null, 2);
   process.stdout.write(str + '\n');
 }
 
@@ -19,18 +65,40 @@ export function renderCliError(err: Md2PdfError, options: CliOptions) {
   if (options.jsonErrors) {
     jsonOut({
       success: false,
+      error: {
+        code: err.code,
+        title: err.title || 'Error',
+        reason: err.reason || err.message
+      },
       results: [{
         input: err.context?.markdownFile || null,
         output: err.context?.outputPath || null,
-        error: err.reason,
+        error: err.reason || err.message,
         code: err.code,
       }]
     });
     let code = EXIT.ENVIRONMENT_ERROR;
     if (err.code === Md2PdfErrorCode.ERR_UNKNOWN) code = EXIT.INTERNAL_BUG;
-    if (err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN || err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR || err.code === Md2PdfErrorCode.ERR_INVALID_INPUT) code = EXIT.USAGE_ERROR;
-  if (err.code === Md2PdfErrorCode.ERR_BROWSER_MISSING || err.code === Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED || err.code === 'ERR_PERMISSION_DENIED' || err.code === 'ERR_INVALID_THEME') code = EXIT.ENVIRONMENT_ERROR;
-    if (err.code === Md2PdfErrorCode.ERR_BROWSER_MISSING || err.code === Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED || err.code === 'ERR_PERMISSION_DENIED' || err.code === 'ERR_INVALID_THEME') code = EXIT.ENVIRONMENT_ERROR;
+    if (
+      err.code === Md2PdfErrorCode.ERR_INVALID_MARKDOWN ||
+      err.code === Md2PdfErrorCode.ERR_CONFIG_ERROR ||
+      err.code === Md2PdfErrorCode.ERR_INVALID_INPUT ||
+      err.code === Md2PdfErrorCode.ERR_INVALID_ARGUMENT ||
+      err.code === Md2PdfErrorCode.ERR_NO_INPUT ||
+      err.code === Md2PdfErrorCode.ERR_INVALID_BROWSER ||
+      err.code === Md2PdfErrorCode.ERR_VAULT_ROOT_NOT_FOUND
+    ) {
+      code = EXIT.USAGE_ERROR;
+    }
+    if (
+      err.code === Md2PdfErrorCode.ERR_BROWSER_MISSING ||
+      err.code === Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED ||
+      err.code === Md2PdfErrorCode.ERR_PERMISSION_DENIED ||
+      err.code === Md2PdfErrorCode.ERR_INVALID_THEME ||
+      err.code === Md2PdfErrorCode.ERR_NETWORK_TIMEOUT
+    ) {
+      code = EXIT.ENVIRONMENT_ERROR;
+    }
     
     process.exitCode = code;
     return;
@@ -114,7 +182,10 @@ export function emitJsonErrorAndExit(code: string, title: string, reason: string
   if (
     code === 'ERR_PERMISSION_DENIED' ||
     code === 'ERR_FILE_TOO_LARGE' ||
-    code === 'ERR_DOCUMENT_TOO_COMPLEX' || code === 'ERR_INVALID_BROWSER' || code === 'ERR_BROWSER_MISSING' || code === 'ERR_BROWSER_LAUNCH_FAILED'
+    code === 'ERR_DOCUMENT_TOO_COMPLEX' ||
+    code === 'ERR_BROWSER_MISSING' ||
+    code === 'ERR_BROWSER_LAUNCH_FAILED' ||
+    code === 'ERR_NETWORK_TIMEOUT'
   ) {
     exitCode = EXIT.ENVIRONMENT_ERROR;
   }

@@ -17,6 +17,22 @@ function rehypeExpandDetails() {
   };
 }
 
+function rehypeSanitizeStyle() {
+  return async (tree: any) => {
+    const { visit } = await import('unist-util-visit');
+    visit(tree, 'element', (node: any) => {
+      if (node.properties && node.properties.style) {
+        if (typeof node.properties.style === 'string') {
+          node.properties.style = node.properties.style
+            .replace(/url\s*\([^)]*\)?/gi, '')
+            .replace(/@import\s+[^;]+;?/gi, '')
+            .replace(/expression\s*\([^)]*\)?/gi, '');
+        }
+      }
+    });
+  };
+}
+
 export async function parseMarkdown(
   markdown: string,
   options?: { 
@@ -129,7 +145,6 @@ export async function parseMarkdown(
       .use(remarkHighlight as any);
 
     if (options?.math?.enabled !== false) {
-      // @ts-expect-error - no types available for mhchem
       await import('katex/contrib/mhchem');
       proc = proc.use(remarkMath as any);
     }
@@ -175,7 +190,8 @@ export async function parseMarkdown(
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
       .use(rehypePageBreaks, options?.pageBreaks)
-      .use(rehypeSanitize, customSchema);
+      .use(rehypeSanitize, customSchema)
+      .use(rehypeSanitizeStyle);
 
     if (options?.math?.enabled !== false) {
       proc = proc.use(rehypeKatex as any, {

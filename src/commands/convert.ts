@@ -14,7 +14,6 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import fg from 'fast-glob';
 import pc from 'picocolors';
 import { loadConfig } from '../config/loader.js';
@@ -24,6 +23,7 @@ import type { CliOptions } from '../cli/options.js';
 import { validateInputFiles } from '../validation/index.js';
 import { handleSingle } from './handlers/single.js';
 import { handleBatch } from './handlers/batch.js';
+import { getMd2PdfHome } from '../core/home.js';
 import { watchFiles } from '../features/watch.js';
 import { splitMarkdownByHeading } from '../features/split.js';
 
@@ -54,8 +54,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     
     if (chunks.length === 1 || chunks.length === 0) {
       // Just write to one scratch file so core doesn't hang trying to read exhausted stdin
-      const os = await import('node:os');
-      const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+      const baseTemp = path.join(getMd2PdfHome(), 'temp');
       if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
       const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-stdin-'));
       scratchDirToCleanup = scratchDir;
@@ -63,8 +62,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       fs.writeFileSync(tempPath, chunks.length > 0 ? chunks[0] : '');
       inputs = [tempPath];
     } else if (chunks.length > 1) {
-      const os = await import('node:os');
-      const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+      const baseTemp = path.join(getMd2PdfHome(), 'temp');
       if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
       const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-stdin-'));
       scratchDirToCleanup = scratchDir;
@@ -133,6 +131,9 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
   }
 
   const cliFlags: any = { ...options };
+  if (cliFlags.title) {
+    cliFlags.addTitle = true;
+  }
   if (cliFlags.browser) {
     process.env.MD2PDF_BROWSER = cliFlags.browser;
   }
@@ -142,8 +143,8 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       emitJsonErrorAndExit('ERR_INVALID_BROWSER', 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`);
     } else {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-      renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_MISSING, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options as any);
-      process.exit(EXIT.ENVIRONMENT_ERROR);
+      renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_BROWSER, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options as any);
+      process.exit(EXIT.USAGE_ERROR);
     }
   }
 
@@ -158,6 +159,18 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
   }
 
   if (!options.jsonErrors) {
+    if (cliFlags.noTitle) {
+      console.warn(pc.yellow('⚠  --no-title is deprecated and has no effect; title injection is now opt-in via --add-title'));
+    }
+    if (cliFlags.addDate) {
+      console.warn(pc.yellow('⚠  --add-date is deprecated and has no effect; use header/footer templates instead'));
+    }
+    if (cliFlags.addFilename) {
+      console.warn(pc.yellow('⚠  --add-filename is deprecated and has no effect; use header/footer templates instead'));
+    }
+    if (cliFlags.documentMeta) {
+      console.warn(pc.yellow('⚠  --document-meta is deprecated and has no effect; use header/footer templates instead'));
+    }
     if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
       console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
     }
@@ -259,7 +272,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     let originalPaths: Record<string, string> | undefined;
 
     if (cliFlags.splitByHeading) {
-      const scratchDir = path.join(os.homedir(), '.md2pdf', 'splits');
+      const scratchDir = path.join(getMd2PdfHome(), 'splits');
       fs.mkdirSync(scratchDir, { recursive: true });
       finalInputs = [];
       originalPaths = {};
@@ -296,14 +309,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     }
 
     if (cliFlags.splitByHeading) {
-      const scratchDir = path.join(os.homedir(), '.md2pdf', 'splits');
-      if (fs.existsSync(scratchDir)) {
-        fs.rmSync(scratchDir, { recursive: true, force: true });
-      }
-    }
-
-    if (cliFlags.splitByHeading) {
-      const scratchDir = path.join(os.homedir(), '.md2pdf', 'splits');
+      const scratchDir = path.join(getMd2PdfHome(), 'splits');
       if (fs.existsSync(scratchDir)) {
         fs.rmSync(scratchDir, { recursive: true, force: true });
       }

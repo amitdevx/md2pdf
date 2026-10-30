@@ -8,15 +8,8 @@ export default defineConfig({
     testTimeout: 120000,
     pool: 'threads',
     fileParallelism: false,
-    poolOptions: {
-      threads: {
-        maxThreads: 2,
-        minThreads: 1
-      },
-      forks: {
-        singleFork: true
-      }
-    },
+    maxThreads: 2,
+    minThreads: 1,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html']

@@ -8,6 +8,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { resolveObsidianEmbeds } from '../plugins/obsidian/embeds.js';
+import { fetchSafeRemoteImage } from '../security/url-guard.js';
 
 import matter from 'gray-matter';
 import { injectMetadata } from '../pdf/metadata.js';
@@ -96,6 +97,16 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       }
       throw err;
     });
+
+    if (!rawMarkdown || rawMarkdown.trim().length === 0) {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_NO_INPUT,
+        'Missing Input',
+        'No input received from stdin.',
+        { markdownFile: 'stdin' }
+      );
+    }
   } else {
     try {
       const stats = await fs.stat(inputPath);
@@ -301,25 +312,38 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     return `![${alt}](${finalUri}${title ? ' ' + title : ''})`;
   });
 
-  // Pre-fetch remote http/https images to base64 in Node.js (with 5s timeout).
-  // This prevents Chromium from making outbound network requests during rendering,
-  // which (combined with page.route interceptors) caused a permanent 120s hang.
+  // Pre-fetch remote http/https images to base64 in Node.js with strict SSRF guard, redirect validation, and timeout.
+  // This prevents Chromium from making outbound network requests during rendering.
+  const maxImgBytes = (options.obsidian?.maxAttachmentSizeMb || 10) * 1024 * 1024;
+
+  // 1. Markdown syntax: ![alt](url)
   processedMarkdown = await asyncReplace(processedMarkdown, /!\[([^\]]*)\]\((https?:\/\/[^)\s]+)(\s+["'][^"']*["'])?\)/g, async (match, alt, url, title) => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const buf = Buffer.from(await res.arrayBuffer());
-      const contentType = res.headers.get('content-type') || 'image/png';
-      const mimeType = contentType.split(';')[0].trim();
-      const dataUri = `data:${mimeType};base64,${buf.toString('base64')}`;
-      return `![${alt}](${dataUri}${title ? title : ''})`;
-    } catch {
-      warnings.push(`Failed to load remote image: ${url}`);
-      return match; // keep original — will render as broken icon in PDF
+    const fetchResult = await fetchSafeRemoteImage(url, {
+      offline: options.offline,
+      maxBytes: maxImgBytes
+    });
+    if (fetchResult.warning) {
+      warnings.push(fetchResult.warning);
     }
+    if (fetchResult.success && fetchResult.dataUri) {
+      return `![${alt}](${fetchResult.dataUri}${title ? title : ''})`;
+    }
+    return match; // keep original — Chromium's page.route will block it and render as broken icon in PDF
+  });
+
+  // 2. Raw HTML syntax: <img ... src="url" ...>
+  processedMarkdown = await asyncReplace(processedMarkdown, /<img\b([^>]*\bsrc=["'])(https?:\/\/[^"'\s]+)(["'][^>]*)>/gi, async (match, prefix, url, suffix) => {
+    const fetchResult = await fetchSafeRemoteImage(url, {
+      offline: options.offline,
+      maxBytes: maxImgBytes
+    });
+    if (fetchResult.warning) {
+      warnings.push(fetchResult.warning);
+    }
+    if (fetchResult.success && fetchResult.dataUri) {
+      return `<img${prefix}${fetchResult.dataUri}${suffix}>`;
+    }
+    return match;
   });
 
   // Resolve Obsidian Embeds
@@ -333,18 +357,22 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     warnings
   );
 
-  // Frontmatter title & date injection
-  let prependMarkdown = '';
-  if (frontmatter.title && !processedMarkdown.match(/^#\s+/m)) {
-    prependMarkdown += `# ${frontmatter.title}\n\n`;
-  }
-  if (frontmatter.date) {
-    const d = new Date(frontmatter.date);
-    if (!isNaN(d.getTime())) {
-      prependMarkdown += `*${d.toLocaleDateString()}*\n\n`;
+  // Frontmatter title & date injection: only injected when addTitle is explicitly opt-in or implied by --title
+  const shouldAddTitle = !!(options.addTitle || (typeof options.title === 'string' && options.title.length > 0));
+  if (shouldAddTitle) {
+    let prependMarkdown = '';
+    const titleToInject = typeof options.title === 'string' ? options.title : frontmatter.title;
+    if (titleToInject && !processedMarkdown.match(/^#\s+/m)) {
+      prependMarkdown += `# ${titleToInject}\n\n`;
     }
+    if (frontmatter.date) {
+      const d = new Date(frontmatter.date);
+      if (!isNaN(d.getTime())) {
+        prependMarkdown += `*${d.toLocaleDateString()}*\n\n`;
+      }
+    }
+    processedMarkdown = prependMarkdown + processedMarkdown;
   }
-  processedMarkdown = prependMarkdown + processedMarkdown;
 
   const mermaidBlocks: any[] = []; // Using any to avoid importing MermaidBlock type here for now, or we can just let it be any array
 
@@ -427,7 +455,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     title = (typeof options.title === 'string' ? options.title : false) || options.metadata?.title || frontmatter.title || (input === '-' ? 'Untitled Document' : path.basename(input, path.extname(input)));
     
     let finalHtml = parsed.html;
-    if (options.title !== false && (typeof options.title === 'string' || !/<h1\b[^>]*>/i.test(finalHtml))) {
+    if (shouldAddTitle && !/<h1\b[^>]*>/i.test(finalHtml)) {
       const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
       finalHtml = `<h1 class="document-title" style="margin-top: 0; padding-top: 0;">${escapeHtml(title)}</h1>\n` + finalHtml;
     }
@@ -635,9 +663,19 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       pageCounts,
       renderTimeMs: Date.now() - startTime,
       warnings: [...warnings, ...(parsed.warnings || [])],
-      metadata
+      metadata,
+      html
     };
   } catch (error) {
+    try {
+      const fsNode = await import('node:fs');
+      const stagePath = outputPath + '.stage';
+      if (fsNode.existsSync(stagePath)) {
+        fsNode.unlinkSync(stagePath);
+      }
+    } catch {
+      // ignore
+    }
     const { detectBrowserError } = await import('../errors/detect.js');
     throw detectBrowserError(error, { markdownFile: inputPath, outputPath });
   } finally {

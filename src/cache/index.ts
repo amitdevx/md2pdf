@@ -1,13 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import os from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { getMd2PdfHome } from '../core/home.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function getCacheDir(): string {
-  return process.env.MD2PDF_CACHE_DIR || path.join(os.homedir(), '.md2pdf', 'render-cache');
+  return process.env.MD2PDF_CACHE_DIR || path.join(getMd2PdfHome(), 'render-cache');
 }
 
 export function clearCache() {

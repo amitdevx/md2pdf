@@ -10,7 +10,7 @@ if (major < 18) {
   process.exit(1);
 }
 
-import { Command, InvalidArgumentError } from 'commander';
+import { Command, InvalidArgumentError, Option } from 'commander';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -125,9 +125,9 @@ program
   .option('--header', 'Enable default running header')
   .option('--footer', 'Enable default running footer')
   .option('--page-numbers [position]', 'Show page numbers (bottom-center, bottom-right, top-center, top-right)')
-  .option("--add-date", "Add the current date/time to the PDF header")
-  .option("--add-filename", "Add the filename/title to the PDF header")
-  .option("--document-meta", "Add page numbers, date, and filename all at once")
+  .addOption(new Option('--add-date', 'Deprecated: use header/footer templates').hideHelp())
+  .addOption(new Option('--add-filename', 'Deprecated: use header/footer templates').hideHelp())
+  .addOption(new Option('--document-meta', 'Deprecated: use header/footer templates').hideHelp())
   .option('--outline', 'Generate PDF bookmarks/outline from headings')
   .option('--header-template <template>', 'Custom HTML template for header')
   .option('--footer-template <template>', 'Custom HTML template for footer')
@@ -179,8 +179,9 @@ program
   .option('--debug', 'Enable debug diagnostics')
   .option('--verbose', 'Enable verbose output')
   .option('--stdin', 'Read markdown from stdin instead of files')
-  .option('--title <string>', 'Explicitly set the document title')
-  .option('--no-title', 'Disable automatic document title injection from frontmatter/filename')
+  .option('--add-title', 'Inject document title and date into markdown body')
+  .option('--title <string>', 'Explicitly set the document title (implies --add-title)')
+  .addOption(new Option('--no-title', 'Deprecated: title injection is now opt-in via --add-title').hideHelp())
   .option('--json-errors', 'Output errors in JSON format')
   .option('--hide-tags', 'Hide inline Obsidian tags in PDF output')
   .option('--resolve-links', 'Attempt to visually indicate resolvable vs unresolvable wiki links')

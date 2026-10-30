@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import crypto from 'node:crypto';
+import { getMd2PdfHome } from '../core/home.js';
 
-const TOKEN_DIR  = path.join(os.homedir(), '.md2pdf');
+const TOKEN_DIR  = getMd2PdfHome();
 const TOKEN_FILE = path.join(TOKEN_DIR, 'daemon.token');
 
 /**

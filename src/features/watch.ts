@@ -1,10 +1,27 @@
 import fs from 'node:fs';
 import pc from 'picocolors';
+import { registerShutdownHandler } from '../core/shutdown.js';
 
 export async function watchFiles(files: string[], buildFn: (file?: string) => Promise<void>) {
   console.log(pc.cyan(`\n👀 Watch mode enabled. Watching ${files.length} file(s) for changes...`));
   let isRebuilding = false;
   let pendingBuild = false;
+  const watchers: fs.FSWatcher[] = [];
+
+  const cleanupWatchers = () => {
+    for (const watcher of watchers) {
+      try {
+        watcher.close();
+      } catch {
+        // ignore
+      }
+    }
+    watchers.length = 0;
+  };
+
+  registerShutdownHandler(() => {
+    cleanupWatchers();
+  });
 
   const triggerBuild = async () => {
     if (isRebuilding) {
@@ -32,11 +49,12 @@ export async function watchFiles(files: string[], buildFn: (file?: string) => Pr
   for (const file of files) {
     if (!fs.existsSync(file)) continue;
     try {
-      fs.watch(file, (eventType) => {
+      const watcher = fs.watch(file, (eventType) => {
         if (eventType === 'change') {
           triggerBuild();
         }
       });
+      watchers.push(watcher);
     } catch (e: any) {
       if (e.code === 'ENOSPC') {
         console.warn(pc.yellow(`⚠ Warning: OS watch limit reached. Could not watch ${file}`));

@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from 'node:url';
+import { getMd2PdfHome } from '../core/home.js';
 
 function getVersion() {
   try {
@@ -50,7 +51,7 @@ function verifyChromiumEngine(executablePath: string): void {
 }
 
 // Cache
-const CACHE_DIR  = path.join(os.homedir(), '.md2pdf');
+const CACHE_DIR  = getMd2PdfHome();
 const CACHE_FILE = path.join(CACHE_DIR, 'browser-cache.json');
 
 import { createRequire } from 'node:module';

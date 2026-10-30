@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import { PDFDocument } from 'pdf-lib';
 import { convert } from '../core/index.js';
+import { getMd2PdfHome } from '../core/home.js';
 import type { Md2PdfConfig } from '../types/config.js';
 
 /**
@@ -67,7 +67,7 @@ export async function prependCoverPage(
     });
   } else if (ext === '.md') {
     // Generate PDF from Markdown cover page
-    const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+    const baseTemp = path.join(getMd2PdfHome(), 'temp');
     if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
     const scratchDir = fs.mkdtempSync(path.join(baseTemp, 'md2pdf-cover-'));
     const tempPdf = path.join(scratchDir, 'cover.pdf');

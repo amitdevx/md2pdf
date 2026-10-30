@@ -9,6 +9,7 @@ import { EXIT } from './formatter.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import { detectBrowserError } from '../errors/detect.js';
 import { getRecommendation } from '../errors/recommendations.js';
+import { getMd2PdfHome } from '../core/home.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -66,7 +67,7 @@ export default new Command('doctor')
       checks.push({ name: 'Warning: Running as root (Chromium requires --no-sandbox)', status: false });
     }
     
-    const cacheDir = path.resolve(os.homedir(), '.md2pdf', 'render-cache');
+    const cacheDir = path.resolve(getMd2PdfHome(), 'render-cache');
     try {
       if (!fs.existsSync(cacheDir)) {
         fs.mkdirSync(cacheDir, { recursive: true });
@@ -110,7 +111,7 @@ export default new Command('doctor')
       }
 
       let skipBrowserLaunch = false;
-      const CACHE_FILE = path.join(os.homedir(), '.md2pdf', 'browser-cache.json');
+      const CACHE_FILE = path.join(getMd2PdfHome(), 'browser-cache.json');
       if (!process.env.MD2PDF_BROWSER && cached?.executablePath && fs.existsSync(CACHE_FILE)) {
          const mtime = fs.statSync(CACHE_FILE).mtimeMs;
          if (Date.now() - mtime < 24 * 60 * 60 * 1000) {
@@ -191,7 +192,7 @@ export default new Command('doctor')
       }
 
       
-      const baseTemp = path.join(os.homedir(), '.md2pdf', 'temp');
+      const baseTemp = path.join(getMd2PdfHome(), 'temp');
       if (!fs.existsSync(baseTemp)) fs.mkdirSync(baseTemp, { recursive: true });
       const tmpPath = path.join(baseTemp, '.md2pdf-doctor-test.pdf');
       try {

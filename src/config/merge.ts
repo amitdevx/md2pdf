@@ -42,6 +42,8 @@ export function mergeConfig(
   
   if (cliFlags) {
     // Top-level CLI overrides
+    if (cliFlags.offline !== undefined) merged.offline = cliFlags.offline;
+    if (cliFlags.addTitle !== undefined) merged.addTitle = cliFlags.addTitle;
     if (cliFlags.theme !== undefined) merged.theme = cliFlags.theme;
     if (cliFlags.paper !== undefined) merged.paper = cliFlags.paper;
     if (cliFlags.margin !== undefined) merged.margin = cliFlags.margin;
@@ -163,6 +165,8 @@ export function mergeConfig(
     } as any,
     plugins: merged.plugins,
     cache: cliFlags?.cache !== false,
+    offline: cliFlags?.offline !== undefined ? cliFlags.offline : (merged.offline ?? false),
+    addTitle: cliFlags?.addTitle !== undefined ? cliFlags.addTitle : (merged.addTitle ?? (cliFlags?.title !== undefined)),
     title: cliFlags?.title !== undefined ? cliFlags.title : merged.metadata?.title,
     watermark: cliFlags?.watermark || merged.watermark,
     password: cliFlags?.password || merged.password,

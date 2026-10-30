@@ -64,8 +64,8 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
     }
 
     if (!filepath) {
-      const os = await import('node:os');
-      const globalConfigPath = path.join(os.homedir(), '.md2pdf', 'config.json');
+      const { getMd2PdfHome } = await import('../core/home.js');
+      const globalConfigPath = path.join(getMd2PdfHome(), 'config.json');
       if (existsSync(globalConfigPath)) {
         filepath = globalConfigPath;
       }

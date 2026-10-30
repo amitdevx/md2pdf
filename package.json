@@ -1,6 +1,6 @@
 {
   "name": "@amitdevx/md2pdf",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "description": "Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,7 +17,9 @@
   "files": [
     "dist",
     "themes",
+    "!themes/**/*.ts",
     "assets",
+    "!assets/fonts",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -109,7 +111,7 @@
     "gray-matter": "^4.0.3",
     "jiti": "^2.7.0",
     "js-yaml": "^4.1.0",
-    "katex": "^0.16.47",
+    "katex": "^0.19.1",
     "mime-types": "^3.0.2",
     "ora": "^5.4.1",
     "pdf-lib": "^1.17.1",
@@ -132,6 +134,9 @@
     "unist-util-visit": "^5.1.0",
     "zod": "^4.4.3"
   },
+  "overrides": {
+    "esbuild": "^0.28.2"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@types/hast": "^3.0.5",
@@ -146,7 +151,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.67.0",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.12"
   },
   "lint-staged": {
     "*.ts": [
@@ -157,8 +162,5 @@
   "allowScripts": {
     "esbuild@0.27.7": true,
     "esbuild@0.21.5": true
-  },
-  "overrides": {
-    "esbuild": "^0.28.2"
   }
 }

@@ -3,6 +3,8 @@ import type { AnyPlugin } from './plugin.js';
 export interface Md2PdfConfig {
   /** Offline mode: disable outbound network requests */
   offline?: boolean;
+  /** Inject document title and date into markdown body */
+  addTitle?: boolean;
   /** Output file path to merge all batch inputs into */
   merge?: string;
   /** Enable watch mode to rebuild PDFs when markdown changes */

@@ -1,3 +1,29 @@
+## [0.9.10] - 2026-10-30
+
+### Security
+- Added URL Guard with strict IP blocklists rejecting loopback, private RFC1918, link-local, cloud metadata (169.254.169.254), CGNAT, ULA, multicast, and IPv4-mapped IPv6 ranges.
+- Hardened remote image pre-fetching with manual redirect validation up to 3 hops, MIME type validation (`image/*`), size caps, and raw `<img>` tag support.
+- Enforced zero Chromium outbound network requests: aborted all HTTP and HTTPS requests in Playwright page route handler, serving only data URIs and sandboxed local files.
+- Sanitized inline styles against CSS exfiltration vectors by stripping `url()`, `@import`, and `expression()`.
+- Added `--offline` flag support across CLI and config, skipping remote network requests completely.
+- Added opt-in override `MD2PDF_ALLOW_PRIVATE_NETWORK=1` for private intranet environments.
+- Added comprehensive threat model documentation in `docs/security.md`.
+
+### Contracts & Standards
+- Added `--add-title` option: title and date are no longer injected into document body by default; `--no-title` retained as hidden alias.
+- Standardized automated JSON error responses across all failure paths to `{ schemaVersion: 1, success, results[], error? }`.
+- Distinguish missing browser executable (`ERR_INVALID_BROWSER`, exit 1) from browser launch failure (`ERR_BROWSER_LAUNCH_FAILED`, exit 2).
+- Published error taxonomy and exit code catalog in `docs/errors.md` with automated synchronization contract tests.
+
+### Robustness & Performance
+- Empty or whitespace-only stdin now exits 1 with clean `ERR_NO_INPUT` error.
+- Implemented unified process shutdown registry handling SIGINT, SIGTERM, and SIGHUP with an unreferenced 3-second force-exit timer.
+- Added configurable conversion deadline (`MD2PDF_TIMEOUT_MS` / `timeout`, default 120s) with `ERR_NETWORK_TIMEOUT` (exit 2).
+- Added `MD2PDF_HOME` environment variable support to isolate runtime state and caches during tests.
+- Fixed visual regression test suite to run against repository baseline PDFs on CI runners.
+- Annotated font CSS declarations in `src/assets/fonts.ts`, reducing TypeScript declaration file size from 650KB to 38 bytes.
+- Cleaned up npm package tarball by excluding redundant source files and duplicate asset binaries.
+
 ## [0.9.9] - 2026-09-27
 
 ### Added

@@ -12,6 +12,7 @@ import { convert } from '../../core/index.js';
 import { mergeConfig } from '../../config/merge.js';
 import { EXIT, jsonOut, renderCliError, SpinnerLike, noopSpinner, emitJsonErrorAndExit } from '../../cli/formatter.js';
 import { Md2PdfError } from '../../errors/index.js';
+import { registerShutdownHandler } from '../../core/shutdown.js';
 
 import { computeHash, checkCache } from '../../cache/index.js';
 import { buildVaultIndex, sortDependencies } from '../../core/vault.js';
@@ -46,17 +47,14 @@ export async function handleBatch(
     } catch { /* ignore */ }
   };
 
-  const sigintHandler = async () => {
+  const unregisterShutdown = registerShutdownHandler(async () => {
     isShuttingDown = true;
     if (!options.quiet && !options.jsonErrors) {
-      console.log(pc.yellow('\n⚠ Process interrupted by user. Cleaning up...'));
+      console.log(pc.yellow('\n⚠ Process interrupted. Cleaning up...'));
     }
     spinner.stop();
     await cleanup();
-    process.exitCode = 130;
-    return;
-  };
-  process.on('SIGINT', sigintHandler);
+  });
 
   let hasErrors = false;
   let successfulCount = 0;
@@ -424,7 +422,7 @@ export async function handleBatch(
       }
     }
   } finally {
-    process.removeListener('SIGINT', sigintHandler);
+    unregisterShutdown();
     await cleanup();
     if (hasErrors && (process.exitCode === undefined || process.exitCode === EXIT.OK)) {
       process.exitCode = EXIT.USAGE_ERROR;

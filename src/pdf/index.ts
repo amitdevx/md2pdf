@@ -1,5 +1,6 @@
 import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
+import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
@@ -22,6 +23,7 @@ export interface PdfOptions {
   renderContext?: import('../types/context.js').RenderContext;
   offline?: boolean;
   warnings?: string[];
+  timeout?: number;
 }
 
 function getSandboxDirs(options: PdfOptions): string[] {
@@ -60,8 +62,19 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     // by core/index.ts before this point, so Chromium makes no outbound requests.
     // This handler only needs to sandbox local file:// access.
     await page.route('**/*', (route: Route) => {
-      const url = route.request().url();
+      let url: string;
+      try {
+        url = route.request().url();
+      } catch {
+        return void route.abort('blockedbyclient');
+      }
 
+      // Allow inline data: and blob: resources
+      if (url.startsWith('data:') || url.startsWith('blob:')) {
+        return void route.continue();
+      }
+
+      // Sandboxed file:// access
       if (url.startsWith('file://')) {
         try {
           const fileUrl = fileURLToPath(new URL(url));
@@ -84,22 +97,14 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
         }
       }
 
-      // Abort loopback HTTP to prevent SSRF (belt-and-suspenders, most images are already base64)
+      // Abort all http and https by default (Chromium makes zero network requests;
+      // remote images are already pre-fetched and converted to base64 in Node.js)
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        try {
-          const u = new URL(url);
-          if (u.hostname === 'localhost' || u.hostname === '0.0.0.0' || u.hostname === '127.0.0.1') {
-            return void route.abort('accessdenied');
-          }
-          if (options.offline) {
-            return void route.abort('internetdisconnected');
-          }
-        } catch {
-          // Malformed URL — allow through
-        }
+        return void route.abort('blockedbyclient');
       }
 
-      route.continue();
+      // Any other unsupported scheme or unparseable URL is aborted
+      return void route.abort('blockedbyclient');
     });
 
     const convertLogic = async () => {
@@ -155,11 +160,26 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
       });
     };
 
+    const timeoutMs = options.timeout || (process.env.MD2PDF_TIMEOUT_MS ? parseInt(process.env.MD2PDF_TIMEOUT_MS, 10) : 120000);
+    let timeoutTimer: NodeJS.Timeout;
     const globalTimeout = new Promise<Buffer>((_, reject) => {
-      setTimeout(() => reject(new Error('PDF generation timed out after 120s')), 120000);
+      timeoutTimer = setTimeout(() => {
+        reject(new Md2PdfError(
+          Md2PdfErrorCode.ERR_NETWORK_TIMEOUT,
+          'Conversion Timeout',
+          `PDF generation timed out after ${timeoutMs / 1000}s`,
+          { outputPath: options.outputPath }
+        ));
+      }, timeoutMs);
+      timeoutTimer.unref();
     });
 
-    let pdfBuffer = await Promise.race([convertLogic(), globalTimeout]);
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await Promise.race([convertLogic(), globalTimeout]);
+    } finally {
+      clearTimeout(timeoutTimer!);
+    }
 
     if (options.registry && options.renderContext) {
       pdfBuffer = await options.registry.executeAfterPdf(pdfBuffer, options.renderContext);

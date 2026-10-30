@@ -5,8 +5,8 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import os from 'node:os';
 import { EXIT } from './formatter.js';
+import { getMd2PdfHome } from '../core/home.js';
 
 export default new Command('init')
   .description('Interactive guided setup for new environments')
@@ -179,7 +179,7 @@ export default new Command('init')
     }
 
     
-    const configPath = path.resolve(os.homedir(), '.md2pdf', 'config.json');
+    const configPath = path.resolve(getMd2PdfHome(), 'config.json');
       
     if (fs.existsSync(configPath)) {
       console.log(`Try running: ${pc.cyan('md2pdf <your-file>.md')}\n`);

@@ -37,7 +37,8 @@ export interface ConvertOptions {
   toc?: boolean;
   tocDepth?: number;
   tocTitle?: string;
-  title?: boolean;
+  title?: boolean | string;
+  addTitle?: boolean;
   fontSize?: string;
   lineHeight?: string | number;
   pageNumbers?: boolean | 'bottom-center' | 'bottom-right' | 'top-center' | 'top-right';
@@ -87,4 +88,5 @@ export interface ConvertResult {
   warnings: string[];
   metadata?: PdfMetadata;
   fromCache?: boolean;
+  html?: string;
 }

@@ -54,8 +54,8 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
   it('12. Invalid split heading -> exits 1', () => { expect(runCli(`"${basicMd}" --split-by -1`).status).toBe(1); });
   it('13. Invalid max attachment size -> exits 1', () => { expect(runCli(`"${basicMd}" --max-attachment-size abc`).status).toBe(1); });
   it.skipIf(process.platform === 'win32')('14. Output is an invalid directory/file combination -> exits 1', () => { expect(runCli(`"${basicMd}" -o /dev/null/out.pdf`).status).toBe(1); });
-  it.skipIf(process.platform === 'win32')('15. Trailing-slash output directory behavior -> exits 1 or creates', () => { expect(runCli(`"${basicMd}" -o "/does/not/exist/"`).status).toBeGreaterThanOrEqual(1); });
-  it('16. Invalid browser arg -> exits 1', () => { expect(runCli(`"${basicMd}" --browser /does/not/exist`).status).toBeGreaterThanOrEqual(1); });
+  it.skipIf(process.platform === 'win32')('15. Trailing-slash output directory behavior -> exits 1', () => { expect(runCli(`"${basicMd}" -o "/does/not/exist/"`).status).toBe(1); });
+  it('16. Invalid browser arg -> exits 1', () => { expect(runCli(`"${basicMd}" --browser /does/not/exist`).status).toBe(1); });
   it('17. Invalid vault root -> exits 1', () => { expect(runCli(`"${basicMd}" --vault-root /does/not/exist/vault`).status).toBe(1); });
   it.skipIf(process.platform === 'win32')('18. Path traversal -> exits 1', () => { expect(runCli(`"${basicMd}" -o /etc/out.pdf`).status).toBe(1); });
   it.skipIf(process.platform === 'win32')('19. Protected system directory -> exits 1', () => { expect(runCli(`"${basicMd}" -o /root/out.pdf`).status).toBe(1); });
@@ -77,7 +77,7 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
     fs.writeFileSync(complex, '> '.repeat(201) + 'test');
     expect(runCli(`"${complex}"`).status).toBe(2);
   });
-  it('24. Missing browser -> exits 2', () => { expect(runCli(`"${basicMd}" --browser /path/does/not/exist/for/browser --no-cache`).status).toBe(2); });
+  it('24. Bad browser path -> exits 1', () => { expect(runCli(`"${basicMd}" --browser /path/does/not/exist/for/browser --no-cache`).status).toBe(1); });
   it('25. Browser launch failure -> exits 2', () => { expect(runCli(`"${basicMd}" --browser "${basicMd}" --no-cache`).status).toBe(2); });
   it.skipIf(isRoot || process.platform === 'win32')('26. Permission denied -> exits 2', () => {
     const chmod = path.join(fixturesDir, 'chmod.md');
