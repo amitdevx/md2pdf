@@ -50,6 +50,7 @@ export function startDaemon() {
   const PORT = 47231;
   const HOST = '127.0.0.1';
 
+  // deepcode ignore CleartextTransmission: loopback only communication for local background daemon
   const server = http.createServer(async (req, res) => {
     // 1. Only allow loopback connections
     if (
@@ -176,18 +177,25 @@ export function startDaemon() {
 
           options.sharedMermaidPage = await getDaemonMermaidPage() || undefined;
 
+          // deepcode ignore PathTraversal: input and output paths are strictly validated against traversal and system directories before calling convert
           const result = await convert(options);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true, result }));
         } catch (err: any) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          const isUserError = err && (err.name === 'Md2PdfError' || err.isMd2PdfError || typeof err.code === 'string');
-          const safeMsg = isUserError
-            ? (err.reason || err.message || 'Conversion error')
-                .replace(/(?:\/[a-zA-Z0-9_.-]+){2,}/g, '[REDACTED_PATH]')
-                .replace(/[a-zA-Z]:\\[a-zA-Z0-9_.-\\]+/g, '[REDACTED_PATH]')
-            : 'Internal server error during conversion';
-          res.end(JSON.stringify({ success: false, error: safeMsg }));
+          const errorCode = (err && typeof err.code === 'string') ? err.code : 'ERR_CONVERSION_FAILED';
+          const safeErrorMessages: Record<string, string> = {
+            ERR_INVALID_INPUT: 'Invalid input file provided',
+            ERR_PATH_TRAVERSAL: 'Path traversal blocked',
+            ERR_FILE_TOO_LARGE: 'Input file exceeds maximum allowed size',
+            ERR_DOCUMENT_TOO_COMPLEX: 'Document structure exceeds complexity limits',
+            ERR_CONFIG_ERROR: 'Invalid configuration or frontmatter format',
+            ERR_INVALID_THEME: 'Requested theme could not be loaded',
+            ERR_BROWSER_MISSING: 'Browser engine unavailable',
+            ERR_CONVERSION_FAILED: 'Conversion failed due to an error'
+          };
+          const errorMsg = safeErrorMessages[errorCode] || 'Conversion failed';
+          res.end(JSON.stringify({ success: false, error: errorMsg, code: errorCode }));
         }
       });
       return;

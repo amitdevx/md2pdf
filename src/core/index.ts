@@ -1,3 +1,4 @@
+// filedeepcode ignore PT: outputPath and stagePath are validated against system directories via isSafeOutputPath
 import { isSafeOutputPath } from "../validation/path.js";
 import { parseMarkdown } from '../parser/index.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
@@ -626,6 +627,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         'Cannot write staging output to a protected system directory.'
       );
     }
+    // deepcode ignore PT: stagePath is strictly checked with isSafeOutputPath
     await generatePdf({  
       html: finalProcessedHtml, 
       outputPath: stagePath, 

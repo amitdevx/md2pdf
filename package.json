@@ -45,6 +45,7 @@
     "typecheck": "tsc --noEmit",
     "test:security": "npm audit --audit-level=high",
     "snyk:test": "snyk test --severity-threshold=high",
+    "snyk:code": "snyk code test --severity-threshold=high",
     "clean": "node -e \"require('fs').rmSync('dist', {recursive:true,force:true})\"",
     "prepare": "husky install || true",
     "prepublishOnly": "npm run clean && npm run build"

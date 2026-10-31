@@ -9,6 +9,7 @@ const HOST = '127.0.0.1';
 
 export async function isDaemonAlive(): Promise<boolean> {
   return new Promise((resolve) => {
+    // deepcode ignore CleartextTransmission: loopback only communication for local background daemon
     const req = http.get(`http://${HOST}:${PORT}/status`, (res) => {
       resolve(res.statusCode === 200);
     });
@@ -20,6 +21,7 @@ export async function isDaemonAlive(): Promise<boolean> {
 export async function stopDaemon(): Promise<boolean> {
   const token = readToken();
   return new Promise((resolve) => {
+    // deepcode ignore CleartextTransmission: loopback only communication for local background daemon
     const req = http.request(`http://${HOST}:${PORT}/stop`, {
       method: 'POST',
       headers: {
@@ -41,6 +43,7 @@ export async function submitToDaemon(options: ConvertOptions): Promise<ConvertRe
 
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(options);
+    // deepcode ignore CleartextTransmission: loopback only communication for local background daemon
     const req = http.request(`http://${HOST}:${PORT}/convert`, {
       method: 'POST',
       headers: {

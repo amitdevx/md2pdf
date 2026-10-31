@@ -41,6 +41,7 @@ jobs:
       run: |
         if [ -n "$SNYK_TOKEN" ]; then
           npx --yes snyk test --severity-threshold=high || true
+          npx --yes snyk code test --severity-threshold=high || true
         else
           echo "SNYK_TOKEN not set, skipping authenticated Snyk scan"
         fi

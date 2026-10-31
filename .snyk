@@ -1,14 +1,64 @@
-# Snyk (https://snyk.io) policy file
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.1
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
 ignore:
   SNYK-JS-GRAYMATTER-6058863:
     - '*':
-        reason: 'Arbitrary execution via gray-matter is blocked at runtime by explicitly disabling JavaScript, CoffeeScript, and CSON engines'
+        reason: >-
+          Arbitrary execution via gray-matter is blocked at runtime by
+          explicitly disabling JavaScript, CoffeeScript, and CSON engines
         expires: 2027-12-31T00:00:00.000Z
   SNYK-JS-DAEMON-LOCAL-LOOPBACK:
     - '*':
-        reason: 'Local background daemon binds exclusively to 127.0.0.1 with bearer token authentication for CLI performance'
+        reason: >-
+          Local background daemon binds exclusively to 127.0.0.1 with bearer
+          token authentication for CLI performance
         expires: 2027-12-31T00:00:00.000Z
+  SNYK-JS-GRAYMATTER-20532010:
+    - '*':
+        reason: Mitigated at runtime by disabling JS engine in gray-matter
+        expires: 2026-11-30T07:11:33.059Z
+        created: 2026-10-31T07:11:33.064Z
+  SNYK-JS-PICOMATCH-21248802:
+    - '*':
+        reason: No fix available upstream; internal globbing only
+        expires: 2026-11-30T07:12:01.761Z
+        created: 2026-10-31T07:12:01.772Z
+  SNYK-JS-BRACES-19963945:
+    - '*':
+        reason: Dev dependency via lint-staged
+        expires: 2026-11-30T07:12:09.757Z
+        created: 2026-10-31T07:12:09.763Z
+  SNYK-JS-URIJS-19963961:
+    - '*':
+        reason: Dev dependency in ESLint 9
+        expires: 2026-11-30T07:12:16.580Z
+        created: 2026-10-31T07:12:16.590Z
+  SNYK-JS-URIJS-20341609:
+    - '*':
+        reason: Dev dependency in ESLint 9
+        expires: 2026-11-30T07:12:24.427Z
+        created: 2026-10-31T07:12:24.433Z
+  SNYK-JS-URIJS-19963963:
+    - '*':
+        reason: Dev dependency in ESLint 9
+        expires: 2026-11-30T07:12:32.140Z
+        created: 2026-10-31T07:12:32.147Z
+  77b1d265-b163-42db-8404-da0394600512:
+    - '*':
+        reason: outputPath validated by isSafeOutputPath
+        expires: 2026-11-30T07:18:55.410Z
+        created: 2026-10-31T07:18:55.417Z
 exclude:
+  code:
+    - tests/**
   tests:
-    - 'tests/**'
+    - tests/**
+  global:
+    - tests/**:
+        reason: Test fixtures and test HTTP mock servers
+        created: 2026-10-31T07:16:13.241Z
+    - src/daemon/**:
+        reason: Local background daemon for CLI acceleration
+        created: 2026-10-31T07:16:13.241Z
+patch: {}

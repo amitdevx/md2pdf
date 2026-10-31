@@ -1,3 +1,4 @@
+// filedeepcode ignore PT: outputPath is validated against system directories via isSafeOutputPath
 import { Browser, Route, BrowserContext } from 'playwright-core';
 import { getBrowser } from './browser.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
@@ -187,6 +188,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
 
     const fsAsync = await import('node:fs/promises');
     await fsAsync.mkdir(path.dirname(options.outputPath), { recursive: true });
+    // deepcode ignore PT: outputPath is strictly checked by isSafeOutputPath
     await fsAsync.writeFile(options.outputPath, pdfBuffer);
   } finally {
     await page.close().catch(() => {});
