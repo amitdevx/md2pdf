@@ -4,22 +4,29 @@ export function inlineMermaidSvgs(html: string, rendered: RenderedMermaid[]): st
   let processedHtml = html;
   
   for (const item of rendered) {
-    // The placeholder div looks like:
-    // <div id="mermaid-placeholder-X" class="mermaid-container" style="page-break-inside: avoid;"></div>
-    // We'll replace the entire div, or just inject into it.
-    // It's easier to use a regex to replace the exact div if it has no children, but rehypeStringify might format it slightly.
-    // Since we know the id exactly, we can match:
-    function escapeRegExp(str: string): string {
-      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (!item.id || typeof item.id !== 'string') continue;
+    const targetIdAttr = `id="${item.id}"`;
+    let searchStart = 0;
+    while (true) {
+      const idIndex = processedHtml.indexOf(targetIdAttr, searchStart);
+      if (idIndex === -1) break;
+      
+      const divOpenIndex = processedHtml.lastIndexOf('<div', idIndex);
+      const tagCloseIndex = processedHtml.indexOf('>', idIndex);
+      if (divOpenIndex !== -1 && tagCloseIndex !== -1 && tagCloseIndex > idIndex) {
+        let replaceEnd = tagCloseIndex + 1;
+        const remainder = processedHtml.slice(replaceEnd, replaceEnd + 6);
+        if (remainder === '</div>') {
+          replaceEnd += 6;
+        }
+        
+        const replacement = `<div class="mermaid-container" style="page-break-inside: avoid; display: flex; justify-content: center; margin: 20px 0;">${item.svgHtml}</div>`;
+        processedHtml = processedHtml.slice(0, divOpenIndex) + replacement + processedHtml.slice(replaceEnd);
+        searchStart = divOpenIndex + replacement.length;
+      } else {
+        searchStart = idIndex + targetIdAttr.length;
+      }
     }
-    const regex = new RegExp(`<div[^>]*\\bid="${escapeRegExp(item.id)}"[^>]*></div>`, 'g');
-    
-    // Replace with a div that contains the SVG
-    processedHtml = processedHtml.replace(
-      regex,
-      `<div class="mermaid-container" style="page-break-inside: avoid; display: flex; justify-content: center; margin: 20px 0;">${item.svgHtml}</div>`
-    );
-
   }
   
   return processedHtml;

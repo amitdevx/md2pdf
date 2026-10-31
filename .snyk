@@ -1,0 +1,14 @@
+# Snyk (https://snyk.io) policy file
+version: v1.25.1
+ignore:
+  SNYK-JS-GRAYMATTER-6058863:
+    - '*':
+        reason: 'Arbitrary execution via gray-matter is blocked at runtime by explicitly disabling JavaScript, CoffeeScript, and CSON engines'
+        expires: 2027-12-31T00:00:00.000Z
+  SNYK-JS-DAEMON-LOCAL-LOOPBACK:
+    - '*':
+        reason: 'Local background daemon binds exclusively to 127.0.0.1 with bearer token authentication for CLI performance'
+        expires: 2027-12-31T00:00:00.000Z
+exclude:
+  tests:
+    - 'tests/**'

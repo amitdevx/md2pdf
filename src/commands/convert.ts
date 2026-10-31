@@ -14,7 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import fg from 'fast-glob';
+import { glob as fg, isDynamicPattern } from 'tinyglobby';
 import pc from 'picocolors';
 import { loadConfig } from '../config/loader.js';
 import { jsonOut, renderCliError, EXIT, emitJsonErrorAndExit } from '../cli/formatter.js';
@@ -82,7 +82,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       if (fs.existsSync(resolved)) {
         if (fs.statSync(resolved).isDirectory()) {
           const pattern = options.recursive ? '**/*.md' : '*.md';
-          const matches = await fg(pattern, { cwd: resolved, dot: false, unique: true, onlyFiles: true, absolute: true, followSymbolicLinks: false, ignore: ['**/node_modules/**'] });
+          const matches = await fg(pattern, { cwd: resolved, dot: false, onlyFiles: true, absolute: true, followSymbolicLinks: false, expandDirectories: false, ignore: ['**/node_modules/**'] });
           inputs.push(...matches);
         } else {
           if (resolved.toLowerCase().endsWith('.pdf')) {
@@ -93,9 +93,9 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
         continue;
       }
       const normalizedPattern = raw.replace(/\\/g, '/');
-      if (fg.isDynamicPattern(normalizedPattern)) {
+      if (isDynamicPattern(normalizedPattern)) {
         // Pass explicit cwd so fast-glob resolves against the user's shell dir
-        const matches = await fg(normalizedPattern, { cwd: shellCwd, dot: true, unique: true, onlyFiles: true, absolute: true });
+        const matches = await fg(normalizedPattern, { cwd: shellCwd, dot: true, onlyFiles: true, absolute: true, expandDirectories: false });
         for (const match of matches) {
           if (match.toLowerCase().endsWith('.pdf')) continue;
           inputs.push(match);

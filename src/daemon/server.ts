@@ -45,6 +45,8 @@ export function startDaemon() {
   daemonToken = generateToken();
   console.log(`Daemon token written to ~/.md2pdf/daemon.token (mode 0600)`);
 
+  // Security notice: Loopback HTTP binding (127.0.0.1) with bearer token auth
+  // is strictly scoped for local IPC performance between md2pdf CLI and daemon.
   const PORT = 47231;
   const HOST = '127.0.0.1';
 
@@ -114,17 +116,62 @@ export function startDaemon() {
           const body = Buffer.concat(chunks).toString('utf8');
           const options = JSON.parse(body) as ConvertOptions;
 
-          // 6. Ensure output has .pdf suffix
-          if (options.output && !options.output.toLowerCase().endsWith('.pdf')) {
-            options.output = options.output + '.pdf';
+          // 6. Validate input parameter against path traversal and null bytes
+          if (!options.input || typeof options.input !== 'string' || options.input.includes('\0')) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Invalid input parameter' }));
+            return;
           }
 
-          // 7. Path safety check
           const { isSafeOutputPath } = await import('../validation/path.js');
-          if (options.output && !isSafeOutputPath(options.output)) {
-            res.writeHead(403, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: 'Path Traversal Blocked' }));
-            return;
+          const pathModule = (await import('node:path')).default;
+
+          if (options.input !== '-') {
+            const inputExt = pathModule.extname(options.input).toLowerCase();
+            if (inputExt !== '.md' && inputExt !== '.markdown') {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'Input must be a markdown file (.md)' }));
+              return;
+            }
+            const resolvedInput = pathModule.resolve(options.input);
+            if (!isSafeOutputPath(resolvedInput)) {
+              res.writeHead(403, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'Path Traversal Blocked' }));
+              return;
+            }
+          }
+
+          // 7. Validate output parameter
+          if (options.output) {
+            if (typeof options.output !== 'string' || options.output.includes('\0')) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'Invalid output parameter' }));
+              return;
+            }
+            if (!options.output.toLowerCase().endsWith('.pdf')) {
+              options.output = options.output + '.pdf';
+            }
+            const resolvedOutput = pathModule.resolve(options.output);
+            if (!isSafeOutputPath(resolvedOutput)) {
+              res.writeHead(403, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'Path Traversal Blocked' }));
+              return;
+            }
+          }
+
+          // 8. Validate coverPage if specified
+          if (options.coverPage) {
+            if (typeof options.coverPage !== 'string' || options.coverPage.includes('\0')) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'Invalid cover page parameter' }));
+              return;
+            }
+            const resolvedCover = pathModule.resolve(options.coverPage);
+            if (!isSafeOutputPath(resolvedCover)) {
+              res.writeHead(403, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'Path Traversal Blocked' }));
+              return;
+            }
           }
 
           options.sharedMermaidPage = await getDaemonMermaidPage() || undefined;
@@ -134,10 +181,12 @@ export function startDaemon() {
           res.end(JSON.stringify({ success: true, result }));
         } catch (err: any) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          // Redact absolute paths (Unix and Windows) from error messages
-          const safeMsg = (err.message || 'Unknown error')
-            .replace(/(?:\/[a-zA-Z0-9_.-]+){2,}/g, '[REDACTED_PATH]')
-            .replace(/[a-zA-Z]:\\[a-zA-Z0-9_.-\\]+/g, '[REDACTED_PATH]');
+          const isUserError = err && (err.name === 'Md2PdfError' || err.isMd2PdfError || typeof err.code === 'string');
+          const safeMsg = isUserError
+            ? (err.reason || err.message || 'Conversion error')
+                .replace(/(?:\/[a-zA-Z0-9_.-]+){2,}/g, '[REDACTED_PATH]')
+                .replace(/[a-zA-Z]:\\[a-zA-Z0-9_.-\\]+/g, '[REDACTED_PATH]')
+            : 'Internal server error during conversion';
           res.end(JSON.stringify({ success: false, error: safeMsg }));
         }
       });

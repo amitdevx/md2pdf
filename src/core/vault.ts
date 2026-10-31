@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import fg from 'fast-glob';
+import { globSync } from 'tinyglobby';
 
 export interface VaultIndex {
   notes: Map<string, string>;
@@ -17,7 +17,7 @@ export function buildVaultIndex(vaultRoot: string | undefined, inputFiles: strin
   
   // If no vault root, just index the input files
   const filesToIndex = vaultRoot 
-    ? fg.sync('**/*.md', { cwd: vaultRoot, absolute: true, ignore: ['**/node_modules/**'] })
+    ? globSync('**/*.md', { cwd: vaultRoot, absolute: true, expandDirectories: false, ignore: ['**/node_modules/**'] })
     : inputFiles;
     
   for (const file of filesToIndex) {

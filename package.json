@@ -43,6 +43,8 @@
     "lint": "eslint src/ tests/",
     "lint:fix": "eslint src/ tests/ --fix",
     "typecheck": "tsc --noEmit",
+    "test:security": "npm audit --audit-level=high",
+    "snyk:test": "snyk test --severity-threshold=high",
     "clean": "node -e \"require('fs').rmSync('dist', {recursive:true,force:true})\"",
     "prepare": "husky install || true",
     "prepublishOnly": "npm run clean && npm run build"
@@ -107,7 +109,6 @@
   "dependencies": {
     "@shikijs/rehype": "^4.4.3",
     "commander": "^11.1.0",
-    "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
     "jiti": "^2.7.0",
     "js-yaml": "^4.1.0",
@@ -130,12 +131,15 @@
     "remark-rehype": "^11.0.0",
     "remark-stringify": "^11.0.0",
     "shiki": "^4.4.3",
+    "tinyglobby": "^0.2.17",
     "unified": "^11.0.4",
     "unist-util-visit": "^5.1.0",
     "zod": "^4.4.3"
   },
   "overrides": {
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "katex": "^0.19.1",
+    "picomatch": "^4.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

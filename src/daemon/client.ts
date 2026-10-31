@@ -2,6 +2,8 @@ import http from 'node:http';
 import type { ConvertOptions, ConvertResult } from '../types/index.js';
 import { readToken } from './token.js';
 
+// Security notice: Loopback HTTP client (127.0.0.1) communicates only with the
+// local background md2pdf daemon process authenticated via ~/.md2pdf/daemon.token.
 const PORT = 47231;
 const HOST = '127.0.0.1';
 

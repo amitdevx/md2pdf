@@ -67,6 +67,14 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   }
 
   const inputPath = input === '-' ? '-' : (path.isAbsolute(input) ? input : path.resolve(process.cwd(), input));
+  if (inputPath !== '-' && !isSafeOutputPath(inputPath)) {
+    const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    throw new Md2PdfError(
+      Md2PdfErrorCode.ERR_PATH_TRAVERSAL,
+      'Access Denied',
+      'Cannot read markdown input from a protected system directory.'
+    );
+  }
   let rawMarkdown = '';
   if (input === '-') {
     rawMarkdown = await new Promise<string>((resolve, reject) => {
@@ -610,6 +618,14 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const finalProcessedHtml = processedHtml.replace('<head>', '<head>\n  <base href="' + baseUrl + '">');
 
     const stagePath = outputPath + '.stage';
+    if (!isSafeOutputPath(stagePath)) {
+      const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      throw new Md2PdfError(
+        Md2PdfErrorCode.ERR_PATH_TRAVERSAL,
+        'Access Denied',
+        'Cannot write staging output to a protected system directory.'
+      );
+    }
     await generatePdf({  
       html: finalProcessedHtml, 
       outputPath: stagePath, 
@@ -670,7 +686,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     try {
       const fsNode = await import('node:fs');
       const stagePath = outputPath + '.stage';
-      if (fsNode.existsSync(stagePath)) {
+      if (isSafeOutputPath(stagePath) && fsNode.existsSync(stagePath)) {
         fsNode.unlinkSync(stagePath);
       }
     } catch {
