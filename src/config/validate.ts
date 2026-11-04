@@ -26,6 +26,7 @@ const baseConfigSchema = z.object({
   toc: z.boolean().optional(),
   tocDepth: z.number().min(1).max(6).optional(),
   tocTitle: z.string().optional(),
+  tocPageBreak: z.boolean().optional(),
   header: headerFooterSchema.optional(),
   footer: headerFooterSchema.optional(),
   mermaid: z.union([

@@ -119,7 +119,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
     );
   }
   // 9. Mermaid Errors
-  if (fullText.match(/Mermaid Error/i)) {
+  if (fullText.match(/Mermaid (Syntax )?Error/i) || fullText.match(/Mermaid/i)) {
     return new Md2PdfError(
       Md2PdfErrorCode.ERR_INVALID_MARKDOWN,
       'Mermaid Syntax Error',

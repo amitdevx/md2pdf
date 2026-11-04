@@ -58,7 +58,7 @@ export const rehypeMermaidDetector: Plugin<[MermaidDetectorOptions], Root> = (op
             id,
             source,
             theme,
-            line: node.position?.start.line,
+            line: node.position?.start.line || codeNode.position?.start.line,
           });
 
           // Replace the <pre> node with our placeholder <div>

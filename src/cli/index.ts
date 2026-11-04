@@ -65,11 +65,44 @@ import { Command as CommanderCommand } from 'commander';
 const daemonCmd = new CommanderCommand('daemon')
   .description('Manage the md2pdf background daemon')
   .argument('<action>', 'start, stop, or status')
+  .option('-f, --foreground', 'Run daemon in foreground')
   .action(async (action) => {
     if (action === 'start') {
-      const { startDaemon } = await import('../daemon/server.js');
-      startDaemon();
-      await new Promise(() => {}); // Keep alive
+      const { isDaemonAlive } = await import('../daemon/client.js');
+      const alive = await isDaemonAlive();
+      if (alive) {
+        console.log('Daemon is already running.');
+        process.exit(0);
+      }
+
+      if (process.argv.includes('--foreground') || process.argv.includes('-f')) {
+        const { startDaemon } = await import('../daemon/server.js');
+        startDaemon();
+        await new Promise(() => {}); // Keep alive in foreground
+      } else {
+        const { spawn } = await import('node:child_process');
+        const child = spawn(process.execPath, [process.argv[1], 'daemon', 'start', '--foreground'], {
+          detached: true,
+          stdio: 'ignore',
+        });
+        child.unref();
+
+        let started = false;
+        for (let i = 0; i < 20; i++) {
+          await new Promise((r) => setTimeout(r, 100));
+          if (await isDaemonAlive()) {
+            started = true;
+            break;
+          }
+        }
+        if (started) {
+          console.log(`md2pdf daemon started in background (PID: ${child.pid}).`);
+          process.exit(0);
+        } else {
+          console.log(`md2pdf daemon process spawned (PID: ${child.pid}).`);
+          process.exit(0);
+        }
+      }
     } else if (action === 'stop') {
       const { stopDaemon } = await import('../daemon/client.js');
       const stopped = await stopDaemon();
@@ -120,11 +153,18 @@ program
     return n;
   })
   .option('--toc-title <title>', 'Title for the TOC section')
+  .option('--toc-page-break', 'Insert a page break after the Table of Contents')
   .option('--font-size <px>', 'Base font size (e.g. 14px or 12pt)')
   .option('--line-height <ratio>', 'Base line height (e.g. 1.5)')
   .option('--header', 'Enable default running header')
   .option('--footer', 'Enable default running footer')
-  .option('--page-numbers [position]', 'Show page numbers (bottom-center, bottom-right, top-center, top-right)')
+  .option('--page-numbers [position]', 'Show page numbers (top-left, top-center, top-right, bottom-left, bottom-center, bottom-right)', (val) => {
+    const valid = ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'];
+    if (val && !valid.includes(val)) {
+      throw new InvalidArgumentError(`must be one of: ${valid.join(', ')}`);
+    }
+    return val || 'bottom-center';
+  })
   .addOption(new Option('--add-date', 'Deprecated: use header/footer templates').hideHelp())
   .addOption(new Option('--add-filename', 'Deprecated: use header/footer templates').hideHelp())
   .addOption(new Option('--document-meta', 'Deprecated: use header/footer templates').hideHelp())
@@ -138,12 +178,39 @@ program
     }
     return val;
   }, 'A4')
-  .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in, 0)', (val) => {
+  .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in, 0, or CSS 4-value "10mm 15mm")', (val) => {
+    const parts = val.trim().split(/\s+/);
+    const unitRegex = /^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/;
+    if (parts.length < 1 || parts.length > 4 || !parts.every(p => unitRegex.test(p))) {
+      throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0 (up to 4 space-separated values)`);
+    }
+    return val;
+  }, '20mm')
+  .option('--margin-top <margin>', 'Top page margin (e.g., 20mm, 1in)', (val) => {
     if (!/^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/.test(val)) {
       throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0`);
     }
     return val;
-  }, '20mm')
+  })
+  .option('--margin-bottom <margin>', 'Bottom page margin (e.g., 20mm, 1in)', (val) => {
+    if (!/^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/.test(val)) {
+      throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0`);
+    }
+    return val;
+  })
+  .option('--margin-left <margin>', 'Left page margin (e.g., 20mm, 1in)', (val) => {
+    if (!/^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/.test(val)) {
+      throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0`);
+    }
+    return val;
+  })
+  .option('--margin-right <margin>', 'Right page margin (e.g., 20mm, 1in)', (val) => {
+    if (!/^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/.test(val)) {
+      throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0`);
+    }
+    return val;
+  })
+  .option('--permissive-mermaid', 'Render error callout box instead of failing build on Mermaid syntax errors')
   .option('--hr-page-break', 'Treat --- as a page break')
   .option('--h1-new-page', 'Force a page break before each H1 heading')
   .option('--theme <theme>', 'Active md2pdf theme (default, github, obsidian-light, etc.)')

@@ -50,7 +50,14 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       process.stdin.on('end', () => resolve(data));
     });
 
-    const chunks = rawMarkdown.split(/(?:\0|\n---\n)/).filter(s => s.trim().length > 0);
+    let chunks: string[] = [];
+    if (rawMarkdown.includes('\0')) {
+      chunks = rawMarkdown.split('\0').filter(s => s.trim().length > 0);
+    } else if (options.merge) {
+      chunks = rawMarkdown.split('\n---\n').filter(s => s.trim().length > 0);
+    } else {
+      chunks = [rawMarkdown];
+    }
     
     if (chunks.length === 1 || chunks.length === 0) {
       // Just write to one scratch file so core doesn't hang trying to read exhausted stdin
@@ -171,8 +178,8 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     if (cliFlags.documentMeta) {
       console.warn(pc.yellow('⚠  --document-meta is deprecated and has no effect; use header/footer templates instead'));
     }
-    if ((cliFlags.tocDepth || cliFlags.tocTitle) && !cliFlags.toc) {
-      console.warn(pc.yellow('⚠  --toc-depth / --toc-title have no effect without --toc'));
+    if ((cliFlags.tocDepth || cliFlags.tocTitle || cliFlags.tocPageBreak) && !cliFlags.toc) {
+      console.warn(pc.yellow('Warning: --toc-depth / --toc-title / --toc-page-break have no effect without --toc'));
     }
     if (cliFlags.headerTemplate && !cliFlags.header) {
       console.warn(pc.yellow('⚠  --header-template has no effect without --header'));

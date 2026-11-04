@@ -3,7 +3,7 @@ import { isSafeOutputPath } from "../validation/path.js";
 import { parseMarkdown } from '../parser/index.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 import { renderHtmlTemplate } from '../renderer/index.js';
-import { generatePdf } from '../pdf/index.js';
+import { generatePdf, parseCssMargin } from '../pdf/index.js';
 import { ConvertOptions, ConvertResult, PdfMetadata } from '../types/index.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -337,7 +337,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     if (fetchResult.success && fetchResult.dataUri) {
       return `![${alt}](${fetchResult.dataUri}${title ? title : ''})`;
     }
-    return match; // keep original — Chromium's page.route will block it and render as broken icon in PDF
+    return match; // keep original: Chromium's page.route will block it and render as broken icon in PDF
   });
 
   // 2. Raw HTML syntax: <img ... src="url" ...>
@@ -452,6 +452,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       toc: options.toc,
       tocDepth: options.tocDepth,
       tocTitle: options.tocTitle,
+      tocPageBreak: options.tocPageBreak,
       pageBreaks: options.pageBreaks,
       mermaidBlocks,
       math: options.math,
@@ -510,11 +511,18 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       maxHeight: frontmatter.mermaid?.maxHeight || options.mermaid?.maxHeight,
       sharedMermaidPage: resolvedSharedMermaidPage,
       registry,
-      ctx
+      ctx,
+      permissiveMermaid: options.permissiveMermaid
     });
     
     let headerTemplate = undefined;
-    let marginTop = margin;
+    const parsedMargin = parseCssMargin(options.margin);
+    let marginTop = options.marginTop || parsedMargin.top || margin;
+    let marginBottom = options.marginBottom || parsedMargin.bottom || margin;
+    const marginLeft = options.marginLeft || parsedMargin.left;
+    const marginRight = options.marginRight || parsedMargin.right;
+    const hasCustomMarginTop = !!options.marginTop || (!!options.margin && options.margin !== '20mm');
+    const hasCustomMarginBottom = !!options.marginBottom || (!!options.margin && options.margin !== '20mm');
     const headerEnabled = options.header === true || 
       (typeof options.header === 'object' && options.header.enabled !== false);
     
@@ -543,7 +551,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     const pageNumPos = typeof options.pageNumbers === 'string' ? options.pageNumbers : 'bottom-center';
 
     if (headerEnabled && options.header !== undefined) {
-      marginTop = '30mm';
+      if (!hasCustomMarginTop) marginTop = '30mm';
       if (typeof options.header === 'object' && options.header.template) {
         headerTemplate = options.header.template;
         headerTemplate = headerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
@@ -557,14 +565,18 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         </div>`;
       }
     } else {
+      let topLeft = useTitle ? '<span class="title"></span>' : '';
+      if (usePageNumbers && pageNumPos === 'top-left') {
+        topLeft = `<span class="pageNumber"></span>${topLeft ? ' ' + topLeft : ''}`;
+      }
       const topCenter = (usePageNumbers && pageNumPos === 'top-center') ? '<span class="pageNumber"></span>' : '';
-      const topLeft = useTitle ? '<span class="title"></span>' : '';
       let topRight = useDate ? '<span class="date"></span>' : '';
-      
-      if (usePageNumbers && pageNumPos === 'top-right') topRight += ' <span class="pageNumber"></span>';
+      if (usePageNumbers && pageNumPos === 'top-right') {
+        topRight += (topRight ? ' ' : '') + '<span class="pageNumber"></span>';
+      }
       
       if (useDate || useTitle || (usePageNumbers && pageNumPos.startsWith('top'))) {
-        marginTop = '20mm';
+        if (!hasCustomMarginTop) marginTop = '20mm';
         
         // Simple 3-column flex
         headerTemplate = `
@@ -577,11 +589,10 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     }
 
     let footerTemplate = undefined;
-    let marginBottom = margin;
     const footerEnabled = options.footer === true || (typeof options.footer === 'object' && options.footer.enabled !== false);
 
     if (footerEnabled && options.footer !== undefined) {
-      marginBottom = '30mm';
+      if (!hasCustomMarginBottom) marginBottom = '30mm';
       if (typeof options.footer === 'object' && options.footer.template) {
         footerTemplate = options.footer.template;
         footerTemplate = footerTemplate.replace(/\{frontmatter\.([^}]+)\}/g, (match, key) => sanitizeFrontmatterValue(frontmatter[key]));
@@ -594,11 +605,11 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       }
     } else {
       if (usePageNumbers && pageNumPos.startsWith('bottom')) {
-        marginBottom = '20mm';
-        const align = pageNumPos === 'bottom-right' ? 'right' : 'center';
+        if (!hasCustomMarginBottom) marginBottom = '20mm';
+        const align = pageNumPos === 'bottom-right' ? 'right' : (pageNumPos === 'bottom-left' ? 'left' : 'center');
         footerTemplate = `
         <div style="font-family: Inter, sans-serif; font-size: 9px; width: 100%; display: flex; padding: 0 10mm; color: #888;">
-          <div style="flex: 1; text-align: left;"></div>
+          <div style="flex: 1; text-align: left;">${align === 'left' ? '<span class="pageNumber"></span>' : ''}</div>
           <div style="flex: 1; text-align: center;">${align === 'center' ? '<span class="pageNumber"></span>' : ''}</div>
           <div style="flex: 1; text-align: right;">${align === 'right' ? '<span class="pageNumber"></span>' : ''}</div>
         </div>`;
@@ -614,7 +625,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       if (!footerTemplate) footerTemplate = '<span></span>';
     }
 
-    // ponytail: Inject base URL so Playwright resolves local images & assets correctly without page.goto
+    // Inject base URL so Playwright resolves local images & assets correctly without page.goto
     const baseUrl = (await import('node:url')).pathToFileURL((await import('node:path')).default.dirname((await import('node:path')).default.resolve(input === '-' ? process.cwd() : input))).href + '/';
     const finalProcessedHtml = processedHtml.replace('<head>', '<head>\n  <base href="' + baseUrl + '">');
 
@@ -635,6 +646,8 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       margin,
       marginTop,
       marginBottom,
+      marginLeft,
+      marginRight,
       displayHeaderFooter,
       headerTemplate,
       footerTemplate,

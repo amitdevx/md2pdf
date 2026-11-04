@@ -323,7 +323,7 @@ export async function getBrowser(): Promise<Browser> {
       verifyChromiumEngine(cached.executablePath);
       return await chromium.launch({ ...launchOpts, executablePath: cached.executablePath });
     } catch {
-      fs.unlinkSync(CACHE_FILE); // Ponytail: If cached binary fails to launch for ANY reason, nuke it and rediscover.
+      fs.unlinkSync(CACHE_FILE); // AmitDevX: If cached binary fails to launch for ANY reason, nuke it and rediscover.
     }
   }
 

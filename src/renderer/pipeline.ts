@@ -19,6 +19,7 @@ export async function processBeforeRender(
     sharedMermaidPage?: any;
     registry?: import('../plugins/registry.js').PluginRegistry;
     ctx?: import('../types/context.js').RenderContext;
+    permissiveMermaid?: boolean;
   }
 ): Promise<string> {
   if (options?.mermaidEnabled === false) {
@@ -36,7 +37,8 @@ export async function processBeforeRender(
       options?.timeout,
       options?.maxWidth,
       options?.maxHeight,
-      options?.sharedMermaidPage
+      options?.sharedMermaidPage,
+      options?.permissiveMermaid
     );
     html = inlineMermaidSvgs(html, renderedSvgs);
   }

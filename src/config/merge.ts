@@ -50,6 +50,7 @@ export function mergeConfig(
     if (cliFlags.toc !== undefined) merged.toc = cliFlags.toc;
     if (cliFlags.tocDepth !== undefined) merged.tocDepth = cliFlags.tocDepth;
     if (cliFlags.tocTitle !== undefined) merged.tocTitle = cliFlags.tocTitle;
+    if (cliFlags.tocPageBreak !== undefined) merged.tocPageBreak = cliFlags.tocPageBreak;
     
     // Header/footer
     if (cliFlags.header !== undefined) {
@@ -118,9 +119,15 @@ export function mergeConfig(
     output: merged.output?.filename || merged.output?.dir || cliFlags?.output || 'output.pdf',
     paper: (merged.paper === 'A3' ? 'A4' : merged.paper) as ConvertOptions['paper'], // A3 fallback to A4 if unhandled by options
     margin: typeof merged.margin === 'string' ? merged.margin : (merged.margin ? `${merged.margin.top||0} ${merged.margin.right||0} ${merged.margin.bottom||0} ${merged.margin.left||0}` : '20mm'),
+    marginTop: cliFlags?.marginTop || (typeof merged.margin === 'object' ? merged.margin.top : undefined),
+    marginBottom: cliFlags?.marginBottom || (typeof merged.margin === 'object' ? merged.margin.bottom : undefined),
+    marginLeft: cliFlags?.marginLeft || (typeof merged.margin === 'object' ? merged.margin.left : undefined),
+    marginRight: cliFlags?.marginRight || (typeof merged.margin === 'object' ? merged.margin.right : undefined),
+    permissiveMermaid: cliFlags?.permissiveMermaid ?? (typeof merged.mermaid === 'object' ? (merged.mermaid as any).permissive : false),
     toc: merged.toc ?? false,
     tocDepth: merged.tocDepth ?? 3,
     tocTitle: merged.tocTitle ?? 'Table of Contents',
+    tocPageBreak: cliFlags?.tocPageBreak ?? merged.tocPageBreak ?? false,
     fontSize: merged.fontSize,
     lineHeight: merged.lineHeight,
     pageNumbers: merged.pageNumbers,
@@ -149,7 +156,7 @@ export function mergeConfig(
       h1NewPage: merged.pageBreaks?.h1NewPage ?? false,
     },
     obsidian: {
-      resolveLinks: merged.obsidian?.resolveWikiLinks ?? false,
+      resolveLinks: cliFlags?.resolveLinks ?? merged.obsidian?.resolveWikiLinks ?? false,
       showTags: !cliFlags?.hideTags,
       vaultRoot: merged.obsidian?.vaultRoot,
       attachmentFolder: merged.obsidian?.attachmentFolder,

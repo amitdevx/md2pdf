@@ -3,6 +3,7 @@ export interface CliOptions {
   toc?: boolean;
   tocDepth?: number;
   tocTitle?: string;
+  tocPageBreak?: boolean;
   header?: boolean;
   footer?: boolean;
   outline?: boolean;
@@ -10,6 +11,10 @@ export interface CliOptions {
   footerTemplate?: string;
   paper?: string;
   margin?: string;
+  marginTop?: string;
+  marginBottom?: string;
+  marginLeft?: string;
+  marginRight?: string;
   hrPageBreak?: boolean;
   h1NewPage?: boolean;
   watch?: boolean;
@@ -18,6 +23,7 @@ export interface CliOptions {
   theme?: string;
   mermaidTheme?: string;
   mermaidTimeout?: string;
+  permissiveMermaid?: boolean;
   math?: boolean;
   debug?: boolean;
   verbose?: boolean;

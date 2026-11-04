@@ -32,7 +32,8 @@ export async function renderMermaidBlocks(
   timeoutMs: number = 30000,
   maxWidth: string = '100%',
   maxHeight: string = 'none',
-  sharedMermaidPage?: import('playwright-core').Page
+  sharedMermaidPage?: import('playwright-core').Page,
+  permissive: boolean = false
 ): Promise<RenderedMermaid[]> {
   if (blocks.length === 0) return [];
 
@@ -121,17 +122,37 @@ export async function renderMermaidBlocks(
     for (let i = 0; i < evaluatedResults.length; i++) {
       const res = evaluatedResults[i];
       const block = payloads[i];
+      const lineInfo = block.line ? ` at line ${block.line}` : '';
+      const snippet = block.source.split('\n').slice(0, 5).map(l => `    ${l}`).join('\n');
 
       if (res.error) {
-        const lineInfo = block.line ? ` at line ${block.line}` : '';
-        throw new Error(`Mermaid Error${lineInfo}: ${res.error}`);
+        const errMessage = `Mermaid Syntax Error${lineInfo}: ${res.error}\n\n  Diagram snippet:\n${snippet}`;
+        if (permissive) {
+          warnings.push(`Warning: ${errMessage}`);
+          const safeSource = block.source.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          results.push({
+            id: block.id,
+            svgHtml: `<div class="mermaid-error" style="border: 1px solid #f85149; background: #fff8f8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; color: #b31d28; margin: 16px 0;"><strong style="display: block; margin-bottom: 6px;">Mermaid Syntax Error${lineInfo}</strong><pre style="margin: 0; white-space: pre-wrap;">${safeSource}</pre></div>`
+          });
+          continue;
+        }
+        throw new Error(errMessage);
       }
 
       let processedSvg = res.svg || '';
       
       if (processedSvg) {
         if (processedSvg.includes('-error') || processedSvg.includes('class="error-icon"')) {
-          const errText = `Mermaid Syntax Error at line ${block.line || 'unknown'}: Check diagram syntax.`;
+          const errText = `Mermaid Syntax Error${lineInfo}: Check diagram syntax.\n\n  Diagram snippet:\n${snippet}`;
+          if (permissive) {
+            warnings.push(`Warning: ${errText}`);
+            const safeSource = block.source.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            results.push({
+              id: block.id,
+              svgHtml: `<div class="mermaid-error" style="border: 1px solid #f85149; background: #fff8f8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; color: #b31d28; margin: 16px 0;"><strong style="display: block; margin-bottom: 6px;">Mermaid Syntax Error${lineInfo}</strong><pre style="margin: 0; white-space: pre-wrap;">${safeSource}</pre></div>`
+            });
+            continue;
+          }
           throw new Error(errText);
         }
 

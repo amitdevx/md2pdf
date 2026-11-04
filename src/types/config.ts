@@ -35,6 +35,8 @@ export interface Md2PdfConfig {
   tocDepth?: number;
   /** TOC section title. Default: 'Table of Contents' */
   tocTitle?: string;
+  /** Insert a page break after the Table of Contents */
+  tocPageBreak?: boolean;
   /** Base font size override (e.g. '14px') */
   fontSize?: string;
   /** Base line height override (e.g. 1.5) */
@@ -44,7 +46,7 @@ export interface Md2PdfConfig {
   /** Footer config */
   footer?: boolean | { enabled?: boolean; template?: string };
   /** Show page numbers in footer without full header/footer config */
-  pageNumbers?: boolean | 'bottom-center' | 'bottom-right' | 'top-center' | 'top-right';
+  pageNumbers?: boolean | 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-center' | 'top-right' | 'top-left';
   addDate?: boolean;
   addFilename?: boolean;
   documentMeta?: boolean;

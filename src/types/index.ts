@@ -34,14 +34,20 @@ export interface ConvertOptions {
   theme?: string;
   paper?: 'A4' | 'Letter' | 'Legal';
   margin?: string; // e.g., '20mm'
+  marginTop?: string;
+  marginBottom?: string;
+  marginLeft?: string;
+  marginRight?: string;
   toc?: boolean;
   tocDepth?: number;
   tocTitle?: string;
+  tocPageBreak?: boolean;
   title?: boolean | string;
   addTitle?: boolean;
   fontSize?: string;
   lineHeight?: string | number;
-  pageNumbers?: boolean | 'bottom-center' | 'bottom-right' | 'top-center' | 'top-right';
+  pageNumbers?: boolean | 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-center' | 'top-right' | 'top-left';
+  permissiveMermaid?: boolean;
   addDate?: boolean;
   addFilename?: boolean;
   documentMeta?: boolean;

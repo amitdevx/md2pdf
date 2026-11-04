@@ -5,10 +5,11 @@ export interface TocOptions {
   enable?: boolean;
   depth?: number;
   title?: string;
+  tocPageBreak?: boolean;
 }
 
 export default function rehypeToc(options: TocOptions = {}) {
-  const { enable = false, depth = 3, title = 'Table of Contents' } = options;
+  const { enable = false, depth = 3, title = 'Table of Contents', tocPageBreak = false } = options;
 
   return (tree: Root) => {
     if (!enable) return;
@@ -114,25 +115,39 @@ export default function rehypeToc(options: TocOptions = {}) {
 
     const tocList = buildList(headings);
 
+    const tocSectionChildren: Element[] = [
+      {
+        type: 'element',
+        tagName: 'h2',
+        properties: { className: ['toc-title'] },
+        children: [{ type: 'text', value: title }],
+      },
+      tocList,
+      {
+        type: 'element',
+        tagName: 'hr',
+        properties: { className: ['toc-separator'] },
+        children: [],
+      },
+    ];
+
+    if (tocPageBreak) {
+      tocSectionChildren.push({
+        type: 'element',
+        tagName: 'div',
+        properties: {
+          className: ['md2pdf-page-break', 'toc-break'],
+          style: 'page-break-before: always; break-before: page;',
+        },
+        children: [],
+      });
+    }
+
     const tocSection: Element = {
       type: 'element',
       tagName: 'div',
       properties: { className: ['table-of-contents'] },
-      children: [
-        {
-          type: 'element',
-          tagName: 'h2',
-          properties: { className: ['toc-title'] },
-          children: [{ type: 'text', value: title }],
-        },
-        tocList,
-        {
-          type: 'element',
-          tagName: 'hr',
-          properties: { className: ['toc-separator'] },
-          children: [],
-        }
-      ],
+      children: tocSectionChildren,
     };
 
     // Insert at the top of the body

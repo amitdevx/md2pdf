@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { registerShutdownHandler } from '../core/shutdown.js';
 
 export async function watchFiles(files: string[], buildFn: (file?: string) => Promise<void>) {
-  console.log(pc.cyan(`\n👀 Watch mode enabled. Watching ${files.length} file(s) for changes...`));
+  console.log(pc.cyan(`\nWatch mode enabled. Watching ${files.length} file(s) for changes...`));
   let isRebuilding = false;
   let pendingBuild = false;
   const watchers: fs.FSWatcher[] = [];
