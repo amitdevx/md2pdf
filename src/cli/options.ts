@@ -41,6 +41,6 @@ export interface CliOptions {
   dryRun?: boolean;
   quiet?: boolean;
   stdin?: boolean;
-  __preparsed?: any;
+  __preparsed?: { data: Record<string, unknown>; content: string };
 }
 

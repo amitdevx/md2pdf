@@ -10,29 +10,53 @@ export const EXIT = {
   INTERNAL_BUG: 3,
 };
 
+export interface JsonOutResult {
+  input?: string | null;
+  output?: string | null;
+  status?: string;
+  pages?: number;
+  timeMs?: number;
+  warnings?: string[];
+  error?: string | { code?: string; reason?: string; title?: string };
+  code?: string;
+  skipReason?: string;
+  [key: string]: unknown;
+}
+
+export interface JsonOutError {
+  code?: string;
+  title?: string;
+  reason?: string;
+  message?: string;
+  context?: {
+    markdownFile?: string | null;
+    outputPath?: string | null;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export function jsonOut(data: {
   schemaVersion?: number;
   success: boolean;
-  results?: any[];
-  error?: any;
+  results?: JsonOutResult[];
+  error?: JsonOutError;
   skipped?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   const schemaVersion = 1;
   const success = data.success;
   
   // Format results array
-  let results = data.results;
-  if (!results) {
+  let results: JsonOutResult[] = data.results || [];
+  if (!data.results) {
     if (data.error) {
       results = [{
         input: data.error.context?.markdownFile || null,
         output: data.error.context?.outputPath || null,
-        error: data.error.reason || data.error.message || data.error,
+        error: data.error.reason || data.error.message || String(data.error),
         code: data.error.code || 'ERR_UNKNOWN'
       }];
-    } else {
-      results = [];
     }
   }
 
@@ -41,15 +65,18 @@ export function jsonOut(data: {
   if (!error && !success && results.length > 0) {
     const firstErr = results.find(r => r.error || r.code);
     if (firstErr) {
+      const errReason = typeof firstErr.error === 'string'
+        ? firstErr.error
+        : (firstErr.error?.reason || 'An error occurred during conversion');
       error = {
         code: firstErr.code || 'ERR_UNKNOWN',
         title: firstErr.code || 'Error',
-        reason: firstErr.error || 'An error occurred during conversion'
+        reason: errReason
       };
     }
   }
 
-  const payload: any = {
+  const payload: Record<string, unknown> = {
     schemaVersion,
     success,
     results,

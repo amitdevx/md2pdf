@@ -94,13 +94,14 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       });
       process.stdin.on('end', () => resolve(data));
       process.stdin.on('error', reject);
-    }).catch(async (err: any) => {
-      if (typeof err?.message === 'string' && err.message.startsWith('ERR_FILE_TOO_LARGE:')) {
+    }).catch(async (err: unknown) => {
+      const error = err as Error;
+      if (typeof error?.message === 'string' && error.message.startsWith('ERR_FILE_TOO_LARGE:')) {
         const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
         throw new Md2PdfError(
           Md2PdfErrorCode.ERR_FILE_TOO_LARGE,
           'File Too Large',
-          err.message.replace('ERR_FILE_TOO_LARGE:', ''),
+          error.message.replace('ERR_FILE_TOO_LARGE:', ''),
           {}
         );
       }
@@ -140,15 +141,16 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
         );
       }
       rawMarkdown = await fs.readFile(inputPath, 'utf-8');
-    } catch (error: any) {
+    } catch (error: unknown) {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-      if (error.code === 'EACCES' || error.message.includes('Permission denied')) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'EACCES' || (err.message && err.message.includes('Permission denied'))) {
         throw new Md2PdfError(
           Md2PdfErrorCode.ERR_PERMISSION_DENIED,
           'Permission Denied',
           `Cannot read file '${inputPath}': Permission denied.`,
           { markdownFile: inputPath },
-          error
+          err
         );
       }
       throw error;
@@ -178,7 +180,28 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     }
   }
 
-  let frontmatter: any;
+  interface DocumentFrontmatter {
+    publish?: boolean;
+    title?: string;
+    date?: string | Date;
+    theme?: string;
+    cssclass?: string;
+    tags?: string | string[];
+    keywords?: string | string[];
+    author?: string;
+    description?: string;
+    subject?: string;
+    mermaid?: {
+      enabled?: boolean;
+      timeout?: number | string;
+      theme?: string;
+      maxWidth?: string;
+      maxHeight?: string;
+    };
+    [key: string]: unknown;
+  }
+
+  let frontmatter: DocumentFrontmatter;
   let markdown: string;
   try {
     if (options.__preparsed) {
@@ -204,12 +227,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       frontmatter = parsed.data;
       markdown = parsed.content;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+    const err = error as Error;
     throw new Md2PdfError(
       Md2PdfErrorCode.ERR_CONFIG_ERROR,
       'Invalid Frontmatter',
-      'Invalid frontmatter YAML: ' + (error.message || String(error)),
+      'Invalid frontmatter YAML: ' + (err.message || String(error)),
       { markdownFile: inputPath }
     );
   }
@@ -247,7 +271,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   const dir = path.dirname(inputPath);
   const warnings: string[] = [];
 
-  const asyncReplace = async (str: string, regex: RegExp, replacer: (...args: any[]) => Promise<string>) => {
+  const asyncReplace = async (str: string, regex: RegExp, replacer: (...args: string[]) => Promise<string>) => {
     const promises: Promise<string>[] = [];
     str.replace(regex, (match, ...args) => {
       promises.push(replacer(match, ...args));
@@ -383,9 +407,9 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     processedMarkdown = prependMarkdown + processedMarkdown;
   }
 
-  const mermaidBlocks: any[] = []; // Using any to avoid importing MermaidBlock type here for now, or we can just let it be any array
+  const mermaidBlocks: import('../plugins/mermaid/detector.js').MermaidBlock[] = [];
 
-  let parsed: any;
+  let parsed: { html: string; title?: string; warnings?: string[] };
   let html: string;
   let browser;
   let title: string = '';
@@ -431,11 +455,12 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     let theme = null;
     try {
       theme = await loadTheme(themeName);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const err = e as Error;
       throw new Md2PdfError(
         Md2PdfErrorCode.ERR_INVALID_THEME,
         'Theme Load Error',
-        `Failed to load theme "${themeName}": ${e.message}`
+        `Failed to load theme "${themeName}": ${err.message}`
       );
     }
 
@@ -443,7 +468,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       inputPath,
       outputPath,
       frontmatter,
-      options: options as any,
+      options: options as unknown as RenderContext['options'],
       logger: console
     };
 
@@ -490,7 +515,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       browser = await globalBrowserManager.acquireBrowser();
     }
 
-    const resolvedSharedMermaidPage = localMermaidInitPromise ? await localMermaidInitPromise : (options as any).sharedMermaidPage;
+    const resolvedSharedMermaidPage = localMermaidInitPromise ? await localMermaidInitPromise : options.sharedMermaidPage;
     
       const baseTimeout = options.mermaid?.timeout || 30000;
       const fmTimeout = frontmatter.mermaid?.timeout ? Number(frontmatter.mermaid.timeout) : undefined;
@@ -503,13 +528,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       const { processBeforeRender } = await import('../renderer/pipeline.js');
       const processedHtml = await processBeforeRender(html, browser, mermaidBlocks, warnings, {
         theme: frontmatterTheme || options.theme,
-        globalMermaidTheme: theme?.mermaidTheme || frontmatter.mermaid?.theme || options.mermaid?.theme,
+        globalMermaidTheme: (theme?.mermaidTheme || frontmatter.mermaid?.theme || options.mermaid?.theme) as import('../plugins/mermaid/theme-map.js').MermaidTheme | undefined,
         themeVariables: theme?.mermaidThemeVariables,
         timeout: safeTimeout,
         mermaidEnabled: safeEnabled,
         maxWidth: frontmatter.mermaid?.maxWidth || options.mermaid?.maxWidth,
       maxHeight: frontmatter.mermaid?.maxHeight || options.mermaid?.maxHeight,
-      sharedMermaidPage: resolvedSharedMermaidPage,
+      sharedMermaidPage: resolvedSharedMermaidPage || undefined,
       registry,
       ctx,
       permissiveMermaid: options.permissiveMermaid
@@ -652,7 +677,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       headerTemplate,
       footerTemplate,
       browser,
-      sharedContext: (options as any).sharedContext,
+      sharedContext: options.sharedContext,
       registry,
       renderContext: ctx,
       offline: options.offline,
@@ -671,7 +696,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     if (options.coverPage) {
       const { prependCoverPage } = await import('../features/cover.js');
       const pdfBytes = fsNode.readFileSync(stagePath);
-      const newPdfBytes = await prependCoverPage(pdfBytes, options.coverPage, options as any);
+      const newPdfBytes = await prependCoverPage(pdfBytes, options.coverPage, options);
       fsNode.writeFileSync(stagePath, newPdfBytes);
       // We don't recalculate pageCounts here accurately because it's just for stats, but we could
     }

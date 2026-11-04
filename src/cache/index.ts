@@ -26,11 +26,12 @@ function getCachePath(inputPath: string): string {
   return path.join(getCacheDir(), pathHash);
 }
 
-export function computeHash(content: string, options: any): string {
+export function computeHash(content: string, options: unknown): string {
   const hash = crypto.createHash('sha256');
   hash.update(content);
   
-  const stableOptions = { ...options };
+  const opts = typeof options === 'object' && options !== null ? (options as Record<string, unknown>) : {};
+  const stableOptions = { ...opts };
   delete stableOptions.input;
   delete stableOptions.output;
   delete stableOptions.vaultRoot;
@@ -50,10 +51,10 @@ export function computeHash(content: string, options: any): string {
     hash.update('v0.9.8');
   }
 
-  if (options.theme && options.theme !== 'default' && options.theme !== 'light' && options.theme !== 'dark') {
+  if (typeof opts.theme === 'string' && opts.theme !== 'default' && opts.theme !== 'light' && opts.theme !== 'dark') {
     try {
-      if (fs.existsSync(options.theme)) {
-        hash.update(fs.readFileSync(options.theme, 'utf-8'));
+      if (fs.existsSync(opts.theme)) {
+        hash.update(fs.readFileSync(opts.theme, 'utf-8'));
       }
     } catch { /* ignore */ }
   }

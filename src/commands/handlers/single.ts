@@ -13,15 +13,19 @@ import { EXIT, jsonOut, renderCliError, SpinnerLike, noopSpinner, emitJsonErrorA
 import { Md2PdfError } from '../../errors/index.js';
 import { computeHash, checkCache } from '../../cache/index.js';
 import { registerShutdownHandler } from '../../core/shutdown.js';
+import type { BrowserContext, Page } from 'playwright-core';
+import type { CliOptions } from '../../cli/options.js';
+import type { Md2PdfConfig } from '../../types/config.js';
+import type { ValidationResult } from '../../validation/index.js';
 
 export async function handleSingle(
   input: string,
-  options: any,
-  cliFlags: any,
-  resolvedConfig: any,
-  validationResult?: any
+  options: CliOptions,
+  cliFlags: Record<string, unknown>,
+  resolvedConfig: Md2PdfConfig,
+  validationResult?: ValidationResult
 ): Promise<void> {
-  if (validationResult?.errors?.length > 0) {
+  if (validationResult?.errors && validationResult.errors.length > 0) {
     const err = validationResult.errors[0];
     if (options.jsonErrors) {
       jsonOut({ success: false, error: { code: err.error.code, title: err.error.title || 'Error', reason: err.error.reason || err.error.message } });
@@ -31,7 +35,7 @@ export async function handleSingle(
     process.exitCode = err.error.code === 'ERR_PATH_TRAVERSAL' ? 1 : (err.error.code === 'ERR_FILE_TOO_LARGE' || err.error.code === 'ERR_DOCUMENT_TOO_COMPLEX' ? 2 : 1);
     return;
   }
-  let output = cliFlags.output;
+  let output = cliFlags.output as string | undefined;
   if (output) {
     if (fs.existsSync(output) && fs.statSync(output).isDirectory()) {
       output = path.join(output, path.basename(input).replace(/\.md$/i, '.pdf'));
@@ -48,16 +52,17 @@ export async function handleSingle(
 
   try {
     fs.mkdirSync(path.dirname(output), { recursive: true });
-  } catch (dirErr: any) {
-    if (dirErr.code !== 'EEXIST') {
+  } catch (dirErr: unknown) {
+    const dErr = dirErr as NodeJS.ErrnoException;
+    if (dErr.code !== 'EEXIST') {
       const { Md2PdfError: DirError, Md2PdfErrorCode: DirErrorCode } = await import('../../errors/index.js');
       const err = new DirError(
-        dirErr.code === 'EACCES' ? DirErrorCode.ERR_PERMISSION_DENIED : DirErrorCode.ERR_OUTPUT_DIR_MISSING,
+        dErr.code === 'EACCES' ? DirErrorCode.ERR_PERMISSION_DENIED : DirErrorCode.ERR_OUTPUT_DIR_MISSING,
         'Cannot Create Output Directory',
-        `Failed to create output directory '${path.dirname(output)}': ${dirErr.message}`,
+        `Failed to create output directory '${path.dirname(output)}': ${dErr.message}`,
         { outputPath: output }
       );
-      renderCliError(err, options as any);
+      renderCliError(err, options);
       process.exit(EXIT.USAGE_ERROR);
     }
   }
@@ -79,8 +84,8 @@ export async function handleSingle(
     if (rawContent !== null) {
       const { Md2PdfError: EarlyError, Md2PdfErrorCode: EarlyCode } = await import('../../errors/index.js');
       const matter = (await import('gray-matter')).default;
-      let parsed: any;
-      let earlyError: any = null;
+      let parsed: { data: Record<string, unknown>; content: string } | undefined;
+      let earlyError: Md2PdfError | null = null;
       try {
         const blockEngine = () => { throw new Error('JavaScript/CoffeeScript frontmatter engines are disabled. Use YAML frontmatter instead.'); };
         parsed = matter(rawContent, {
@@ -91,12 +96,13 @@ export async function handleSingle(
             coffeescript: blockEngine,
             cson:         blockEngine,
           }
-        });
-      } catch (yamlErr: any) {
+        }) as unknown as { data: Record<string, unknown>; content: string };
+      } catch (yamlErr: unknown) {
+        const yErr = yamlErr as Error;
         earlyError = new EarlyError(
           EarlyCode.ERR_CONFIG_ERROR,
           'Invalid Frontmatter',
-          'Invalid frontmatter YAML: ' + (yamlErr.message || String(yamlErr)),
+          'Invalid frontmatter YAML: ' + (yErr.message || String(yErr)),
           { markdownFile: input }
         );
       }
@@ -121,18 +127,19 @@ export async function handleSingle(
         try {
           const { loadTheme } = await import('../../themes/loader.js');
           await loadTheme(themeName);
-        } catch (themeErr: any) {
+        } catch (themeErr: unknown) {
+          const tErr = themeErr as Error;
           earlyError = new EarlyError(
             EarlyCode.ERR_INVALID_THEME,
             'Theme Load Error',
-            `Failed to load theme "${themeName}": ${themeErr.message}`,
+            `Failed to load theme "${themeName}": ${tErr.message}`,
             { markdownFile: input }
           );
         }
       }
 
       if (earlyError) {
-        renderCliError(earlyError, options as any);
+        renderCliError(earlyError, options);
         return;
       }
 
@@ -178,9 +185,9 @@ export async function handleSingle(
     : ora('Converting...').start() as unknown as SpinnerLike;
 
   const startTime = Date.now();
-  let sharedContext: any = null;
-  let sharedMermaidContext: any = null;
-  let globalMermaidPage: any = null;
+  let sharedContext: BrowserContext | null = null;
+  let sharedMermaidContext: BrowserContext | null = null;
+  let globalMermaidPage: Page | null = null;
   let isShuttingDown = false;
 
   const cleanup = async () => {
@@ -250,7 +257,7 @@ export async function handleSingle(
     }
 
     if (sharedContext) {
-      (convertOptions as any).sharedContext = sharedContext;
+      convertOptions.sharedContext = sharedContext;
     }
     if (globalMermaidPage) {
       convertOptions.sharedMermaidPage = globalMermaidPage;
@@ -263,7 +270,7 @@ export async function handleSingle(
       spinner.start();
     }
 
-    const result = await convert({ ...convertOptions, ...options.__preparsed ? { __preparsed: options.__preparsed } : {} } as any);
+    const result = await convert({ ...convertOptions, ...(options.__preparsed ? { __preparsed: options.__preparsed } : {}) });
     result.renderTimeMs = Date.now() - startTime;
 
     if (options.verbose && !options.jsonErrors) {
@@ -292,11 +299,12 @@ export async function handleSingle(
     }
 
     process.exitCode = EXIT.OK;
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (isShuttingDown) return;
     spinner.stop();
 
-    if (err?.code === 'ERR_PUBLISH_SKIPPED') {
+    const errObj = err as { code?: string; message?: string; name?: string; stack?: string };
+    if (errObj?.code === 'ERR_PUBLISH_SKIPPED') {
       if (options.jsonErrors) {
         jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'publish: false' }] });
       } else {
@@ -306,21 +314,21 @@ export async function handleSingle(
       return;
     }
 
-    const isMdError = err instanceof Md2PdfError || err?.name === 'Md2PdfError' || err?.code?.startsWith('ERR_');
+    const isMdError = err instanceof Md2PdfError || errObj?.name === 'Md2PdfError' || errObj?.code?.startsWith('ERR_');
     if (isMdError) {
-      renderCliError(err, options as any);
+      renderCliError(err as Md2PdfError, options);
     } else {
       if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
+        emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', errObj.message || String(err));
       } else {
         spinner.stop();
-        console.error(pc.red('✖') + ' ' + pc.red(err.message));
-        const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME'
-          || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
+        console.error(pc.red('✖') + ' ' + pc.red(errObj.message || String(err)));
+        const isUserError = errObj.code === 'ENOENT' || errObj.code === 'EACCES' || errObj.code === 'ERR_INVALID_THEME'
+          || /not found/i.test(errObj.message || '') || /invalid/i.test(errObj.message || '');
         if (!isUserError) {
           console.error(pc.yellow('\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues\n'));
         }
-        if (options.debug && err.stack) console.error(pc.dim(err.stack));
+        if (options.debug && errObj.stack) console.error(pc.dim(errObj.stack));
         process.exitCode = EXIT.USAGE_ERROR;
       }
     }

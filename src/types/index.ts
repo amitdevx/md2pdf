@@ -19,8 +19,9 @@ export interface ConvertOptions {
   output: string;
   plugins?: AnyPlugin[];
   sharedBrowser?: import('playwright-core').Browser;
+  sharedContext?: import('playwright-core').BrowserContext;
   /** Internal shared Mermaid page for batch processing performance */
-  sharedMermaidPage?: any;
+  sharedMermaidPage?: import('playwright-core').Page;
   offline?: boolean;
   watermark?: string;
   splitByHeading?: 1 | 2;
@@ -60,7 +61,7 @@ export interface ConvertOptions {
     hrAsPageBreak?: boolean;
   };
   /** Internal optimization to prevent double-parsing of gray-matter in single-file mode */
-  __preparsed?: { data: any; content: string };
+  __preparsed?: { data: Record<string, unknown>; content: string };
   mermaid?: {
     enabled?: boolean;
     theme?: 'default' | 'dark' | 'base' | 'neutral';

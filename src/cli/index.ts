@@ -52,7 +52,7 @@ program.exitOverride((err) => {
     process.exit(1);
   } else {
     // Use the boxed formatter for consistency
-    renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Argument', err.message), { jsonErrors: false } as any);
+    renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_INPUT, 'Invalid Argument', err.message), { jsonErrors: false });
     process.exit(1);
   }
 });

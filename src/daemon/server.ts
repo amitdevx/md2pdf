@@ -35,7 +35,7 @@ function hasForbiddenOrigin(req: http.IncomingMessage): boolean {
   const origin = req.headers['origin'];
   if (!origin) return false;
   // Allow only explicit opt-in from localhost (should still be blocked, but
-  // being conservative: any Origin header from a web context is rejected).
+  // being conservative: every Origin header from a web context is rejected).
   return true;
 }
 
@@ -181,9 +181,10 @@ export function startDaemon() {
           const result = await convert(options);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true, result }));
-        } catch (err: any) {
+        } catch (err: unknown) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          const errorCode = (err && typeof err.code === 'string') ? err.code : 'ERR_CONVERSION_FAILED';
+          const errObj = err as { code?: string };
+          const errorCode = (errObj && typeof errObj.code === 'string') ? errObj.code : 'ERR_CONVERSION_FAILED';
           const safeErrorMessages: Record<string, string> = {
             ERR_INVALID_INPUT: 'Invalid input file provided',
             ERR_PATH_TRAVERSAL: 'Path traversal blocked',

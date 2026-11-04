@@ -42,5 +42,5 @@ export async function initializeMermaid(page: Page): Promise<void> {
   await page.addScriptTag({ path: cachedMermaidScriptPath });
 
   // Explicitly verify window.mermaid is ready
-  await page.waitForFunction(() => typeof (window as any).mermaid !== 'undefined' && typeof (window as any).mermaid.initialize === 'function', { timeout: 5000 });
+  await page.waitForFunction(() => typeof (window as unknown as { mermaid?: { initialize?: unknown } }).mermaid !== 'undefined' && typeof (window as unknown as { mermaid?: { initialize?: unknown } }).mermaid?.initialize === 'function', { timeout: 5000 });
 }

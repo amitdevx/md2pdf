@@ -55,11 +55,12 @@ export async function watchFiles(files: string[], buildFn: (file?: string) => Pr
         }
       });
       watchers.push(watcher);
-    } catch (e: any) {
-      if (e.code === 'ENOSPC') {
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code === 'ENOSPC') {
         console.warn(pc.yellow(`⚠ Warning: OS watch limit reached. Could not watch ${file}`));
       } else {
-        console.warn(pc.yellow(`⚠ Warning: Failed to watch ${file} - ${e.message}`));
+        console.warn(pc.yellow(`⚠ Warning: Failed to watch ${file} - ${err.message}`));
       }
     }
   }

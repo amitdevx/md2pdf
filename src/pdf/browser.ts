@@ -44,8 +44,8 @@ function verifyChromiumEngine(executablePath: string): void {
     if (!isChromium) {
       throw new Error(`ERR_UNSUPPORTED_ENGINE: The executable at '${executablePath}' does not appear to be a Chromium-based browser.\nOutput: ${output.trim()}\nmd2pdf requires Chromium engines (Chrome, Edge, Brave, etc.) to generate PDFs.`);
     }
-  } catch (err: any) {
-    if (err.message.includes('ERR_UNSUPPORTED_ENGINE')) throw err;
+  } catch (err: unknown) {
+    if ((err as Error).message?.includes('ERR_UNSUPPORTED_ENGINE')) throw err;
     // If it fails to run --version entirely, we let Playwright's 5-second timeout handle it.
   }
 }
@@ -281,8 +281,9 @@ export function discoverBrowser(): { executablePath: string; name: string } | nu
 }
 
 // Launch
-export function isMissingExecutableError(err: any): boolean {
-  if (err?.code === 'ERR_BROWSER_MISSING') return true;
+export function isMissingExecutableError(err: unknown): boolean {
+  const errObj = err as { code?: string };
+  if (errObj?.code === 'ERR_BROWSER_MISSING') return true;
   const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
   return msg.includes("executable doesn't exist") || msg.includes('not found');
 }
@@ -307,12 +308,13 @@ export async function getBrowser(): Promise<Browser> {
 
     try {
       return await chromium.launch({ ...launchOpts, executablePath: cliPath });
-    } catch (err: any) {
-      if (err.message.includes('Timeout')) {
+    } catch (err: unknown) {
+      const error = err as Error;
+      if (error.message?.includes('Timeout')) {
         throw new Error(`ERR_CDP_TIMEOUT: Failed to connect to the browser at '${cliPath}'. Ensure it is a valid, Chromium-based browser.`);
       }
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-      throw new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED, 'Browser Launch Failed', err.message);
+      throw new Md2PdfError(Md2PdfErrorCode.ERR_BROWSER_LAUNCH_FAILED, 'Browser Launch Failed', error.message);
     }
   }
 
@@ -334,8 +336,9 @@ export async function getBrowser(): Promise<Browser> {
       const browser = await chromium.launch({ ...launchOpts, executablePath: found.executablePath });
       writeCache({ executablePath: found.executablePath, browserName: found.name, md2pdfVersion: getVersion() });
       return browser;
-    } catch (e: any) {
-      if (!e.message?.includes('Timeout') && !isMissingExecutableError(e)) {
+    } catch (e: unknown) {
+      const err = e as Error;
+      if (!err.message?.includes('Timeout') && !isMissingExecutableError(e)) {
         throw e;
       }
       // Binary exists but won't launch or timed out (e.g., Firefox overriding a Chromium path) - fall through

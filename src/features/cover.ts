@@ -4,6 +4,7 @@ import { PDFDocument } from 'pdf-lib';
 import { convert } from '../core/index.js';
 import { getMd2PdfHome } from '../core/home.js';
 import type { Md2PdfConfig } from '../types/config.js';
+import type { ConvertOptions } from '../types/index.js';
 
 /**
  * Prepends a cover page (Image, PDF, or Markdown) to the main PDF document.
@@ -11,7 +12,7 @@ import type { Md2PdfConfig } from '../types/config.js';
 export async function prependCoverPage(
   mainPdfBytes: Uint8Array,
   coverPagePath: string,
-  config: Md2PdfConfig
+  config: Md2PdfConfig | ConvertOptions
 ): Promise<Uint8Array> {
   if (!fs.existsSync(coverPagePath)) {
     const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
@@ -33,12 +34,13 @@ export async function prependCoverPage(
       for (let i = copiedPages.length - 1; i >= 0; i--) {
         mainDoc.insertPage(0, copiedPages[i]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
+      const error = err as Error;
       throw new Md2PdfError(
         Md2PdfErrorCode.ERR_INVALID_INPUT,
         'Invalid Cover PDF',
-        `Failed to parse cover PDF: ${err.message}`
+        `Failed to parse cover PDF: ${error.message}`
       );
     }
   } else if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
@@ -73,7 +75,7 @@ export async function prependCoverPage(
     const tempPdf = path.join(scratchDir, 'cover.pdf');
     
     try {
-      const subConfig = { ...config } as any;
+      const subConfig: Partial<ConvertOptions> = { ...(config as Partial<ConvertOptions>) };
       delete subConfig.coverPage; // Prevent infinite recursion
       delete subConfig.password; // Prevent encrypting the temp cover page
       delete subConfig.__preparsed; // Prevent recursive rendering of the main document content!
@@ -88,7 +90,7 @@ export async function prependCoverPage(
         pageNumbers: false,
         header: false,
         footer: false,
-      } as any);
+      });
       
       const coverBytes = fs.readFileSync(tempPdf);
       const coverDoc = await PDFDocument.load(coverBytes);

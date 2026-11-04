@@ -2,7 +2,7 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkStringify from 'remark-stringify';
-import type { Root, Node } from 'mdast';
+import type { Root, RootContent } from 'mdast';
 
 export function splitMarkdownByHeading(markdown: string, level: 1 | 2): string[] {
   const tree = unified()
@@ -12,7 +12,7 @@ export function splitMarkdownByHeading(markdown: string, level: 1 | 2): string[]
 
   const documents: Root[] = [];
   let currentDoc: Root = { type: 'root', children: [] };
-  let frontmatterNode: Node | null = null;
+  let frontmatterNode: RootContent | null = null;
 
   for (const node of tree.children) {
     if (node.type === 'yaml') {
@@ -27,11 +27,11 @@ export function splitMarkdownByHeading(markdown: string, level: 1 | 2): string[]
       }
       currentDoc = { type: 'root', children: [] };
       if (frontmatterNode) {
-        currentDoc.children.push(frontmatterNode as any); // Duplicate frontmatter to all splits
+        currentDoc.children.push(frontmatterNode); // Duplicate frontmatter to all splits
       }
     }
     
-    currentDoc.children.push(node as any);
+    currentDoc.children.push(node);
   }
 
   if (currentDoc.children.length > 0) {

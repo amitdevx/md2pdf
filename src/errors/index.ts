@@ -39,7 +39,7 @@ export interface ErrorContext {
   outputPath?: string;
   markdownFile?: string;
   platform?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export class Md2PdfError extends Error {

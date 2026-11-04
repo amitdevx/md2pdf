@@ -43,7 +43,7 @@ export default new Command('doctor')
         mermaidRender: false,
         filesystem: false
       },
-      errorContext: null as any,
+      errorContext: null as Record<string, unknown> | null,
     };
 
     const cpus = os.cpus().length;
@@ -79,7 +79,7 @@ export default new Command('doctor')
     }
 
     const oraOptions = { prefixText: ' ' };
-    let spinner: any = null;
+    let spinner: ReturnType<typeof ora> | null = null;
     if (!options.json) {
       console.log(pc.bold('\nℹ  md2pdf System Health Check\n'));
       checks.forEach(check => console.log(`  ${pc.green('✔')} ${check.name}`));
@@ -159,7 +159,7 @@ export default new Command('doctor')
           const mermaidPath = path.join(getProjectRoot(), 'assets/mermaid.min.js');
           await page.setContent('<!DOCTYPE html><html><body><div class="mermaid">graph TD;\nA-->B;</div></body></html>');
           await page.addScriptTag({ path: mermaidPath });
-          await page.evaluate(() => (window as any).mermaid.initialize({ startOnLoad: true }));
+          await page.evaluate(() => (window as unknown as { mermaid: { initialize: (opts: unknown) => void } }).mermaid.initialize({ startOnLoad: true }));
           await page.evaluate(() => new Promise(r => setTimeout(r, 100)));
           results.checks.mermaidRender = true;
           checks.push({ name: 'Mermaid rendering', status: true });
@@ -205,11 +205,12 @@ export default new Command('doctor')
           spinner.stop();
           console.log('  ' + pc.green('✔') + ' ' + 'Filesystem write (tested .md2pdf-doctor-test.pdf in ~/.md2pdf/temp)');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const error = err as Error;
         throw new Md2PdfError(
           Md2PdfErrorCode.ERR_PERMISSION_DENIED,
           'Filesystem Write Failed',
-          `Cannot write to current directory: ${err.message}`,
+          `Cannot write to current directory: ${error.message}`,
           { outputPath: process.cwd() },
           err
         );

@@ -18,6 +18,7 @@ import { glob as fg, isDynamicPattern } from 'tinyglobby';
 import pc from 'picocolors';
 import { loadConfig } from '../config/loader.js';
 import { jsonOut, renderCliError, EXIT, emitJsonErrorAndExit } from '../cli/formatter.js';
+import type { Md2PdfError } from '../errors/index.js';
 
 import type { CliOptions } from '../cli/options.js';
 import { validateInputFiles } from '../validation/index.js';
@@ -131,17 +132,18 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
   try {
     const result = await loadConfig(process.cwd(), options.config);
     resolvedConfig = result.config;
-  } catch (err: any) {
-    console.error(pc.red(`\n✖ ${err.title || 'Config Error'}`));
-    console.error(err.reason || err.message);
+  } catch (err: unknown) {
+    const cfgErr = err as { title?: string; reason?: string; message?: string };
+    console.error(pc.red(`\n✖ ${cfgErr.title || 'Config Error'}`));
+    console.error(cfgErr.reason || cfgErr.message);
     process.exit(EXIT.USAGE_ERROR);
   }
 
-  const cliFlags: any = { ...options };
+  const cliFlags: Record<string, unknown> = { ...options };
   if (cliFlags.title) {
     cliFlags.addTitle = true;
   }
-  if (cliFlags.browser) {
+  if (typeof cliFlags.browser === 'string') {
     process.env.MD2PDF_BROWSER = cliFlags.browser;
   }
 
@@ -150,13 +152,13 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       emitJsonErrorAndExit('ERR_INVALID_BROWSER', 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`);
     } else {
       const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
-      renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_BROWSER, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options as any);
+      renderCliError(new Md2PdfError(Md2PdfErrorCode.ERR_INVALID_BROWSER, 'Browser Not Found', `The specified browser executable does not exist at '${process.env.MD2PDF_BROWSER}'.`), options);
       process.exit(EXIT.USAGE_ERROR);
     }
   }
 
 
-  if (cliFlags.vaultRoot && !fs.existsSync(cliFlags.vaultRoot)) {
+  if (typeof cliFlags.vaultRoot === 'string' && !fs.existsSync(cliFlags.vaultRoot)) {
     if (options.jsonErrors) {
       emitJsonErrorAndExit('ERR_VAULT_ROOT_NOT_FOUND', 'Vault Root Not Found', `--vault-root '${cliFlags.vaultRoot}' does not exist.`);
     } else {
@@ -232,7 +234,7 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
     } else if (!path.extname(options.output)) {
       if (!options.jsonErrors) console.warn(pc.yellow(`⚠ Output path has no .pdf extension - appending`));
       options.output += '.pdf';
-      (cliFlags as any).output = options.output;
+      cliFlags.output = options.output;
     }
   }
 
@@ -263,12 +265,13 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
   for (const err of validationResult.errors) {
     
     if (err.isFatal) {
+      const fatalErr = (err.error || err) as Md2PdfError;
       if (options.jsonErrors) {
-        jsonOut({ success: false, error: { code: (err.error || err).code as string, title: (err.error || err).title || 'Error', reason: (err.error || err).reason || (err.error || err).message } });
+        jsonOut({ success: false, error: { code: fatalErr.code, title: fatalErr.title || 'Error', reason: fatalErr.reason || fatalErr.message } });
       } else {
-        renderCliError(err.error || err, options as any);
+        renderCliError(fatalErr, options);
       }
-      process.exitCode = (err.error || err).code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
+      process.exitCode = fatalErr.code === 'ERR_PATH_TRAVERSAL' ? EXIT.USAGE_ERROR : EXIT.ENVIRONMENT_ERROR;
       process.exit(process.exitCode);
     }
   }

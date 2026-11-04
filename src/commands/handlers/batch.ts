@@ -16,24 +16,27 @@ import { registerShutdownHandler } from '../../core/shutdown.js';
 
 import { computeHash, checkCache } from '../../cache/index.js';
 import { buildVaultIndex, sortDependencies } from '../../core/vault.js';
-
+import type { BrowserContext, Page } from 'playwright-core';
+import type { CliOptions } from '../../cli/options.js';
+import type { Md2PdfConfig } from '../../types/config.js';
+import type { ValidationResult } from '../../validation/index.js';
+import type { JsonOutResult } from '../../cli/formatter.js';
 
 export async function handleBatch(
   inputs: string[],
-  options: any,
-  cliFlags: any,
-  resolvedConfig: any,
-  validationResult?: any,
-  /* originalPaths?: Record<string, string> */
+  options: CliOptions,
+  cliFlags: Record<string, unknown>,
+  resolvedConfig: Md2PdfConfig,
+  validationResult?: ValidationResult
 ): Promise<void> {
   const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
     ? noopSpinner
     : ora('Starting batch conversion...').start() as unknown as SpinnerLike;
 
   const startTime = Date.now();
-  let sharedContext: any = null;
-  let sharedMermaidContext: any = null;
-  let globalMermaidPage: any = null;
+  let sharedContext: BrowserContext | null = null;
+  let sharedMermaidContext: BrowserContext | null = null;
+  let globalMermaidPage: Page | null = null;
   let isShuttingDown = false;
 
   const cleanup = async () => {
@@ -77,6 +80,7 @@ export async function handleBatch(
     warnings: string[];
     fromCache: boolean;
     hasMermaid: boolean;
+    __preparsed?: { data: Record<string, unknown>; content: string };
   }
 
   try {
@@ -121,7 +125,7 @@ export async function handleBatch(
     for (const rec of records) {
       if (rec.isError) continue;
 
-      let output = cliFlags.output;
+      let output = cliFlags.output as string | undefined;
       if (output) {
         if (isDir) {
           output = path.join(output, cliFlags.merge ? `md2pdf-merge-${Date.now()}-${path.basename(rec.input)}`.replace(/\.md$/i, '.pdf') : path.basename(rec.input).replace(/\.md$/i, '.pdf'));
@@ -137,11 +141,12 @@ export async function handleBatch(
 
       try {
         fs.mkdirSync(path.dirname(rec.output), { recursive: true });
-      } catch (dirErr: any) {
-        if (dirErr.code !== 'EEXIST') {
+      } catch (dirErr: unknown) {
+        const dErr = dirErr as NodeJS.ErrnoException;
+        if (dErr.code !== 'EEXIST') {
           rec.isError = true;
           rec.code = 'ERR_FS_MKDIR';
-          rec.error = `Cannot create output directory: ${dirErr.message}`;
+          rec.error = `Cannot create output directory: ${dErr.message}`;
           failedCount++;
           hasErrors = true;
           continue;
@@ -170,17 +175,17 @@ export async function handleBatch(
       rec.hasMermaid = rawContent.includes('```mermaid');
 
       const matter = (await import('gray-matter')).default;
-      let parsed: any;
+      let parsed: { data: Record<string, unknown>; content: string } | undefined;
       try {
         const blockEngine = () => { throw new Error('JavaScript/CoffeeScript frontmatter engines are disabled.'); };
-        parsed = matter(rawContent, { engines: { js: blockEngine, javascript: blockEngine, coffee: blockEngine, coffeescript: blockEngine, cson: blockEngine } });
+        parsed = matter(rawContent, { engines: { js: blockEngine, javascript: blockEngine, coffee: blockEngine, coffeescript: blockEngine, cson: blockEngine } }) as unknown as { data: Record<string, unknown>; content: string };
         if (parsed?.data?.publish === false) {
           rec.isSkipped = true;
           rec.skipReason = 'publish: false';
           skippedPublishCount++;
           continue;
         }
-        (rec as any).__preparsed = { data: parsed.data, content: parsed.content };
+        rec.__preparsed = { data: parsed.data, content: parsed.content };
         
         const SAFE_THEME_NAME = /^[a-zA-Z0-9_-]+$/;
         const rawFrontmatterTheme = parsed.data?.theme ? String(parsed.data.theme) : undefined;
@@ -188,10 +193,11 @@ export async function handleBatch(
         const themeName: string = safeFrontmatterTheme || options.theme || 'default';
         const { loadTheme } = await import('../../themes/loader.js');
         await loadTheme(themeName);
-      } catch (yamlErr: any) {
+      } catch (yamlErr: unknown) {
+        const yErr = yamlErr as Error;
         rec.isError = true;
-        rec.code = yamlErr.message?.includes('Theme Load Error') || yamlErr.message?.includes('Failed to load theme') ? 'ERR_INVALID_THEME' : 'ERR_CONFIG_ERROR';
-        rec.error = `Frontmatter/Theme error: ${yamlErr.message || String(yamlErr)}`;
+        rec.code = yErr.message?.includes('Theme Load Error') || yErr.message?.includes('Failed to load theme') ? 'ERR_INVALID_THEME' : 'ERR_CONFIG_ERROR';
+        rec.error = `Frontmatter/Theme error: ${yErr.message || String(yamlErr)}`;
         failedCount++;
         hasErrors = true;
         continue;
@@ -245,19 +251,19 @@ export async function handleBatch(
         const fileStartTime = Date.now();
         const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input: rec.input, output: rec.output });
         
-        if ((rec as any).__preparsed) {
-          (convertOptions as any).__preparsed = (rec as any).__preparsed;
+        if (rec.__preparsed) {
+          convertOptions.__preparsed = rec.__preparsed;
         }
 
         // Reuse sharedContext to eliminate per-file context creation/destruction
         if (sharedContext) {
-          (convertOptions as any).sharedContext = sharedContext;
+          convertOptions.sharedContext = sharedContext;
         }
 
         const useCache = convertOptions.cache !== false;
-        if (useCache && (rec as any).__preparsed?.content) {
+        if (useCache && rec.__preparsed?.content) {
           try {
-            const fileHash = computeHash((rec as any).__preparsed.content, convertOptions);
+            const fileHash = computeHash(rec.__preparsed.content, convertOptions);
             if (checkCache(rec.input, fileHash, rec.output)) {
               rec.fromCache = true;
               if (!options.jsonErrors && !options.quiet) {
@@ -285,7 +291,7 @@ export async function handleBatch(
             spinner.start();
           }
 
-          const result = await convert(convertOptions as any);
+          const result = await convert(convertOptions);
           rec.renderTimeMs = Date.now() - fileStartTime;
           rec.pageCounts = result.pageCounts;
           rec.warnings = result.warnings || [];
@@ -304,12 +310,13 @@ export async function handleBatch(
           }
 
           successfulCount++;
-        } catch (err: any) {
+        } catch (err: unknown) {
           if (isShuttingDown) break;
 
           hasErrors = true;
           failedCount++;
-          const rawMsg = err.reason || err.message || String(err);
+          const errObj = err as { reason?: string; message?: string; errorCode?: string };
+          const rawMsg = errObj.reason || errObj.message || String(err);
           const cleanMsg = rawMsg.split('\n').slice(0, 3).join(' | ');
 
           if (!options.jsonErrors && !options.quiet) {
@@ -322,7 +329,7 @@ export async function handleBatch(
           const md2Error = detectBrowserError(err, { markdownFile: rec.input });
           rec.isError = true;
           rec.error = cleanMsg;
-          rec.code = (err as any).errorCode ?? (err as NodeJS.ErrnoException).code ?? md2Error?.code ?? 'ERR_UNKNOWN';
+          rec.code = errObj.errorCode ?? (err as NodeJS.ErrnoException).code ?? md2Error?.code ?? 'ERR_UNKNOWN';
         }
 
         completedCount++;
@@ -359,9 +366,10 @@ export async function handleBatch(
               try { fs.unlinkSync(p); } catch { /* ignore */ }
             }
           }
-        } catch (err: any) {
+        } catch (err: unknown) {
           hasErrors = true;
-          if (!options.quiet) spinner.fail(`Failed to merge PDFs: ${err.message}`);
+          const mErr = err as Error;
+          if (!options.quiet) spinner.fail(`Failed to merge PDFs: ${mErr.message}`);
         }
       }
     }
@@ -371,7 +379,7 @@ export async function handleBatch(
         success: !hasErrors && (successfulCount > 0 || skippedExistingCount > 0 || skippedPublishCount > 0),
         ...(skippedExistingCount + skippedPublishCount > 0 ? { skipped: skippedExistingCount + skippedPublishCount } : {}),
         results: records.map(r => {
-          const out: any = {
+          const out: JsonOutResult = {
             input: r.input,
             output: r.output || '-',
             status: r.isError ? 'error' : (r.isSkipped ? 'skipped' : 'success'),
@@ -416,19 +424,20 @@ export async function handleBatch(
       process.exitCode = EXIT.OK;
     }
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     hasErrors = true;
     spinner.stop();
-    const isMdError = err instanceof Md2PdfError || err?.name === 'Md2PdfError' || err?.code?.startsWith('ERR_');
+    const errObj = err as { name?: string; code?: string; message?: string };
+    const isMdError = err instanceof Md2PdfError || errObj?.name === 'Md2PdfError' || errObj?.code?.startsWith('ERR_');
     if (isMdError) {
-      renderCliError(err, options as any);
+      renderCliError(err as Md2PdfError, options);
     } else {
       if (options.jsonErrors) {
-        emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', err.message);
+        emitJsonErrorAndExit('ERR_UNKNOWN', 'Conversion Failed', errObj.message || String(err));
       } else {
         spinner.stop();
-        console.error(pc.red('✖') + ' ' + pc.red(err.message));
-        if (options.debug && err.stack) console.error(pc.dim(err.stack));
+        console.error(pc.red('✖') + ' ' + pc.red(errObj.message || String(err)));
+        if (options.debug && (err as Error).stack) console.error(pc.dim((err as Error).stack));
         process.exitCode = EXIT.USAGE_ERROR;
       }
     }

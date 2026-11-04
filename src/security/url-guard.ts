@@ -122,9 +122,10 @@ export async function validateRemoteUrl(
     }
 
     return { valid: true, resolvedIp: addresses[0].address };
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Fail closed on DNS lookup errors
-    return { valid: false, reason: `DNS resolution failed: ${err.message}` };
+    const error = err as Error;
+    return { valid: false, reason: `DNS resolution failed: ${error.message}` };
   }
 }
 
@@ -186,11 +187,12 @@ export async function fetchSafeRemoteImage(
           'User-Agent': 'md2pdf-bot/1.0 (+https://github.com/amitdevx/md2pdf)'
         }
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timer);
+      const error = err as Error;
       return {
         success: false,
-        warning: `Failed to load remote image: ${currentUrl} (${err.message})`
+        warning: `Failed to load remote image: ${currentUrl} (${error.message})`
       };
     } finally {
       clearTimeout(timer);
@@ -266,10 +268,11 @@ export async function fetchSafeRemoteImage(
         success: true,
         dataUri
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       return {
         success: false,
-        warning: `Failed to read remote image: ${currentUrl} (${err.message})`
+        warning: `Failed to read remote image: ${currentUrl} (${error.message})`
       };
     }
   }

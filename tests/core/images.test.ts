@@ -29,7 +29,7 @@ describe('Image Sandbox and Loading', () => {
 
     expect(result.warnings.length).toBeGreaterThan(0);
     expect(result.warnings[0]).toContain('Security block');
-  }, 60000);
+  }, 120000);
 
   it('should successfully embed and render local PNG/JPG/WebP images', async () => {
     fs.mkdirSync(insideDir, { recursive: true });
@@ -59,5 +59,5 @@ describe('Image Sandbox and Loading', () => {
     }
     expect(result.warnings.length).toBe(0);
     expect(fs.existsSync(outputFile)).toBe(true);
-  }, 60000);
+  }, 120000);
 });

@@ -158,12 +158,13 @@ export default new Command('init')
         
         spinner.stop();
         console.log('  ' + pc.green('✔') + ' ' + 'Successfully installed browser dependencies!');
-      } catch (e: any) {
+      } catch (e: unknown) {
         spinner.stop();
         console.log('  ' + pc.red('✖') + ' ' + 'Failed to install dependencies automatically.');
-        if (e.stderr || e.stdout || e.message) {
+        const err = e as { stderr?: string; stdout?: string; message?: string };
+        if (err.stderr || err.stdout || err.message) {
           console.error(pc.red(`\nError details:`));
-          console.error(pc.dim((e.stderr || e.stdout || e.message).toString()));
+          console.error(pc.dim((err.stderr || err.stdout || err.message || '').toString()));
         }
         console.error(pc.red('\n✖ Please run the installation commands manually.'));
         process.exit(EXIT.ENVIRONMENT_ERROR);
@@ -205,17 +206,18 @@ export default new Command('init')
           toc: false
         }, null, 2));
         console.log('\n  ' + pc.green('✔') + ` Created ~/.md2pdf/config.json\n`);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.log('');
+        const error = err as Error;
         const { Md2PdfError, Md2PdfErrorCode } = await import('../errors/index.js');
         const { renderCliError } = await import('./formatter.js');
         renderCliError(new Md2PdfError(
           Md2PdfErrorCode.ERR_PERMISSION_DENIED,
           'Filesystem Write Failed',
-          `Cannot write config to current directory: ${err.message}`,
+          `Cannot write config to current directory: ${error.message}`,
           { outputPath: process.cwd() },
           err
-        ), { jsonErrors: false, verbose: false, debug: false } as any);
+        ), { jsonErrors: false, verbose: false, debug: false });
       }
     } else {
       console.log('');

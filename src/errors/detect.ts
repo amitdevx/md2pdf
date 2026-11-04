@@ -66,7 +66,7 @@ export function detectBrowserError(error: unknown, contextBase: Partial<ErrorCon
 
   // 5. Permission Denied
   if (fullText.match(/EACCES/i) || fullText.match(/Permission denied/i)) {
-    const errObj = error as any;
+    const errObj = error as { syscall?: string; path?: string } | undefined;
     const isFileWrite = fullText.match(/open|writeFile/i) || (errObj && (errObj.syscall === 'open' || errObj.syscall === 'writeFile' || errObj.path));
     if (isFileWrite) {
       return new Md2PdfError(

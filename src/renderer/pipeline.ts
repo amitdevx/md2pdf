@@ -16,7 +16,7 @@ export async function processBeforeRender(
     mermaidEnabled?: boolean;
     maxWidth?: string;
     maxHeight?: string;
-    sharedMermaidPage?: any;
+    sharedMermaidPage?: import('playwright-core').Page;
     registry?: import('../plugins/registry.js').PluginRegistry;
     ctx?: import('../types/context.js').RenderContext;
     permissiveMermaid?: boolean;

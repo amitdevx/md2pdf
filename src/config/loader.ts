@@ -72,7 +72,7 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
     }
   }
 
-  let rawConfig: any = {};
+  let rawConfig: Record<string, unknown> = {};
 
   if (filepath) {
     if (!existsSync(filepath)) {
@@ -94,17 +94,18 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
           rawConfig = parsed;
         }
       } else if (ext === '.yaml' || ext === '.yml') {
-        rawConfig = yaml.load(await fs.readFile(filepath, 'utf8'));
+        rawConfig = (yaml.load(await fs.readFile(filepath, 'utf8')) as Record<string, unknown>) || {};
       } else {
         const jiti = (await import('jiti')).default;
         const load = jiti(filepath, { interopDefault: true });
-        rawConfig = load(filepath);
+        rawConfig = load(filepath) as Record<string, unknown>;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       throw new Md2PdfError(
         Md2PdfErrorCode.ERR_CONFIG_ERROR,
         'Config Load Error',
-        `Failed to parse config file ${filepath}: ${err.message}`,
+        `Failed to parse config file ${filepath}: ${error.message}`,
         { configFile: filepath },
         err
       );
@@ -118,11 +119,12 @@ export async function loadConfig(cwd = process.cwd(), explicitPath?: string): Pr
   try {
     const validConfig = validateConfig(rawConfig);
     return { config: validConfig as Md2PdfConfig, filepath };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as Error;
     throw new Md2PdfError(
       Md2PdfErrorCode.ERR_CONFIG_ERROR,
       'Config Validation Error',
-      `Invalid configuration in ${filepath}: ${err.message}`,
+      `Invalid configuration in ${filepath}: ${error.message}`,
       { configFile: filepath },
       err
     );

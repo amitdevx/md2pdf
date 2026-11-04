@@ -89,15 +89,16 @@ export async function renderMermaidBlocks(
                 })();
 
                 let timerId: ReturnType<typeof setTimeout>;
-                const timeoutPromise = new Promise<any>((_, reject) => {
+                const timeoutPromise = new Promise<{ id: string; svg: string | null; error: string | null }>((_, reject) => {
                   timerId = setTimeout(() => reject(new Error(`Mermaid render timed out after ${timeout}ms`)), timeout);
                 });
 
                 const res = await Promise.race([renderPromise, timeoutPromise]);
                 clearTimeout(timerId!);
                 return res;
-              } catch (err: any) {
-                return { id: block.id, svg: null, error: err.message || String(err) };
+              } catch (err: unknown) {
+                const error = err as Error;
+                return { id: block.id, svg: null, error: error.message || String(err) };
               }
             });
             const themeResults = await Promise.all(themePromises);
@@ -105,16 +106,17 @@ export async function renderMermaidBlocks(
           }
           return results;
         }, { blocks: payloads, timeout: timeoutMs, themeVariables }).finally(() => clearTimeout(evaluateTimerId)),
-        new Promise<any>((_, reject) => {
+        new Promise<never>((_, reject) => {
           evaluateTimerId = setTimeout(() => reject(new Error(`page.evaluate hung for ${timeoutMs + 2000}ms`)), timeoutMs + 2000);
         })
       ]);
       } finally {
         unlock();
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // If the entire evaluate fails
-      throw new Error(`Mermaid Batch Render Error: ${e.message}`);
+      const error = e as Error;
+      throw new Error(`Mermaid Batch Render Error: ${error.message}`);
     }
 
     const results: RenderedMermaid[] = [];

@@ -1,32 +1,36 @@
 import type { Md2PdfConfig } from '../types/config.js';
 import type { ConvertOptions } from '../types/index.js';
 
-function isObject(item: any) {
-  return (item && typeof item === 'object' && !Array.isArray(item));
+function isObject(item: unknown): item is Record<string, unknown> {
+  return Boolean(item && typeof item === 'object' && !Array.isArray(item));
 }
 
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
-function deepMerge(target: any, source: any): any {
-  if (!source) return target;
+function deepMerge<T extends object>(target: T, source: unknown): T {
+  if (!source || typeof source !== 'object') return target;
   const output = Object.assign(Object.create(null), target);
   if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
+    const s = source as Record<string, unknown>;
+    const t = target as Record<string, unknown>;
+    Object.keys(s).forEach(key => {
       if (FORBIDDEN_KEYS.has(key)) return;
-      if (Array.isArray(target[key]) && Array.isArray(source[key])) {
-        output[key] = [...target[key], ...source[key]];
-      } else if (isObject(source[key])) {
-        if (!(key in target)) {
-          output[key] = source[key];
+      const tVal = t[key];
+      const sVal = s[key];
+      if (Array.isArray(tVal) && Array.isArray(sVal)) {
+        output[key] = [...tVal, ...sVal];
+      } else if (isObject(sVal)) {
+        if (!(key in t)) {
+          output[key] = sVal;
         } else {
-          output[key] = deepMerge(target[key], source[key]);
+          output[key] = deepMerge(tVal as object, sVal);
         }
       } else {
-        output[key] = source[key];
+        output[key] = sVal;
       }
     });
   }
-  return output;
+  return output as T;
 }
 
 export function mergeConfig(
@@ -123,7 +127,7 @@ export function mergeConfig(
     marginBottom: cliFlags?.marginBottom || (typeof merged.margin === 'object' ? merged.margin.bottom : undefined),
     marginLeft: cliFlags?.marginLeft || (typeof merged.margin === 'object' ? merged.margin.left : undefined),
     marginRight: cliFlags?.marginRight || (typeof merged.margin === 'object' ? merged.margin.right : undefined),
-    permissiveMermaid: cliFlags?.permissiveMermaid ?? (typeof merged.mermaid === 'object' ? (merged.mermaid as any).permissive : false),
+    permissiveMermaid: cliFlags?.permissiveMermaid ?? (typeof merged.mermaid === 'object' && merged.mermaid !== null && 'permissive' in merged.mermaid ? Boolean((merged.mermaid as { permissive?: boolean }).permissive) : false),
     toc: merged.toc ?? false,
     tocDepth: merged.tocDepth ?? 3,
     tocTitle: merged.tocTitle ?? 'Table of Contents',
@@ -140,7 +144,7 @@ export function mergeConfig(
     theme: merged.theme || 'default',
     mermaid: {
       enabled: typeof merged.mermaid === 'object' ? (merged.mermaid.enabled !== false) : (merged.mermaid !== false),
-      theme: typeof merged.mermaid === 'object' ? (merged.mermaid.theme as any || 'auto') : 'auto',
+      theme: typeof merged.mermaid === 'object' && merged.mermaid !== null && 'theme' in merged.mermaid ? (merged.mermaid.theme as ConvertOptions['mermaid'] extends { theme?: infer T } ? T : never) : 'default',
       timeout: typeof merged.mermaid === 'object' ? merged.mermaid.timeout : 30000,
       maxWidth: typeof merged.mermaid === 'object' ? merged.mermaid.maxWidth : undefined,
       maxHeight: typeof merged.mermaid === 'object' ? merged.mermaid.maxHeight : undefined,
@@ -164,12 +168,12 @@ export function mergeConfig(
       embedNotes: merged.obsidian?.embedNotes,
       maxEmbedDepth: merged.obsidian?.maxEmbedDepth,
     },
-    metadata: {
+    metadata: merged.metadata ? {
       ...merged.metadata,
-      keywords: Array.isArray(merged.metadata?.keywords) 
+      keywords: Array.isArray(merged.metadata.keywords) 
         ? merged.metadata.keywords.join(', ') 
-        : merged.metadata?.keywords
-    } as any,
+        : merged.metadata.keywords
+    } : undefined,
     plugins: merged.plugins,
     cache: cliFlags?.cache !== false,
     offline: cliFlags?.offline !== undefined ? cliFlags.offline : (merged.offline ?? false),

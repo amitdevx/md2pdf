@@ -7,7 +7,7 @@ export interface ValidationResult {
   errors: { input: string; error: Md2PdfError; isFatal: boolean }[];
 }
 
-export function validateInputFiles(inputs: string[], isBatch: boolean, options: any): ValidationResult {
+export function validateInputFiles(inputs: string[], isBatch: boolean, options: import('../cli/options.js').CliOptions): ValidationResult {
   const validInputs: string[] = [];
   const errors: { input: string; error: Md2PdfError; isFatal: boolean }[] = [];
 

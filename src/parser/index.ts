@@ -1,12 +1,23 @@
 import type { MermaidBlock } from '../plugins/mermaid/index.js';
 import { Md2PdfError, Md2PdfErrorCode } from '../errors/index.js';
 
-let shikiHighlighter: any | null = null;
+let shikiHighlighter: import('shiki').Highlighter | null = null;
+
+interface PipelineRunner {
+  use(...args: unknown[]): PipelineRunner;
+  process(content: string): Promise<{ messages: unknown[]; [key: string]: unknown }>;
+}
+
+interface PipelineBuilder {
+  use(...args: unknown[]): PipelineBuilder;
+  (): PipelineRunner;
+}
+
 // Cache the pre-shiki pipeline (everything up to but not including the mermaid detector + shiki)
-const processorCache = new Map<string, any>();
+const processorCache = new Map<string, PipelineBuilder>();
 
 function rehypeExpandDetails() {
-  return async (tree: any) => {
+  return async (tree: import('hast').Root) => {
     const { visit } = await import('unist-util-visit');
     visit(tree, 'element', (node) => {
       if (node.tagName === 'details') {
@@ -18,9 +29,9 @@ function rehypeExpandDetails() {
 }
 
 function rehypeSanitizeStyle() {
-  return async (tree: any) => {
+  return async (tree: import('hast').Root) => {
     const { visit } = await import('unist-util-visit');
-    visit(tree, 'element', (node: any) => {
+    visit(tree, 'element', (node: import('hast').Element) => {
       if (node.properties && node.properties.style) {
         if (typeof node.properties.style === 'string') {
           node.properties.style = node.properties.style
@@ -92,7 +103,7 @@ export async function parseMarkdown(
   }
 
   if (shikiLangs.length > 0) {
-    await shikiHighlighter.loadLanguage(...(shikiLangs as any));
+    await shikiHighlighter.loadLanguage(...(shikiLangs as Parameters<typeof shikiHighlighter.loadLanguage>));
   }
 
   const markdownPluginNames = options?.registry?.getMarkdownPlugins().map(p => p.name).join(',') || '';
@@ -137,16 +148,17 @@ export async function parseMarkdown(
       const { default: rehypeToc } = await import('../plugins/layout/toc.js');
 
 
-    let proc: any = unified()
+    let proc: PipelineBuilder = unified() as unknown as PipelineBuilder;
+    proc = proc
       .use(remarkParse)
       .use(remarkBlockRefs)
-      .use(remarkWikiLinks as any, { resolveLinks: options?.obsidian?.resolveLinks })
-      .use(remarkTags as any, { showTags: options?.obsidian?.showTags })
-      .use(remarkHighlight as any);
+      .use(remarkWikiLinks, { resolveLinks: options?.obsidian?.resolveLinks })
+      .use(remarkTags, { showTags: options?.obsidian?.showTags })
+      .use(remarkHighlight);
 
     if (options?.math?.enabled !== false) {
       await import('katex/contrib/mhchem');
-      proc = proc.use(remarkMath as any);
+      proc = proc.use(remarkMath);
     }
 
     if (options?.registry) {
@@ -163,9 +175,9 @@ export async function parseMarkdown(
     // like meta refresh, iframes, script, object, embed.
     
     // Strip existing restrictive className rules from defaultSchema
-    const cleanAttributes: Record<string, any[]> = {};
+    const cleanAttributes: Record<string, unknown[]> = {};
     for (const [tag, attrs] of Object.entries(defaultSchema.attributes || {})) {
-      cleanAttributes[tag] = attrs.filter((attr: any) => 
+      cleanAttributes[tag] = (attrs as unknown[]).filter((attr: unknown) => 
         attr !== 'className' && (!Array.isArray(attr) || attr[0] !== 'className')
       );
     }
@@ -194,7 +206,7 @@ export async function parseMarkdown(
       .use(rehypeSanitizeStyle);
 
     if (options?.math?.enabled !== false) {
-      proc = proc.use(rehypeKatex as any, {
+      proc = proc.use(rehypeKatex, {
         strict: options?.math?.strict ?? false,
         macros: options?.math?.macros,
         throwOnError: false,
@@ -210,7 +222,7 @@ export async function parseMarkdown(
 
     proc = proc
       .use(rehypeSlug)
-      .use(rehypeCallouts as any)
+      .use(rehypeCallouts)
       .use(rehypeToc, {
         enable: options?.toc,
         depth: options?.tocDepth,
@@ -294,11 +306,21 @@ export async function parseMarkdown(
   }
 
   // Add any warnings from unified itself
-  file.messages.forEach((msg: any) => {
-    if (msg.source === 'rehype-katex' && msg.cause) {
-      let lineNum = msg.line || msg.place?.line || msg.position?.start?.line || msg.node?.position?.start?.line;
-      if (!lineNum && typeof msg.cause?.message === 'string') {
-        const errorFrag = msg.cause.message.match(/at position \d+:\s*(.+)$/);
+  file.messages.forEach((msg: unknown) => {
+    const m = msg as {
+      source?: string;
+      cause?: { message?: string };
+      line?: number;
+      place?: { line?: number };
+      position?: { start?: { line?: number } };
+      node?: { position?: { start?: { line?: number } } };
+      reason?: string;
+      message?: string;
+    };
+    if (m.source === 'rehype-katex' && m.cause) {
+      let lineNum = m.line || m.place?.line || m.position?.start?.line || m.node?.position?.start?.line;
+      if (!lineNum && typeof m.cause?.message === 'string') {
+        const errorFrag = m.cause.message.match(/at position \d+:\s*(.+)$/);
         if (errorFrag && errorFrag[1]) {
           const target = errorFrag[1].trim().slice(0, 15);
           if (target) {
@@ -308,9 +330,9 @@ export async function parseMarkdown(
           }
         }
       }
-      warnings.push(`KaTeX warning (line ${lineNum || 'unknown'}): ${msg.cause.message || msg.reason}`);
+      warnings.push(`KaTeX warning (line ${lineNum || 'unknown'}): ${m.cause.message || m.reason}`);
     } else {
-      warnings.push(msg.reason || msg.message);
+      warnings.push(m.reason || m.message || 'Parser warning');
     }
   });
   
