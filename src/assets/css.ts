@@ -304,6 +304,13 @@ details[open] > summary {
   vertical-align: middle;
 }
 
+.katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
 .math-error {
   color: #cc0000;
   background-color: #ffcccc;
@@ -344,6 +351,15 @@ export const printCss = `
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
     overflow-x: hidden !important;
+  }
+
+  .katex-display {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  .katex-display > .katex {
+    max-width: 100% !important;
+    font-size: min(1em, calc(100vw / 50));
   }
 
   .md2pdf-page-break,

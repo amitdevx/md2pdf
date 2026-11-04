@@ -14,6 +14,8 @@ export interface PdfOptions {
   margin?: string;
   marginTop?: string;
   marginBottom?: string;
+  marginLeft?: string;
+  marginRight?: string;
   displayHeaderFooter?: boolean;
   headerTemplate?: string;
   footerTemplate?: string;
@@ -43,6 +45,21 @@ function getSandboxDirs(options: PdfOptions): string[] {
   return dirs;
 }
 
+export function parseCssMargin(marginStr?: string): { top?: string; right?: string; bottom?: string; left?: string } {
+  if (!marginStr) return {};
+  const parts = marginStr.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return { top: parts[0], right: parts[0], bottom: parts[0], left: parts[0] };
+  } else if (parts.length === 2) {
+    return { top: parts[0], right: parts[1], bottom: parts[0], left: parts[1] };
+  } else if (parts.length === 3) {
+    return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[1] };
+  } else if (parts.length >= 4) {
+    return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[3] };
+  }
+  return {};
+}
+
 export async function generatePdf(options: PdfOptions): Promise<void> {
   const browser = options.browser || await getBrowser();
   const ownedContext = !options.sharedContext;
@@ -55,7 +72,7 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
   const realSandboxDirs = sandboxDirs.map(resolveSafe);
 
   try {
-    // Route handler is fully synchronous — no await anywhere.
+    // Route handler is fully synchronous: no await anywhere.
     // Async route handlers block Chromium's event loop, which prevents
     // img.onload/onerror from firing and causes a permanent 120s hang.
     // 
@@ -111,49 +128,50 @@ export async function generatePdf(options: PdfOptions): Promise<void> {
     const convertLogic = async () => {
       await page.setContent(options.html, { waitUntil: 'domcontentloaded' });
 
-      // Brief wait for networkidle (fonts, etc.); remote images are already base64 so no hang
-      await page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
+      // Native font ready check without arbitrary 3000ms networkidle latency
+      await page.evaluate(() => document.fonts.ready).catch(() => {});
 
       if (options.registry && options.renderContext) {
         await options.registry.executeAfterPageLoad(page, options.renderContext);
       }
 
-      // Safety net: call window.stop() then clear any broken-image srcs
-      const brokenImages = await page.evaluate(async () => {
-        const images = Array.from(document.querySelectorAll('img'));
-        await Promise.all(images.map(img => {
-          if (img.complete) return Promise.resolve();
-          return Promise.race([
-            new Promise<void>(resolve => {
+      // Only evaluate image validation if HTML actually contains images
+      if (options.html.includes('<img')) {
+        const brokenImages = await page.evaluate(async () => {
+          const images = Array.from(document.querySelectorAll('img'));
+          await Promise.all(images.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise<void>(resolve => {
               img.onload = () => resolve();
               img.onerror = () => resolve();
-            }),
-            new Promise<void>(resolve => setTimeout(resolve, 5000))
-          ]);
-        }));
+              setTimeout(resolve, 1000);
+            });
+          }));
 
-        window.stop();
+          window.stop();
 
-        const broken = images.filter(img => img.naturalWidth === 0);
-        const brokenSrcs = broken.map(img => img.src || img.getAttribute('src') || 'unknown');
-        broken.forEach(img => { img.src = ''; img.removeAttribute('src'); });
-        return brokenSrcs;
-      });
+          const broken = images.filter(img => img.naturalWidth === 0);
+          const brokenSrcs = broken.map(img => img.src || img.getAttribute('src') || 'unknown');
+          broken.forEach(img => { img.src = ''; img.removeAttribute('src'); });
+          return brokenSrcs;
+        });
 
-      if (brokenImages.length > 0 && options.warnings) {
-        brokenImages.forEach(src => options.warnings!.push(`Failed to load image: ${src}`));
+        if (brokenImages.length > 0 && options.warnings) {
+          brokenImages.forEach(src => options.warnings!.push(`Failed to load image: ${src}`));
+        }
       }
 
-      const marginValue = options.margin || '20mm';
+      const parsed = parseCssMargin(options.margin);
+      const marginDefault = '20mm';
 
       return await page.pdf({
         format: options.format || 'A4',
         printBackground: true,
         margin: {
-          top: options.marginTop || marginValue,
-          right: marginValue,
-          bottom: options.marginBottom || marginValue,
-          left: marginValue,
+          top: options.marginTop || parsed.top || marginDefault,
+          right: options.marginRight || parsed.right || marginDefault,
+          bottom: options.marginBottom || parsed.bottom || marginDefault,
+          left: options.marginLeft || parsed.left || marginDefault,
         },
         displayHeaderFooter: options.displayHeaderFooter || false,
         headerTemplate: options.headerTemplate,

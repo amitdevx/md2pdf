@@ -31,7 +31,7 @@ export async function handleBatch(
     : ora('Starting batch conversion...').start() as unknown as SpinnerLike;
 
   const startTime = Date.now();
-  const sharedContext: any = null;
+  let sharedContext: any = null;
   let sharedMermaidContext: any = null;
   let globalMermaidPage: any = null;
   let isShuttingDown = false;
@@ -210,6 +210,8 @@ export async function handleBatch(
     if (queue.length > 0 && !daemonAlive) {
       const { globalBrowserManager } = await import('../../core/browser-manager.js');
       const browser = await globalBrowserManager.acquireBrowser();
+      // Reuse single sharedContext across batch workers to eliminate per-document context creation IPC churn
+      sharedContext = await browser.newContext();
       const hasMermaidAnywhere = queue.some(r => r.hasMermaid);
       
       if (hasMermaidAnywhere) {
@@ -230,8 +232,12 @@ export async function handleBatch(
     updateSpinner();
 
     // 6. Execution Phase
+    // Concurrency defaults to available CPU cores (capped at 8) instead of artificial 2-worker throttle
     const os = await import('node:os');
-    const concurrencyLimit = cliFlags.concurrency ? Math.max(1, Number(cliFlags.concurrency) || 1) : Math.min(2, os.cpus().length);
+    const cpuCount = Array.isArray(os.cpus()) ? os.cpus().length : 4;
+    const concurrencyLimit = cliFlags.concurrency
+      ? Math.max(1, Number(cliFlags.concurrency) || 1)
+      : Math.max(1, Math.min(cpuCount, 8));
 
     const worker = async () => {
       while (queue.length > 0 && !isShuttingDown) {
@@ -241,6 +247,11 @@ export async function handleBatch(
         
         if ((rec as any).__preparsed) {
           (convertOptions as any).__preparsed = (rec as any).__preparsed;
+        }
+
+        // Reuse sharedContext to eliminate per-file context creation/destruction
+        if (sharedContext) {
+          (convertOptions as any).sharedContext = sharedContext;
         }
 
         const useCache = convertOptions.cache !== false;

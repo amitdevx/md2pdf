@@ -62,10 +62,20 @@ export async function handleSingle(
     }
   }
 
+  // Read rawContent once and reuse across early-validation, cache hashing, and mermaid checks
+  let cachedRawContent: string | null = null;
+  if (input !== '-') {
+    try {
+      cachedRawContent = fs.readFileSync(input, 'utf-8');
+    } catch {
+      cachedRawContent = null;
+    }
+  }
+
   // Early validation: parse YAML and check publish:false BEFORE launching the browser
   // This ensures ERR_CONFIG_ERROR / ERR_PUBLISH_SKIPPED are not shadowed by ERR_BROWSER_MISSING.
   {
-    const rawContent = (() => { try { return fs.readFileSync(input, 'utf-8'); } catch { return null; } })();
+    const rawContent = cachedRawContent;
     if (rawContent !== null) {
       const { Md2PdfError: EarlyError, Md2PdfErrorCode: EarlyCode } = await import('../../errors/index.js');
       const matter = (await import('gray-matter')).default;
@@ -145,7 +155,7 @@ export async function handleSingle(
 
   if (convertOptions.cache !== false) {
     try {
-      const rawContent = fs.readFileSync(input, 'utf-8');
+      const rawContent = cachedRawContent;
       if (rawContent) {
         const fileHash = computeHash(rawContent, convertOptions);
         if (checkCache(input, fileHash, output)) {
@@ -198,16 +208,15 @@ export async function handleSingle(
 
 
 
-    // Read raw content for mermaid check
+    // Reuse cached raw content for mermaid check
     let rawContent = '';
     let hasMermaid = false;
     if (input !== '-') {
-      try {
-        rawContent = fs.readFileSync(input, 'utf-8');
-      } catch {
+      if (cachedRawContent === null) {
         const { Md2PdfError: E, Md2PdfErrorCode } = await import('../../errors/index.js');
         throw new E(Md2PdfErrorCode.ERR_PERMISSION_DENIED, 'Permission Denied', `SINGLE-ERR Cannot read file '${input}': Permission denied.`, { markdownFile: input });
       }
+      rawContent = cachedRawContent;
       hasMermaid = rawContent.includes('```mermaid');
     }
 
@@ -309,7 +318,7 @@ export async function handleSingle(
         const isUserError = err.code === 'ENOENT' || err.code === 'EACCES' || err.code === 'ERR_INVALID_THEME'
           || /not found/i.test(err.message || '') || /invalid/i.test(err.message || '');
         if (!isUserError) {
-          console.error(pc.yellow('\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues 💖\n'));
+          console.error(pc.yellow('\nReport this issue on GitHub: https://github.com/amitdevx/md2pdf/issues\n'));
         }
         if (options.debug && err.stack) console.error(pc.dim(err.stack));
         process.exitCode = EXIT.USAGE_ERROR;

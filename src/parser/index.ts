@@ -41,6 +41,7 @@ export async function parseMarkdown(
     toc?: boolean; 
     tocDepth?: number; 
     tocTitle?: string;
+    tocPageBreak?: boolean;
     pageBreaks?: {
       h1NewPage?: boolean;
       hrAsPageBreak?: boolean;
@@ -72,28 +73,26 @@ export async function parseMarkdown(
   const validLangs = detectedLangs.filter(lang => lang in bundledLanguages);
   const shikiLangs = validLangs.length > 0 ? validLangs : ['txt'];
 
-  // Initialise the Shiki singleton once (expensive - loads grammar bundles)
+  // Only load the active theme requested instead of 6 themes upfront
+  const activeTheme = options?.shikiTheme || 'github-light';
   if (!shikiHighlighter) {
     shikiHighlighter = await getSingletonHighlighter({
-      themes: ['github-light', 'github-dark', 'dracula', 'nord', 'one-light', 'one-dark-pro'],
+      themes: [activeTheme],
       langs: []
     });
+  } else if (!shikiHighlighter.getLoadedThemes().includes(activeTheme)) {
+    try {
+      const { bundledThemes } = await import('shiki');
+      if (activeTheme in bundledThemes) {
+        await shikiHighlighter.loadTheme(bundledThemes[activeTheme as keyof typeof bundledThemes]);
+      }
+    } catch {
+      warnings.push(`Failed to load shiki theme '${activeTheme}'`);
+    }
   }
 
   if (shikiLangs.length > 0) {
     await shikiHighlighter.loadLanguage(...(shikiLangs as any));
-  }
-
-
-  if (options?.shikiTheme && !shikiHighlighter.getLoadedThemes().includes(options.shikiTheme)) {
-    try {
-      const { bundledThemes } = await import('shiki');
-      if (options.shikiTheme in bundledThemes) {
-        await shikiHighlighter.loadTheme(bundledThemes[options.shikiTheme as keyof typeof bundledThemes]);
-      }
-    } catch {
-      warnings.push(`Failed to load shiki theme '${options.shikiTheme}'`);
-    }
   }
 
   const markdownPluginNames = options?.registry?.getMarkdownPlugins().map(p => p.name).join(',') || '';
@@ -105,6 +104,7 @@ export async function parseMarkdown(
     toc: options?.toc,
     tocDepth: options?.tocDepth,
     tocTitle: options?.tocTitle,
+    tocPageBreak: options?.tocPageBreak,
     pageBreaks: options?.pageBreaks,
     obsidian: options?.obsidian,
     mdPlugins: markdownPluginNames,
@@ -215,6 +215,7 @@ export async function parseMarkdown(
         enable: options?.toc,
         depth: options?.tocDepth,
         title: options?.tocTitle,
+        tocPageBreak: options?.tocPageBreak,
       })
       .use(rehypeExpandDetails);
 
@@ -295,7 +296,19 @@ export async function parseMarkdown(
   // Add any warnings from unified itself
   file.messages.forEach((msg: any) => {
     if (msg.source === 'rehype-katex' && msg.cause) {
-      warnings.push(`KaTeX warning (line ${msg.line || '?'}): ${msg.cause.message || msg.reason}`);
+      let lineNum = msg.line || msg.place?.line || msg.position?.start?.line || msg.node?.position?.start?.line;
+      if (!lineNum && typeof msg.cause?.message === 'string') {
+        const errorFrag = msg.cause.message.match(/at position \d+:\s*(.+)$/);
+        if (errorFrag && errorFrag[1]) {
+          const target = errorFrag[1].trim().slice(0, 15);
+          if (target) {
+            const lines = markdown.split('\n');
+            const foundIdx = lines.findIndex((l: string) => l.includes(target));
+            if (foundIdx !== -1) lineNum = foundIdx + 1;
+          }
+        }
+      }
+      warnings.push(`KaTeX warning (line ${lineNum || 'unknown'}): ${msg.cause.message || msg.reason}`);
     } else {
       warnings.push(msg.reason || msg.message);
     }
