@@ -1,24 +1,34 @@
 :root {
   --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', 'Cascadia Code', monospace;
-  --md2pdf-color-bg: #2e3440;
-  --md2pdf-color-text: #d8dee9;
-  --md2pdf-color-heading: #eceff4;
-  --md2pdf-color-link: #5e81ac;
-  --md2pdf-color-link-visited: #5e81ac;
-  --md2pdf-color-code-bg: #e5e9f0;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #2e3440;
+  --md2pdf-color-heading: #2e3440;
+  --md2pdf-color-link: #4c6e97;
+  --md2pdf-color-link-visited: #4c6e97;
+  --md2pdf-color-code-bg: #eceff4;
   --md2pdf-color-code-text: #2e3440;
   --md2pdf-color-border: #d8dee9;
-  --md2pdf-color-blockquote-border: #81a1c1;
+  --md2pdf-color-blockquote-border: #4c6e97;
   --md2pdf-color-hr: #d8dee9;
   --md2pdf-color-text-muted: #4c566a;
-  --md2pdf-accent-color: #5e81ac;
-  --md2pdf-accent-text: #eceff4;
+  --md2pdf-accent-color: #4c6e97;
+  --md2pdf-accent-text: #ffffff;
+  --md2pdf-table-header-bg: #eceff4;
+  --md2pdf-table-stripe-bg: #f5f7fa;
 }
 
-
+body {
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
+}
 
 table th {
+  color: var(--md2pdf-color-heading) !important;
+  background-color: var(--md2pdf-table-header-bg);
+}
+
+table td {
   color: var(--md2pdf-color-text) !important;
 }
 
@@ -30,22 +40,20 @@ h4, h5, h6 { color: #4c566a; }
 
 /* Blockquote left border uses Nord frost blue - clearly visible */
 blockquote {
-  border-left: 4px solid #81a1c1;
+  border-left: 4px solid var(--md2pdf-color-blockquote-border);
+  background-color: rgba(76, 110, 151, 0.05);
 }
 
 /* Tag variables for the Nord palette */
 .tag {
-  background-color: rgba(94, 129, 172, 0.15);
-  color: #5e81ac;
-  border: 1px solid rgba(94, 129, 172, 0.3);
+  background-color: rgba(76, 110, 151, 0.12);
+  color: #4c6e97;
+  border: 1px solid rgba(76, 110, 151, 0.3);
 }
 
 @media print {
-  :root {
-    --md2pdf-color-bg: #ffffff;
-    --md2pdf-color-text: #1a1a1a;
-    --md2pdf-color-heading: #111111;
-    --md2pdf-color-link: #0066cc;
-    --md2pdf-accent-text: #ffffff;
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

@@ -1,54 +1,60 @@
 :root {
-  /* Fix: font was never explicitly declared for Dracula - use a modern monospace-friendly stack */
   --md2pdf-font-family-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
-  --md2pdf-color-bg: #282a36;
-  --md2pdf-color-text: #f8f8f2;
-  --md2pdf-color-heading: #ff79c6;
-  --md2pdf-color-link: #8be9fd;
-  --md2pdf-color-link-visited: #8be9fd;
-  --md2pdf-color-code-bg: #44475a;
-  --md2pdf-color-code-text: #f8f8f2;
-  --md2pdf-color-border: #6272a4;
-  --md2pdf-color-blockquote-border: #bd93f9;
-  --md2pdf-color-hr: #6272a4;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #282a36;
+  --md2pdf-color-heading: #b01068;
+  --md2pdf-color-link: #00658a;
+  --md2pdf-color-link-visited: #6f42c1;
+  --md2pdf-color-code-bg: #f1f2f6;
+  --md2pdf-color-code-text: #b01068;
+  --md2pdf-color-border: #e2e4e9;
+  --md2pdf-color-blockquote-border: #6f42c1;
+  --md2pdf-color-hr: #e2e4e9;
   --md2pdf-color-text-muted: #6272a4;
-  --md2pdf-accent-color: #bd93f9;
-  --md2pdf-accent-text: #282a36;
+  --md2pdf-accent-color: #6f42c1;
+  --md2pdf-accent-text: #ffffff;
+  --md2pdf-table-header-bg: #f4effa;
+  --md2pdf-table-stripe-bg: #faf7fd;
 }
 
+body {
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
+}
 
-
-/* Heading hierarchy using Dracula's color palette */
-h1 { color: #ff79c6; }
-h2 { color: #bd93f9; }
-h3 { color: #8be9fd; }
-h4, h5, h6 { color: #50fa7b; }
+/* Heading hierarchy using Dracula's color palette adapted for high contrast on white */
+h1 { color: #b01068; }
+h2 { color: #6f42c1; }
+h3 { color: #00658a; }
+h4, h5, h6 { color: #19733e; }
 
 /* Blockquote */
 blockquote {
   border-left: 4px solid var(--md2pdf-color-blockquote-border);
-  background-color: rgba(189, 147, 249, 0.05);
+  background-color: rgba(111, 66, 193, 0.05);
 }
 
-/* Fix: tag variables set for dark mode */
+/* Tag variables for Dracula palette */
 .tag {
-  background-color: rgba(189, 147, 249, 0.15);
-  color: #bd93f9;
-  border: 1px solid rgba(189, 147, 249, 0.35);
+  background-color: rgba(111, 66, 193, 0.1);
+  color: #6f42c1;
+  border: 1px solid rgba(111, 66, 193, 0.3);
 }
 
-/* Table styling for dark mode */
+/* Table styling */
 table th {
   color: var(--md2pdf-color-heading) !important;
+  background-color: var(--md2pdf-table-header-bg);
+}
+
+table td {
+  color: var(--md2pdf-color-text) !important;
 }
 
 @media print {
-  :root {
-    --md2pdf-color-bg: #ffffff;
-    --md2pdf-color-text: #1a1a1a;
-    --md2pdf-color-heading: #111111;
-    --md2pdf-color-link: #0066cc;
-    --md2pdf-accent-text: #ffffff;
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

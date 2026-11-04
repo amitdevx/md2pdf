@@ -1,22 +1,26 @@
 :root {
   --md2pdf-font-family-body: 'Inter', sans-serif;
   --md2pdf-font-family-mono: 'Fira Code', monospace;
-  --md2pdf-color-bg: #1e1e2e;
-  --md2pdf-color-text: #cdd6f4;
-  /* Fix: correct Obsidian dark background - #1e1e2e is the real Obsidian dark palette (Catppuccin Mocha base) */
-  /* Fix: headings must be visually distinct from body text - use Obsidian's purple/lavender */
-  --md2pdf-color-heading: #cba6f7;
-  --md2pdf-color-link: #89b4fa;
-  --md2pdf-color-link-visited: #89b4fa;
-  /* Fix: code block contrast was 1.3:1 - use proper surface1 bg (#313244) with text #cdd6f4 = 8.5:1 contrast */
-  --md2pdf-color-code-bg: #313244;
-  --md2pdf-color-code-text: #cdd6f4;
-  --md2pdf-color-border: #45475a;
-  --md2pdf-color-blockquote-border: #cba6f7;
-  --md2pdf-color-hr: #45475a;
-  --md2pdf-color-text-muted: #a6adc8;
-  --md2pdf-accent-color: #cba6f7;
-  --md2pdf-accent-text: #1e1e2e;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #1e1e2e;
+  --md2pdf-color-heading: #6d28d9;
+  --md2pdf-color-link: #4f46e5;
+  --md2pdf-color-link-visited: #6d28d9;
+  --md2pdf-color-code-bg: #f1f2f6;
+  --md2pdf-color-code-text: #1e1e2e;
+  --md2pdf-color-border: #e2e4e9;
+  --md2pdf-color-blockquote-border: #6d28d9;
+  --md2pdf-color-hr: #e2e4e9;
+  --md2pdf-color-text-muted: #64748b;
+  --md2pdf-accent-color: #6d28d9;
+  --md2pdf-accent-text: #ffffff;
+  --md2pdf-table-header-bg: #f5f3ff;
+  --md2pdf-table-stripe-bg: #faf8ff;
+}
+
+body {
+  background-color: var(--md2pdf-color-bg) !important;
+  color: var(--md2pdf-color-text) !important;
 }
 
 /* Internal links in Obsidian style */
@@ -28,13 +32,11 @@ a[href^="#"]:hover {
   text-decoration: underline;
 }
 
-
-
-/* Heading hierarchy - distinct from body text */
-h1 { color: #cba6f7; }
-h2 { color: #b4befe; }
-h3 { color: #89b4fa; }
-h4, h5, h6 { color: #74c7ec; }
+/* Heading hierarchy - high-contrast Obsidian palette adapted for white page */
+h1 { color: #6d28d9; }
+h2 { color: #7c3aed; }
+h3 { color: #1d4ed8; }
+h4, h5, h6 { color: #0369a1; }
 
 /* Minimalist Tables for Obsidian */
 table th, table td {
@@ -45,21 +47,28 @@ table th, table td {
 table th {
   color: var(--md2pdf-color-heading) !important;
   border-bottom: 2px solid var(--md2pdf-color-border);
+  background-color: var(--md2pdf-table-header-bg);
+}
+table td {
+  color: var(--md2pdf-color-text) !important;
 }
 
-/* Tag variables for dark mode */
+/* Blockquote */
+blockquote {
+  border-left: 4px solid var(--md2pdf-color-blockquote-border);
+  background-color: rgba(109, 40, 217, 0.05);
+}
+
+/* Tag variables */
 .tag {
-  background-color: rgba(203, 166, 247, 0.15);
-  color: #cba6f7;
-  border: 1px solid rgba(203, 166, 247, 0.3);
+  background-color: rgba(109, 40, 217, 0.1);
+  color: #6d28d9;
+  border: 1px solid rgba(109, 40, 217, 0.3);
 }
 
 @media print {
-  :root {
-    --md2pdf-color-bg: #ffffff;
-    --md2pdf-color-text: #1a1a1a;
-    --md2pdf-color-heading: #111111;
-    --md2pdf-color-link: #0066cc;
-    --md2pdf-accent-text: #ffffff;
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
