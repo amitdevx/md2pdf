@@ -1,3 +1,36 @@
+## [0.9.11] - 2026-11-04
+
+### Margins and Layout
+- Added independent margin controls: `--margin-top`, `--margin-bottom`, `--margin-left`, and `--margin-right`.
+- Added support for CSS 1 to 4 space-separated values in `--margin` (e.g. `10mm 15mm` or `10mm 15mm 20mm 25mm`).
+- Fixed margin clobbering bug where user-specified margins were overwritten by hardcoded 20mm or 30mm values when page numbers or headers were enabled.
+- Added `top-left` and `bottom-left` positions to `--page-numbers` and config.
+- Added `--toc-page-break` option to insert a page break after the Table of Contents.
+
+### Mermaid and KaTeX Diagnostics
+- Added `--permissive-mermaid` flag to render an inline error callout box instead of failing the build on Mermaid syntax errors.
+- Improved Mermaid syntax error diagnostics with source line numbers and code snippets.
+- Fixed Mermaid syntax error classification in error detector.
+- Fixed line number reporting for KaTeX math warnings by inspecting AST node and place positions.
+- Added responsive display math CSS with auto-fitting in print media to prevent wide equations from clipping.
+
+### CLI and Daemon Lifecycle
+- Fixed stdin splitting bug where documents containing frontmatter or horizontal rules were fragmented into multiple files.
+- Fixed `md2pdf daemon start` deadlock by spawning a detached background process and returning immediately with PID.
+- Fixed `--resolve-links` CLI flag mapping so it correctly sets link resolution in the processor pipeline.
+
+### Performance and Resource Optimizations
+- Replaced 3000ms networkidle timeout in PDF rendering with native document.fonts.ready check.
+- Added shared BrowserContext pooling across batch conversion workers, eliminating redundant context creation and teardown overhead.
+- Scaled default batch conversion concurrency to available CPU cores (capped at 8) instead of the previous 2-worker throttle.
+- Skipped image polling evaluation during PDF generation when documents contain no image tags.
+- Optimized Shiki highlighter initialization by loading only the active theme on-demand rather than 6 bundled themes upfront.
+- Eliminated redundant disk reads in single-file conversion by caching the raw content in memory across validation passes.
+
+### Themes
+- Set standard paper-white page background (`#ffffff`) across `dracula`, `nord`, and `obsidian-dark` themes for clean printing and reading like classic PDFs.
+- Calibrated high-contrast WCAG AA/AAA typography and headings on white backgrounds while preserving rich code block syntax highlighting and Mermaid diagram themes.
+
 ## [0.9.10] - 2026-10-30
 
 ### Security
@@ -113,13 +146,13 @@
 - **`--outline`**: Generates PDF bookmarks/outline from markdown headings (H1–H6), navigable in any PDF reader sidebar. Implemented using `pdf-lib` without relying on Playwright's native (broken) outline support.
 - **`--add-date`**: Injects the current date/time into the PDF header (top-right). Does not require `--page-numbers` to be set.
 - **`--add-filename`**: Injects the document title/filename into the PDF header (top-left).
-- **`--document-meta`**: Super flag — enables `--page-numbers`, `--add-date`, and `--add-filename` all at once for a fully annotated PDF in a single flag.
+- **`--document-meta`**: Super flag :  enables `--page-numbers`, `--add-date`, and `--add-filename` all at once for a fully annotated PDF in a single flag.
 - **`--page-numbers [position]`**: Now accepts an optional position argument: `bottom-center` (default), `bottom-right`, `top-center`, `top-right`. Previously only supported default bottom-center.
 - Visual regression baseline test suite (`tests/visual/visual.test.ts`) using `pdf-lib` to validate page count and file size for all theme/option combinations.
 - Contract tests for `--outline`, `--page-numbers`, `--line-height`, `--font-size`, and `--theme nord` in `tests/contract/options.test.ts`.
 
 ### Fixed
-- Fixed the Chromium default header (date/time/filename) being injected unintentionally when `--page-numbers` was used — Chromium's `displayHeaderFooter` mode now only shows content that was explicitly requested.
+- Fixed the Chromium default header (date/time/filename) being injected unintentionally when `--page-numbers` was used :  Chromium's `displayHeaderFooter` mode now only shows content that was explicitly requested.
 - Fixed Mermaid block rendering crashes in batch mode (`TypeError: Cannot read properties of undefined (reading 'initialize')`).
 - Fixed configuration and cache files polluting the home directory root (`~/.md2pdf.json`); moved to `~/.md2pdf/config.json`.
 - Fixed `--outline` flag being silently dropped before reaching the conversion pipeline by adding `outline` to the explicit property map in `src/config/merge.ts`.
@@ -249,8 +282,8 @@ All notable changes to this project will be documented in this file.
 ## [0.8.9] - 2026-08-22
 
 ### Fixed
-- File >5MB no longer hangs; the size check now correctly exits before the browser starts for single-file mode — missing continue caused the file to enter the pipeline after the check fired (BUG-1)
-- Batch progress counter no longer overflows (e.g. 5/3); completedCount++ was called twice per file — once in the success path and again unconditionally at the bottom of the loop (BUG-6 regression)
+- File >5MB no longer hangs; the size check now correctly exits before the browser starts for single-file mode :  missing continue caused the file to enter the pipeline after the check fired (BUG-1)
+- Batch progress counter no longer overflows (e.g. 5/3); completedCount++ was called twice per file :  once in the success path and again unconditionally at the bottom of the loop (BUG-6 regression)
 - doc too complex now exits 2 without --json-errors; process.exit was being called inside a try/catch that silently swallowed it (BUG-8)
 - Path traversal error is now rendered through the shared renderCliError formatter with correct box, error code, and run-with-verbose hint (BUG-NEW-3)
 - Browser not found error is now rendered through renderCliError for consistent output (BUG-NEW-3)
