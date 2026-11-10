@@ -14,6 +14,7 @@ import { fetchSafeRemoteImage } from '../security/url-guard.js';
 import matter from 'gray-matter';
 import { injectMetadata } from '../pdf/metadata.js';
 import { PluginRegistry } from '../plugins/registry.js';
+import { fillTitlePlaceholder } from '../utils/header-template.js';
 import type { RenderContext } from '../types/context.js';
 
 function sanitizeFrontmatterValue(val: unknown): string {
@@ -488,7 +489,13 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
     });
 
     title = (typeof options.title === 'string' ? options.title : false) || options.metadata?.title || frontmatter.title || (input === '-' ? 'Untitled Document' : path.basename(input, path.extname(input)));
-    
+
+    // Chromium's header/footer only auto-fills .pageNumber/.totalPages/.date.
+    // The document <span class="title"> placeholder must be filled manually,
+    // otherwise custom headers render an empty title.
+    const fillTitle = (tpl: string | undefined): string | undefined =>
+      fillTitlePlaceholder(tpl, title);
+
     let finalHtml = parsed.html;
     if (shouldAddTitle && !/<h1\b[^>]*>/i.test(finalHtml)) {
       const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -641,13 +648,15 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       }
     }
 
-    const displayHeaderFooter = (headerEnabled && options.header !== undefined) || 
-                                (footerEnabled && options.footer !== undefined) || 
+    const displayHeaderFooter = (headerEnabled && options.header !== undefined) ||
+                                (footerEnabled && options.footer !== undefined) ||
                                 !!usePageNumbers || !!useDate || !!useTitle;
 
     if (displayHeaderFooter) {
       if (!headerTemplate) headerTemplate = '<span></span>';
       if (!footerTemplate) footerTemplate = '<span></span>';
+      headerTemplate = fillTitle(headerTemplate);
+      footerTemplate = fillTitle(footerTemplate);
     }
 
     // Inject base URL so Playwright resolves local images & assets correctly without page.goto
