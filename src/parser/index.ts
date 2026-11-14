@@ -57,6 +57,13 @@ export async function parseMarkdown(
       h1NewPage?: boolean;
       hrAsPageBreak?: boolean;
     };
+    captions?: {
+      enable?: boolean;
+      figures?: boolean;
+      tables?: boolean;
+      figLabel?: string;
+      tabLabel?: string;
+    };
     mermaidBlocks?: MermaidBlock[];
     math?: {
       enabled?: boolean;
@@ -117,6 +124,7 @@ export async function parseMarkdown(
     tocTitle: options?.tocTitle,
     tocPageBreak: options?.tocPageBreak,
     pageBreaks: options?.pageBreaks,
+    captions: options?.captions,
     obsidian: options?.obsidian,
     mdPlugins: markdownPluginNames,
     htmlPlugins: htmlPluginNames
@@ -142,6 +150,7 @@ export async function parseMarkdown(
       const { default: remarkGfm } = await import('remark-gfm');
       const { default: remarkRehype } = await import('remark-rehype');
       const { default: rehypePageBreaks } = await import('../plugins/layout/page-breaks.js');
+      const { default: rehypeCaptions } = await import('../plugins/layout/captions.js');
       const { default: rehypeKatex } = await import('rehype-katex');
       const { default: rehypeSlug } = await import('rehype-slug');
       const { default: rehypeCallouts } = await import('../plugins/obsidian/callouts.js');
@@ -184,7 +193,7 @@ export async function parseMarkdown(
     
     const customSchema = {
       ...defaultSchema,
-      tagNames: [...(defaultSchema.tagNames || []), 'span'],
+      tagNames: [...(defaultSchema.tagNames || []), 'span', 'caption', 'figure', 'figcaption'],
       protocols: {
         ...(defaultSchema.protocols || {}),
         src: ['http', 'https', 'data', 'file', ''],
@@ -203,7 +212,8 @@ export async function parseMarkdown(
       .use(rehypeRaw)
       .use(rehypePageBreaks, options?.pageBreaks)
       .use(rehypeSanitize, customSchema)
-      .use(rehypeSanitizeStyle);
+      .use(rehypeSanitizeStyle)
+      .use(rehypeCaptions, options?.captions);
 
     if (options?.math?.enabled !== false) {
       proc = proc.use(rehypeKatex, {

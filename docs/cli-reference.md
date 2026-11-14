@@ -30,6 +30,10 @@ Processes multiple files and merges them into a single PDF output.
 Watches input files for changes and automatically rebuilds the PDF in the background.
 `md2pdf draft.md --output live.pdf --watch`
 
+### Academic and Technical Documents
+Generates an academic paper with numbered figures and tables, Table of Contents, and outline bookmarks.
+`md2pdf paper.md --output paper.pdf --figure-captions --table-captions --toc --outline`
+
 ## All Available Flags
 - `-V, --version`                 output the current version
 - `-o, --output <output>`         Output PDF file (or directory if multiple inputs)
@@ -47,6 +51,8 @@ Watches input files for changes and automatically rebuilds the PDF in the backgr
 - `--outline`                     Generate PDF bookmarks/outline from headings
 - `--header-template <template>`  Custom HTML template for header
 - `--footer-template <template>`  Custom HTML template for footer
+- `--figure-captions`             Auto-number figure captions under images
+- `--table-captions`              Auto-number table captions above tables
 - `--paper <format>`              Page format: A4, Letter, Legal (default: "A4")
 - `--margin <margin>`             Page margin (e.g., 20mm, 1in, 0) (default: "20mm")
 - `--hr-page-break`               Treat --- as a page break

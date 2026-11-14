@@ -60,6 +60,14 @@ export interface ConvertOptions {
     h1NewPage?: boolean;
     hrAsPageBreak?: boolean;
   };
+  /** Auto-number figure/table captions */
+  captions?: {
+    enable?: boolean;
+    figures?: boolean;
+    tables?: boolean;
+    figLabel?: string;
+    tabLabel?: string;
+  };
   /** Internal optimization to prevent double-parsing of gray-matter in single-file mode */
   __preparsed?: { data: Record<string, unknown>; content: string };
   mermaid?: {

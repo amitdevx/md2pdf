@@ -171,6 +171,8 @@ program
   .option('--outline', 'Generate PDF bookmarks/outline from headings')
   .option('--header-template <template>', 'Custom HTML template for header')
   .option('--footer-template <template>', 'Custom HTML template for footer')
+  .option('--figure-captions', 'Auto-number figure captions under images')
+  .option('--table-captions', 'Auto-number table captions above tables')
   .option('--paper <format>', 'Page format: A4, Letter, Legal', (val) => {
     const valid = ['A4', 'Letter', 'Legal'];
     if (!valid.includes(val)) {
