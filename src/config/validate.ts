@@ -68,6 +68,16 @@ const baseConfigSchema = z.object({
     h1NewPage: z.boolean().optional(),
     hrAsPageBreak: z.boolean().optional(),
   }).optional(),
+  captions: z.union([
+    z.boolean(),
+    z.object({
+      enable: z.boolean().optional(),
+      figures: z.boolean().optional(),
+      tables: z.boolean().optional(),
+      figLabel: z.string().optional(),
+      tabLabel: z.string().optional(),
+    })
+  ]).optional(),
   output: z.object({
     dir: z.string().optional(),
     filename: z.string().optional(),
