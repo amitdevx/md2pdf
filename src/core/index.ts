@@ -479,6 +479,7 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
       tocTitle: options.tocTitle,
       tocPageBreak: options.tocPageBreak,
       pageBreaks: options.pageBreaks,
+      captions: options.captions,
       mermaidBlocks,
       math: options.math,
       obsidian: options.obsidian,

@@ -88,6 +88,14 @@ export interface Md2PdfConfig {
     h1NewPage?: boolean;
     hrAsPageBreak?: boolean;
   };
+  /** Auto-number figure/table captions */
+  captions?: boolean | {
+    enable?: boolean;
+    figures?: boolean;
+    tables?: boolean;
+    figLabel?: string;
+    tabLabel?: string;
+  };
   /** Generate PDF bookmarks/outline from headings */
   outline?: boolean;
   /** Output options */

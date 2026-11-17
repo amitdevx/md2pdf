@@ -36,6 +36,14 @@ export default defineConfig({
     enabled: true,
   },
 
+  captions: {
+    enable: true,
+    figures: true,
+    tables: true,
+    figLabel: 'Figure',
+    tabLabel: 'Table',
+  },
+
   metadata: {
     author: 'Amit Divekar',
     keywords: ['docs', 'notes'],

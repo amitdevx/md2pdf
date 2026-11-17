@@ -367,5 +367,51 @@ export const printCss = `
     page-break-before: always !important;
     break-before: page !important;
   }
+
+  /* Auto figure/table captions (enabled via --figure-captions/--table-captions).
+     md2pdf wraps standalone <img> and <table> in <figure><figcaption>.
+     Numbering uses CSS counters so it stays correct across page breaks. */
+  .markdown-body {
+    counter-reset: figcount tabcount;
+  }
+  figure.figure {
+    margin: 1.5em 0;
+  }
+  figure.figure-fig {
+    break-inside: avoid;
+    counter-increment: figcount;
+    text-align: center;
+  }
+  figure.figure-fig > img,
+  figure.figure-fig > a > img {
+    max-width: 100%;
+    height: auto;
+  }
+  figure.figure-fig > figcaption.caption-fig {
+    font-size: 0.9em;
+    text-align: center;
+    margin-top: 0.5em;
+    color: var(--md2pdf-color-text-muted, #666);
+  }
+  figure.figure-fig > figcaption.caption-fig > .caption-prefix::after {
+    content: "\\00a0" counter(figcount);
+  }
+  figure.figure-tab {
+    counter-increment: tabcount;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  figure.figure-tab > table {
+    margin-top: 0;
+  }
+  figure.figure-tab > figcaption.caption-tab {
+    font-size: 0.9em;
+    text-align: left;
+    margin-bottom: 0.5em;
+    color: var(--md2pdf-color-text-muted, #666);
+  }
+  figure.figure-tab > figcaption.caption-tab > .caption-prefix::after {
+    content: "\\00a0" counter(tabcount);
+  }
 }
 `;

@@ -35,12 +35,16 @@ function deepMerge<T extends object>(target: T, source: unknown): T {
 
 export function mergeConfig(
   base: Md2PdfConfig,
-  profileName?: string,
+  profileName?: string | Record<string, any>,
   cliFlags?: Record<string, any>
 ): ConvertOptions {
+  if (typeof profileName === 'object' && profileName !== null && cliFlags === undefined) {
+    cliFlags = profileName;
+    profileName = undefined;
+  }
   let merged: Md2PdfConfig = deepMerge({}, base);
 
-  if (profileName && base.profiles && base.profiles[profileName]) {
+  if (typeof profileName === 'string' && base.profiles && base.profiles[profileName]) {
     merged = deepMerge(merged, base.profiles[profileName]);
   }
   
@@ -108,6 +112,20 @@ export function mergeConfig(
       if (typeof merged.pageBreaks !== 'object') merged.pageBreaks = {};
       if (cliFlags.hrPageBreak !== undefined) merged.pageBreaks.hrAsPageBreak = cliFlags.hrPageBreak;
       if (cliFlags.h1NewPage !== undefined) merged.pageBreaks.h1NewPage = cliFlags.h1NewPage;
+    }
+
+    // Auto captions
+    if (typeof merged.captions === 'boolean') {
+      merged.captions = { enable: merged.captions };
+    }
+    if (cliFlags.figureCaptions !== undefined || cliFlags.tableCaptions !== undefined) {
+      if (typeof merged.captions !== 'object' || merged.captions === null) {
+        merged.captions = { enable: true };
+      } else {
+        merged.captions.enable = true;
+      }
+      if (cliFlags.figureCaptions !== undefined) merged.captions.figures = cliFlags.figureCaptions;
+      if (cliFlags.tableCaptions !== undefined) merged.captions.tables = cliFlags.tableCaptions;
     }
 
     // Output
@@ -184,5 +202,16 @@ export function mergeConfig(
     coverPage: cliFlags?.coverPage || merged.coverPage,
     noLinkUnderline: cliFlags?.noLinkUnderline || merged.noLinkUnderline,
     linkColor: cliFlags?.linkColor || merged.linkColor,
+    captions: typeof merged.captions === 'object' && merged.captions !== null ? {
+      enable: merged.captions.enable !== false,
+      figures: merged.captions.figures ?? (cliFlags?.tableCaptions !== undefined ? false : true),
+      tables: merged.captions.tables ?? (cliFlags?.figureCaptions !== undefined ? false : true),
+      figLabel: merged.captions.figLabel,
+      tabLabel: merged.captions.tabLabel,
+    } : (merged.captions === true ? {
+      enable: true,
+      figures: cliFlags?.tableCaptions !== undefined ? false : true,
+      tables: cliFlags?.figureCaptions !== undefined ? false : true,
+    } : undefined),
   };
 }

@@ -9,6 +9,8 @@ export interface CliOptions {
   outline?: boolean;
   headerTemplate?: string;
   footerTemplate?: string;
+  figureCaptions?: boolean;
+  tableCaptions?: boolean;
   paper?: string;
   margin?: string;
   marginTop?: string;

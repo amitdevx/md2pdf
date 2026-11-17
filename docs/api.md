@@ -31,6 +31,7 @@ const result: ConvertResult = await convert(options);
 | `pageBreaks` | `{ h1NewPage?: boolean, hrAsPageBreak?: boolean }` | `undefined` | Configuration for automatic page breaks. |
 | `mermaid` | `object` | `{ enabled: true }` | Configuration for Mermaid diagram rendering. |
 | `math` | `object` | `{ enabled: true }` | Configuration for KaTeX math rendering. |
+| `captions` | `boolean \| CaptionsConfig` | `undefined` | Automatic figure and table caption numbering configuration. |
 | `obsidian` | `object` | `undefined` | Compatibility options for Obsidian syntax. |
 | `plugins` | `AnyPlugin[]` | `undefined` | Array of custom plugins to extend md2pdf capabilities. |
 | `sharedBrowser` | `Browser` | `undefined` | Inject an existing Playwright `Browser` instance (optimizes batch processing). |
