@@ -139,7 +139,7 @@ export function mergeConfig(
   return {
     input: cliFlags?.input || '',
     output: merged.output?.filename || merged.output?.dir || cliFlags?.output || 'output.pdf',
-    paper: (merged.paper === 'A3' ? 'A4' : merged.paper) as ConvertOptions['paper'], // A3 fallback to A4 if unhandled by options
+    paper: (merged.paper || 'A4') as ConvertOptions['paper'],
     margin: typeof merged.margin === 'string' ? merged.margin : (merged.margin ? `${merged.margin.top||0} ${merged.margin.right||0} ${merged.margin.bottom||0} ${merged.margin.left||0}` : '20mm'),
     marginTop: cliFlags?.marginTop || (typeof merged.margin === 'object' ? merged.margin.top : undefined),
     marginBottom: cliFlags?.marginBottom || (typeof merged.margin === 'object' ? merged.margin.bottom : undefined),
@@ -200,7 +200,7 @@ export function mergeConfig(
     watermark: cliFlags?.watermark || merged.watermark,
     password: cliFlags?.password || merged.password,
     coverPage: cliFlags?.coverPage || merged.coverPage,
-    noLinkUnderline: cliFlags?.noLinkUnderline || merged.noLinkUnderline,
+    noLinkUnderline: (cliFlags?.linkUnderline === false) || cliFlags?.noLinkUnderline || merged.noLinkUnderline || (merged.linkUnderline === false),
     linkColor: cliFlags?.linkColor || merged.linkColor,
     captions: typeof merged.captions === 'object' && merged.captions !== null ? {
       enable: merged.captions.enable !== false,

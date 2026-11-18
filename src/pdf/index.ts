@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 export interface PdfOptions {
   html: string;
   outputPath: string;
-  format?: 'A4' | 'Letter' | 'Legal';
+  format?: 'A4' | 'Letter' | 'Legal' | 'A3';
   margin?: string;
   marginTop?: string;
   marginBottom?: string;

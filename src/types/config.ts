@@ -19,6 +19,7 @@ export interface Md2PdfConfig {
   coverPage?: string;
   /** Remove underlines from hyperlinks */
   noLinkUnderline?: boolean;
+  linkUnderline?: boolean;
   /** Custom CSS color for hyperlinks */
   linkColor?: string;
   /** Theme name or path to custom CSS/dir */

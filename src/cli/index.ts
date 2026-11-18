@@ -173,13 +173,13 @@ program
   .option('--footer-template <template>', 'Custom HTML template for footer')
   .option('--figure-captions', 'Auto-number figure captions under images')
   .option('--table-captions', 'Auto-number table captions above tables')
-  .option('--paper <format>', 'Page format: A4, Letter, Legal', (val) => {
-    const valid = ['A4', 'Letter', 'Legal'];
+  .option('--paper <format>', 'Page format: A4, Letter, Legal, A3', (val) => {
+    const valid = ['A4', 'Letter', 'Legal', 'A3'];
     if (!valid.includes(val)) {
-      throw new InvalidArgumentError(`must be one of: A4, Letter, Legal`);
+      throw new InvalidArgumentError(`must be one of: A4, Letter, Legal, A3`);
     }
     return val;
-  }, 'A4')
+  })
   .option('--margin <margin>', 'Page margin (e.g., 20mm, 1in, 0, or CSS 4-value "10mm 15mm")', (val) => {
     const parts = val.trim().split(/\s+/);
     const unitRegex = /^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/;
@@ -187,7 +187,7 @@ program
       throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0 (up to 4 space-separated values)`);
     }
     return val;
-  }, '20mm')
+  })
   .option('--margin-top <margin>', 'Top page margin (e.g., 20mm, 1in)', (val) => {
     if (!/^(0|\d+(\.\d+)?(mm|cm|in|px|pt|pc|em|rem|%))$/.test(val)) {
       throw new InvalidArgumentError(`use CSS units like 20mm, 1in, 1.5cm, or 0`);
