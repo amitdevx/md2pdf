@@ -335,6 +335,8 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
   };
 
   if (cliFlags.watch) {
+    options.force = true;
+    cliFlags.force = true;
     await watchFiles(inputs, runHandlers);
   } else {
     await runHandlers();

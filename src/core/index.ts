@@ -284,48 +284,65 @@ export async function convert(options: ConvertOptions): Promise<ConvertResult> {
   const fsNode = await import('node:fs/promises');
   const mime = (await import('mime-types')).default;
   
-  let processedMarkdown = await asyncReplace(markdown, /!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)(?:\{width=([^}]+)\}|\s*=([\dx]+))?/g, async (match, alt, fullSrc, attrWidth, kramWidth) => {
-    let src = fullSrc.trim();
-    let title = '';
-    const titleMatch = src.match(/\s+((['"])(.*)\2|\((.*)\))$/);
-    if (titleMatch) {
-      title = titleMatch[1];
-      src = src.slice(0, -titleMatch[0].length).trim();
-    }
-    
-    const absPath = path.resolve(dir, decodeURIComponent(src));
-    let finalUri = match;
+  const safeDecodeUri = (uri: string): string => {
     try {
-      const realPath = await fsNode.realpath(absPath);
-      
-      // Sandbox validation
-      let allowedDirs = [dir];
-      if (options.obsidian?.vaultRoot) {
-        allowedDirs.push(path.resolve(options.obsidian.vaultRoot));
-      }
-      
-      // Resolve real paths for allowed directories to prevent symlink bypasses or false positives (e.g. macOS /var vs /private/var or Windows 8.3 paths)
-      allowedDirs = await Promise.all(allowedDirs.map(async d => {
-        try {
-          return await fsNode.realpath(d);
-        } catch {
-          return d;
-        }
-      }));
-      
-      const isAllowed = allowedDirs.some(d => realPath.startsWith(d) || realPath === d);
-      if (!isAllowed) {
-        warnings.push(`Security block: Attempted to load image outside allowed directories: ${absPath}`);
+      return decodeURIComponent(uri);
+    } catch {
+      return uri;
+    }
+  };
+
+  let processedMarkdown = await asyncReplace(
+    markdown,
+    /(```[\s\S]*?```|`[^`\n]+`)|!\[([^\]]*)\]\((?!http|data:|file:)([^)]+)\)(?:\{width=([^}]+)\}|\s*=([\dx]+))?/g,
+    async (match, codeSpan, alt, fullSrc, attrWidth, kramWidth) => {
+      if (codeSpan) {
         return match;
       }
+      let src = fullSrc.trim();
+      let title = '';
+      const titleMatch = src.match(/\s+((['"])(.*)\2|\((.*)\))$/);
+      if (titleMatch) {
+        title = titleMatch[1];
+        src = src.slice(0, -titleMatch[0].length).trim();
+      }
       
-      const data = await fsNode.readFile(realPath);
-      const mimeType = mime.lookup(realPath) || 'application/octet-stream';
-      finalUri = `data:${mimeType};base64,${data.toString('base64')}`;
-    } catch {
-      warnings.push(`Failed to read local image: ${absPath}`);
-      return match; // fallback to original on failure
-    }
+      const absPath = path.resolve(dir, safeDecodeUri(src));
+      let finalUri = match;
+      try {
+        const realPath = await fsNode.realpath(absPath);
+        
+        // Sandbox validation
+        let allowedDirs = [dir];
+        if (options.obsidian?.vaultRoot) {
+          allowedDirs.push(path.resolve(options.obsidian.vaultRoot));
+        }
+        
+        // Resolve real paths for allowed directories to prevent symlink bypasses or false positives (e.g. macOS /var vs /private/var or Windows 8.3 paths)
+        allowedDirs = await Promise.all(allowedDirs.map(async d => {
+          try {
+            return await fsNode.realpath(d);
+          } catch {
+            return d;
+          }
+        }));
+        
+        const isAllowed = allowedDirs.some(d => {
+          const prefix = d.endsWith(path.sep) ? d : d + path.sep;
+          return realPath === d || realPath.startsWith(prefix);
+        });
+        if (!isAllowed) {
+          warnings.push(`Security block: Attempted to load image outside allowed directories: ${absPath}`);
+          return `[Blocked image: ${alt}]`;
+        }
+        
+        const data = await fsNode.readFile(realPath);
+        const mimeType = mime.lookup(realPath) || 'application/octet-stream';
+        finalUri = `data:${mimeType};base64,${data.toString('base64')}`;
+      } catch {
+        warnings.push(`Failed to read local image: ${absPath}`);
+        return `[Failed image: ${alt}]`;
+      }
     
     let sizing = '';
     const widthRaw = attrWidth || kramWidth;

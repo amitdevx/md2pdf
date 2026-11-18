@@ -36,6 +36,7 @@ export function computeHash(content: string, options: unknown): string {
   delete stableOptions.output;
   delete stableOptions.vaultRoot;
   delete stableOptions.sharedBrowser;
+  delete stableOptions.sharedContext;
   delete stableOptions.sharedMermaidPage;
   delete stableOptions.__preparsed;
   
@@ -55,6 +56,40 @@ export function computeHash(content: string, options: unknown): string {
     try {
       if (fs.existsSync(opts.theme)) {
         hash.update(fs.readFileSync(opts.theme, 'utf-8'));
+      }
+    } catch { /* ignore */ }
+  }
+
+  // ponytail: invalidate cache when local images or embedded notes change
+  const inputDir = typeof opts.input === 'string' && opts.input !== '-' ? path.dirname(path.resolve(opts.input)) : process.cwd();
+
+  const imageRegex = /!\[([^\]]*)\]\((?!https?:\/\/|data:|file:)([^)\s]+)[^)]*\)/g;
+  let imgMatch;
+  while ((imgMatch = imageRegex.exec(content)) !== null) {
+    try {
+      let rawImgPath = imgMatch[2];
+      try { rawImgPath = decodeURIComponent(rawImgPath); } catch { /* ignore */ }
+      const imgPath = path.resolve(inputDir, rawImgPath);
+      if (fs.existsSync(imgPath)) {
+        const stat = fs.statSync(imgPath);
+        hash.update(`${imgPath}:${stat.size}:${stat.mtimeMs}`);
+      }
+    } catch { /* ignore */ }
+  }
+
+  const embedRegex = /!\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g;
+  let embedMatch;
+  const vaultRoot = (typeof opts.obsidian === 'object' && opts.obsidian !== null && 'vaultRoot' in opts.obsidian && typeof (opts.obsidian as { vaultRoot?: unknown }).vaultRoot === 'string') 
+    ? (opts.obsidian as { vaultRoot: string }).vaultRoot 
+    : inputDir;
+  while ((embedMatch = embedRegex.exec(content)) !== null) {
+    try {
+      let noteName = embedMatch[1].trim();
+      if (!noteName.endsWith('.md')) noteName += '.md';
+      const notePath = path.resolve(vaultRoot, noteName);
+      if (fs.existsSync(notePath)) {
+        const stat = fs.statSync(notePath);
+        hash.update(`${notePath}:${stat.size}:${stat.mtimeMs}`);
       }
     } catch { /* ignore */ }
   }

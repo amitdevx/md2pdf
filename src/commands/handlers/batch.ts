@@ -249,7 +249,11 @@ export async function handleBatch(
       while (queue.length > 0 && !isShuttingDown) {
         const rec = queue.shift()!;
         const fileStartTime = Date.now();
-        const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...cliFlags, input: rec.input, output: rec.output });
+        const batchFlags = { ...cliFlags };
+        if (cliFlags.merge && options.password) {
+          delete batchFlags.password;
+        }
+        const convertOptions = mergeConfig(resolvedConfig, options.profile, { ...batchFlags, input: rec.input, output: rec.output });
         
         if (rec.__preparsed) {
           convertOptions.__preparsed = rec.__preparsed;
@@ -359,6 +363,10 @@ export async function handleBatch(
           }
           const { mergePDFs } = await import('../../features/merge.js');
           await mergePDFs(pathsToMerge, finalMergeOutput);
+          if (options.password) {
+            const { encryptPdf } = await import('../../pdf/encrypt.js');
+            await encryptPdf(finalMergeOutput, options.password);
+          }
           if (!options.quiet) spinner.succeed(`Merged output saved to ${finalMergeOutput}`);
           
           for (const p of pathsToMerge) {

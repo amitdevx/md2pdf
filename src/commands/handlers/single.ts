@@ -150,16 +150,6 @@ export async function handleSingle(
   }
 
 
-  if (fs.existsSync(output) && !options.force) {
-    if (options.jsonErrors) {
-      jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'output exists' }] });
-    } else if (!options.quiet) {
-      console.info(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
-    }
-    process.exitCode = EXIT.OK;
-    return;
-  }
-
   if (convertOptions.cache !== false) {
     try {
       const rawContent = cachedRawContent;
@@ -178,6 +168,16 @@ export async function handleSingle(
     } catch {
       // Silent fallback
     }
+  }
+
+  if (convertOptions.cache === false && fs.existsSync(output) && !options.force && !options.watch) {
+    if (options.jsonErrors) {
+      jsonOut({ success: true, skipped: 1, results: [{ input, output, status: 'skipped', pages: 0, timeMs: 0, warnings: [], skipReason: 'output exists' }] });
+    } else if (!options.quiet) {
+      console.info(pc.dim(`➖ Skipped: Output file '${output}' already exists (use --force to overwrite).`));
+    }
+    process.exitCode = EXIT.OK;
+    return;
   }
 
   const spinner: SpinnerLike = (options.jsonErrors || options.quiet)
