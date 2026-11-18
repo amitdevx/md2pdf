@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: [ main, dev ]
-    tags: [ 'v*']
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, dev ]
 
@@ -11,151 +11,126 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security Audit
+        run: npm audit --audit-level=high
+
+      - name: Snyk Security Scan
+        run: |
+          if [ -n "$SNYK_TOKEN" ]; then
+            npx --yes snyk test --severity-threshold=high || true
+            npx --yes snyk code test --severity-threshold=high || true
+          else
+            echo "SNYK_TOKEN not set, skipping authenticated Snyk scan"
+          fi
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+  test:
+    name: Test (${{ matrix.os }}, Node ${{ matrix.node-version }})
+    needs: quality
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [20.x, 22.x, 24.x]
+        include:
+          - os: ubuntu-latest
+            node-version: 22.x
+          - os: ubuntu-latest
+            node-version: 24.x
+            is-canonical: true
+          - os: ubuntu-latest
+            node-version: 26.x
+          - os: windows-latest
+            node-version: 24.x
+          - os: macos-latest
+            node-version: 24.x
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
-      shell: bash
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Security Audit
-      run: npm audit --audit-level=high
-      shell: bash
+      - name: Build
+        run: npm run build
 
-    - name: Snyk Security Scan
-      if: runner.os == 'Linux' && matrix.node-version == '24.x'
-      run: |
-        if [ -n "$SNYK_TOKEN" ]; then
-          npx --yes snyk test --severity-threshold=high || true
-          npx --yes snyk code test --severity-threshold=high || true
-        else
-          echo "SNYK_TOKEN not set, skipping authenticated Snyk scan"
-        fi
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      shell: bash
+      - name: Install Poppler (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+        shell: bash
 
-    - name: Typecheck
-      run: npm run typecheck
-      shell: bash
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium --with-deps
+        shell: bash
 
-    - name: Lint
-      run: npm run lint
-      shell: bash
+      - name: Run Test Suite
+        run: npm run test
+        shell: bash
 
-    - name: Build
-      run: npm run build
-      shell: bash
+      - name: Packed Consumer Verification (Canonical)
+        if: matrix.is-canonical
+        run: |
+          TARBALL=$(npm pack)
+          CONSUMER_DIR=$(mktemp -d)
+          cp "$TARBALL" "$CONSUMER_DIR/"
+          pushd "$CONSUMER_DIR"
+          npm init -y
+          npm install "./$TARBALL"
+          npx md2pdf --version
+          npx md2pdf doctor
+          echo "# Canonical Packed Consumer Test" > test.md
+          npx md2pdf test.md -o output.pdf --no-cache --force
+          node -e "if (!require('node:fs').existsSync('output.pdf')) process.exit(1);"
+          popd
+          rm -rf "$CONSUMER_DIR" "$TARBALL"
+        shell: bash
 
-    - name: Install Playwright Browsers (for E2E)
-      run: npx playwright install chromium --with-deps
-      shell: bash
+      - name: Cross-Platform CLI Functional Verification
+        run: |
+          node -e "require('node:fs').writeFileSync('cli_core.md', '# CLI Core Check\n')"
+          node dist/cli/index.js cli_core.md -o cli_core.pdf --no-cache --force
+          node -e "if (!require('node:fs').existsSync('cli_core.pdf')) process.exit(1);"
 
-    - name: Test
-      run: npm run test
-      shell: bash
+          node -e "require('node:fs').writeFileSync('cli_pass.md', '# CLI Password & Watermark\n')"
+          node dist/cli/index.js cli_pass.md -o cli_pass.pdf --password "secret" --watermark "CONFIDENTIAL" --no-cache --force
+          node -e "if (!require('node:fs').existsSync('cli_pass.pdf')) process.exit(1);"
 
-    - name: Benchmark
-      run: npm run bench
-      shell: bash
+          node -e "require('node:fs').writeFileSync('chunk1.md', '# Chunk 1\n')"
+          node -e "require('node:fs').writeFileSync('chunk2.md', '# Chunk 2\n')"
+          node dist/cli/index.js --merge -o cli_merge.pdf chunk1.md chunk2.md --no-cache --force
+          node -e "if (!require('node:fs').existsSync('cli_merge.pdf')) process.exit(1);"
+        shell: bash
 
-    - name: Test Global Install & E2E CLI
-      run: |
-        npm install -g .
-        md2pdf --version
-        md2pdf doctor
-        
-        echo "# E2E Core" > test_core.md
-        md2pdf test_core.md -o e2e_core.pdf --no-cache --force
-        node -e "if (!require('node:fs').existsSync('e2e_core.pdf')) process.exit(1);"
-        
-        echo "# E2E Password & Watermark" > test_pass.md
-        md2pdf test_pass.md -o e2e_pass.pdf --password "secret" --watermark "CONFIDENTIAL" --no-cache --force
-        node -e "if (!require('node:fs').existsSync('e2e_pass.pdf')) process.exit(1);"
-        
-        echo "# Chunk 1" > chunk1.md
-        echo "# Chunk 2" > chunk2.md
-        md2pdf --merge -o e2e_merge.pdf chunk1.md chunk2.md --no-cache --force
-        node -e "if (!require('node:fs').existsSync('e2e_merge.pdf')) process.exit(1);"
-        
-        echo -e "# Stdin Batch 1\n---\n# Stdin Batch 2" | md2pdf --stdin --merge -o e2e_stdin.pdf --no-cache --force
-        node -e "if (!require('node:fs').existsSync('e2e_stdin.pdf')) process.exit(1);"
-
-        echo "============================================="
-        echo "Running Comprehensive CLI Audit"
-        echo "============================================="
-        
-        # Setup files
-        echo "# Valid Markdown" > valid.md
-        echo "" > empty.md
-        dd if=/dev/urandom of=corrupt.md bs=1024 count=1 2>/dev/null || head -c 1024 /dev/urandom > corrupt.md
-        echo -e "---\nbroken yaml\n--\n# Test" > broken.md
-        mkdir -p somedir
-        
-        run_test() {
-          local desc="$1"
-          local cmd="$2"
-          local expected_code="$3"
-          echo "Test: $desc"
-          set +e
-          # Run the command and capture output
-          eval "$cmd" > test_out.log 2>&1
-          local exit_code=$?
-          set -e
-          if [ "$exit_code" -ne "$expected_code" ]; then
-            echo "FAILED: Expected $expected_code, got $exit_code"
-            echo "--- Command Output ---"
-            cat test_out.log
-            echo "----------------------"
-            exit 1
-          fi
-          echo "PASS"
-        }
-        
-        run_test "1. No arguments" "md2pdf" 1
-        run_test "2. Missing file" "md2pdf missing.md" 1
-        run_test "3. Basic valid conversion" "md2pdf valid.md -o out_t3.pdf --no-cache --force" 0
-        run_test "4. Empty file" "md2pdf empty.md -o out_t4.pdf --no-cache --force" 0
-        run_test "5. Corrupted binary file as markdown" "md2pdf corrupt.md -o out_t5.pdf --no-cache --force" 0
-        run_test "6. Broken frontmatter" "md2pdf broken.md -o out_t6.pdf --no-cache --force" 0
-        run_test "7. Output to non-existent directory" "md2pdf valid.md -o /no_such_dir_md2pdf_test/forbidden.pdf --no-cache --force" 1
-        run_test "8. Output flag is a directory" "md2pdf valid.md -o . --no-cache --force" 1
-        run_test "9. Non-existent theme" "md2pdf valid.md -o out_t9.pdf --theme unknown-theme --no-cache --force" 2
-        run_test "10. Invalid split-by-heading depth" "md2pdf valid.md -o out_t10.pdf --split-by-heading -1 --no-cache --force" 1
-        run_test "11. Cover page missing" "md2pdf valid.md -o out_t11.pdf --cover-page nonexistent.pdf --no-cache --force" 1
-        run_test "12. Output to same file (self-referential cover)" "md2pdf valid.md -o out_t12.pdf --cover-page valid.pdf --no-cache --force" 1
-        run_test "13. Merge without inputs" "md2pdf --merge" 1
-        run_test "14. Merge with single file" "md2pdf valid.md -o out_t14.pdf --merge --no-cache --force" 0
-        run_test "15. Merge with missing file" "md2pdf valid.md missing.md --merge" 1
-        run_test "16. PDF as main input" "md2pdf valid.pdf" 1
-        run_test "17. Stdin piped correctly" "echo '# Piped' | md2pdf --stdin -o piped.pdf --no-cache --force" 0
-        run_test "18. Stdin empty pipe" "cat /dev/null | md2pdf --stdin -o out_t18.pdf --no-cache --force" 0
-        run_test "19. Missing required argument for flag" "md2pdf valid.md --watermark" 1
-        run_test "20. Directory as input" "md2pdf somedir" 1
-        
-        echo "CLI Audit Complete"
-
-        
-      shell: bash
-
-
-    - name: Upload Artifact
-      if: runner.os == 'Linux' && matrix.node-version == '24.x'
-      uses: actions/upload-artifact@v4
-      with:
-        name: md2pdf-dist-${{ matrix.os }}
-        path: dist/
+      - name: Upload Artifact
+        if: matrix.is-canonical
+        uses: actions/upload-artifact@v4
+        with:
+          name: md2pdf-dist-${{ matrix.os }}
+          path: dist/

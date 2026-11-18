@@ -1,6 +1,6 @@
 {
   "name": "@amitdevx/md2pdf",
-  "version": "0.9.11",
+  "version": "1.0.0",
   "description": "Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,7 +25,7 @@
     "CHANGELOG.md"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "sideEffects": false,
   "publishConfig": {
@@ -132,7 +132,6 @@
     "remark-rehype": "^11.0.0",
     "remark-stringify": "^11.0.0",
     "shiki": "^4.4.3",
-    "tinyglobby": "^0.2.17",
     "unified": "^11.0.4",
     "unist-util-visit": "^5.1.0",
     "zod": "^4.4.3"
@@ -147,7 +146,7 @@
     "@types/hast": "^3.0.5",
     "@types/js-yaml": "^4.0.9",
     "@types/mime-types": "^3.0.1",
-    "@types/node": "^20.19.43",
+    "@types/node": "^22.20.5",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
     "husky": "^8.0.3",

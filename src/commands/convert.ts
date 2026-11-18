@@ -14,7 +14,6 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { glob as fg, isDynamicPattern } from 'tinyglobby';
 import pc from 'picocolors';
 import { loadConfig } from '../config/loader.js';
 import { jsonOut, renderCliError, EXIT, emitJsonErrorAndExit } from '../cli/formatter.js';
@@ -90,8 +89,11 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
       if (fs.existsSync(resolved)) {
         if (fs.statSync(resolved).isDirectory()) {
           const pattern = options.recursive ? '**/*.md' : '*.md';
-          const matches = await fg(pattern, { cwd: resolved, dot: false, onlyFiles: true, absolute: true, followSymbolicLinks: false, expandDirectories: false, ignore: ['**/node_modules/**'] });
-          inputs.push(...matches);
+          // ponytail: Use native fs.promises.glob (Node >= 22)
+          for await (const entry of fs.promises.glob(pattern, { cwd: resolved })) {
+            if (entry.includes('node_modules')) continue;
+            inputs.push(path.resolve(resolved, entry));
+          }
         } else {
           if (resolved.toLowerCase().endsWith('.pdf')) {
             throw new Error(`ERR_INVALID_INPUT: Cannot process PDF file '${raw}' as main input. md2pdf converts Markdown to PDF. Existing PDFs can only be attached as cover pages.`);
@@ -101,12 +103,12 @@ export async function runConvert(inputsRaw: string[], options: CliOptions) {
         continue;
       }
       const normalizedPattern = raw.replace(/\\/g, '/');
-      if (isDynamicPattern(normalizedPattern)) {
-        // Pass explicit cwd so fast-glob resolves against the user's shell dir
-        const matches = await fg(normalizedPattern, { cwd: shellCwd, dot: true, onlyFiles: true, absolute: true, expandDirectories: false });
-        for (const match of matches) {
-          if (match.toLowerCase().endsWith('.pdf')) continue;
-          inputs.push(match);
+      const isDynamic = /[*?[{]/.test(normalizedPattern);
+      if (isDynamic) {
+        // Pass explicit cwd so native glob resolves against user shell dir
+        for await (const entry of fs.promises.glob(normalizedPattern, { cwd: shellCwd })) {
+          if (entry.toLowerCase().endsWith('.pdf') || entry.includes('node_modules')) continue;
+          inputs.push(path.resolve(shellCwd, entry));
         }
       } else {
         if (resolved.toLowerCase().endsWith('.pdf')) {

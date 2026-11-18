@@ -55,7 +55,7 @@ check_exit() {
 }
 
 # =============================================================================
-# GATE 1 — REPO HYGIENE
+# GATE 1 - REPO HYGIENE
 # =============================================================================
 section "GATE 1: Repo Hygiene"
 
@@ -69,7 +69,7 @@ else
   fail "Debug scripts found in root: $DEBUG_FILES"
   if [[ "$AUTO_FIX" == true ]]; then
     echo "$DEBUG_FILES" | xargs git rm --cached 2>/dev/null || true
-    warn "Staged for removal — commit the change"
+    warn "Staged for removal - commit the change"
   fi
 fi
 
@@ -91,7 +91,7 @@ DIRTY_SRC=$(git diff --name-only HEAD -- src/ 2>/dev/null || true)
 if [[ -z "$DIRTY_SRC" ]]; then
   pass "src/ is clean (no uncommitted changes)"
 else
-  warn "Uncommitted src/ changes — are these intentional?"
+  warn "Uncommitted src/ changes - are these intentional?"
   echo "    $DIRTY_SRC"
 fi
 
@@ -113,11 +113,11 @@ else
 fi
 
 # =============================================================================
-# GATE 2 — STATIC ANALYSIS
+# GATE 2 - STATIC ANALYSIS
 # =============================================================================
 section "GATE 2: Static Analysis"
 
-# 2.1 Lint — zero errors allowed (warnings OK)
+# 2.1 Lint - zero errors allowed (warnings OK)
 if npm run lint > /tmp/lint_out.txt 2>&1; then
   LINT_WARN=$(grep -c "warning" /tmp/lint_out.txt 2>/dev/null || true)
   pass "ESLint: 0 errors (${LINT_WARN:-0} warnings)"
@@ -128,7 +128,7 @@ else
 fi
 
 
-# 2.2 TypeScript — zero errors
+# 2.2 TypeScript - zero errors
 check_exit "TypeScript: 0 errors" npm run typecheck
 
 # 2.3 No raw 'any' in new code (warn only)
@@ -136,11 +136,11 @@ ANY_COUNT=$(grep -rn ": any\b\|as any\b" src/ --include="*.ts" 2>/dev/null | wc 
 if [[ "$ANY_COUNT" -lt 20 ]]; then
   pass "TypeScript 'any' usage: $ANY_COUNT (within limit)"
 else
-  warn "TypeScript 'any' usage: $ANY_COUNT — consider reducing"
+  warn "TypeScript 'any' usage: $ANY_COUNT - consider reducing"
 fi
 
 # =============================================================================
-# GATE 3 — BUILD INTEGRITY
+# GATE 3 - BUILD INTEGRITY
 # =============================================================================
 section "GATE 3: Build Integrity"
 
@@ -159,7 +159,7 @@ if [[ -f "assets/mermaid.min.js" ]]; then
   MERMAID_SIZE=$(du -h assets/mermaid.min.js | cut -f1)
   pass "assets/mermaid.min.js present ($MERMAID_SIZE)"
 else
-  fail "assets/mermaid.min.js MISSING — build did not copy it (BUG: B07 regression)"
+  fail "assets/mermaid.min.js MISSING - build did not copy it (BUG: B07 regression)"
 fi
 
 # 3.4 All theme CSS files copied to themes/
@@ -190,11 +190,11 @@ PW_VERSION=$(node -e "console.log(require('./package.json').dependencies['playwr
 info "playwright-core version: $PW_VERSION"
 # Warn if it's a loose range (^ or ~) since this caused B24
 if echo "$PW_VERSION" | grep -qE "^\^|^~"; then
-  warn "playwright-core uses loose semver ($PW_VERSION) — version mismatch risk (BUG: B24)"
+  warn "playwright-core uses loose semver ($PW_VERSION) - version mismatch risk (BUG: B24)"
 fi
 
 # =============================================================================
-# GATE 4 — UNIT TESTS
+# GATE 4 - UNIT TESTS
 # =============================================================================
 section "GATE 4: Unit Tests"
 
@@ -202,7 +202,7 @@ check_exit "Vitest suite: all tests pass" npm run test
 check_exit "Vitest suite: benchmark passes" npm run bench
 
 # =============================================================================
-# GATE 5 — EXIT CODE CONTRACT
+# GATE 5 - EXIT CODE CONTRACT
 # =============================================================================
 section "GATE 5: Exit Code Contract"
 # This is the gate that would have caught B01, B12, B14, B15, B20, B21, B26
@@ -266,17 +266,19 @@ fi
 # USAGE ERRORS → must exit 1
 check_exit_code "no args"             1  $CLI
 check_exit_code "missing file"        1  $CLI /nonexistent.md
-check_exit_code "directory input"     1  $CLI /tmp
+EMPTY_TEST_DIR=$(mktemp -d)
+check_exit_code "directory input"     1  $CLI "$EMPTY_TEST_DIR"
+rm -rf "$EMPTY_TEST_DIR"
 check_exit_code "txt extension"       1  $CLI /tmp/test.txt
 check_exit_code "same file"           1  $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST/basic.md"
-check_exit_code "bad paper"           1  $CLI "$TMPDIR_TEST/basic.md" --paper A3
+check_exit_code "bad paper"           1  $CLI "$TMPDIR_TEST/basic.md" --paper INVALID
 check_exit_code "bad margin"          1  $CLI "$TMPDIR_TEST/basic.md" --margin 20
 check_exit_code "bad mermaid-theme"   1  $CLI "$TMPDIR_TEST/basic.md" --mermaid-theme notvalid
 check_exit_code "output is dir"       1  $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST"
 check_exit_code "output dir slash"    1  $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST"/
 check_exit_code "browser not found"   1  $CLI "$TMPDIR_TEST/basic.md" --browser /fake/browser
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
-  info "Windows detected — skipping /etc traversal and chmod 000 tests (permissions operate differently)"
+  info "Windows detected - skipping /etc traversal and chmod 000 tests (permissions operate differently)"
 else
   check_exit_code "path traversal /etc"   1  $CLI tests/fixtures/basic.md -o /etc/out.pdf
   check_exit_code "path traversal /root"  1  $CLI tests/fixtures/basic.md -o /root/out.pdf
@@ -287,7 +289,7 @@ else
     check_exit_code "chmod 000"         2  $CLI "$TMPDIR_TEST/locked.md"
     chmod 644 "$TMPDIR_TEST/locked.md"
   else
-    warn "Running as root — chmod 000 test skipped (root bypasses file permissions)"
+    warn "Running as root - chmod 000 test skipped (root bypasses file permissions)"
   fi
 fi
 
@@ -302,7 +304,7 @@ check_exit_code "publish false"       0  $CLI "$TMPDIR_TEST/publish-false.md"
 check_exit_code "clear-cache"         0  $CLI clear-cache
 
 # =============================================================================
-# GATE 6 — JSON-ERRORS CONTRACT
+# GATE 6 - JSON-ERRORS CONTRACT
 # =============================================================================
 section "GATE 6: --json-errors Contract"
 # Tests that every error path produces valid JSON on stdout (not stderr)
@@ -314,20 +316,22 @@ check_json() {
   local expect_code=$3
   shift 3
 
-  CHROME_PATH="${CHROME_FOR_TEST:-}" "$@" --json-errors > je_gate.txt 2>je_gate_err.txt || true
+  local je_out="$TMPDIR_TEST/je_gate.txt"
+  local je_err="$TMPDIR_TEST/je_gate_err.txt"
+  CHROME_PATH="${CHROME_FOR_TEST:-}" "$@" --json-errors > "$je_out" 2>"$je_err" || true
 
   local stderr_size
-  stderr_size=$(wc -c < je_gate_err.txt)
+  stderr_size=$(wc -c < "$je_err")
   if [[ "$stderr_size" -gt 0 ]]; then
     fail "json-errors output on STDERR (should be stdout): $label"
     return
   fi
 
-  python3 - "$label" "$expect_success" "$expect_code" << 'PYEOF'
+  python3 - "$label" "$expect_success" "$expect_code" "$je_out" << 'PYEOF'
 import json, sys
-label, expect_success, expect_code = sys.argv[1], sys.argv[2], sys.argv[3]
+label, expect_success, expect_code, je_out = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 try:
-    raw = open('je_gate.txt').read()
+    raw = open(je_out).read()
     d = json.loads(raw)
     success = str(d.get('success', '?')).lower()
     
@@ -343,10 +347,10 @@ try:
         got_codes = []
         for r in results:
             e = r.get('error', {})
-            c = e.get('code', '—') if isinstance(e, dict) else r.get('code', '—')
+            c = e.get('code', '-') if isinstance(e, dict) else r.get('code', '-')
             got_codes.append(c)
         if not got_codes:
-            got_codes = [err.get('code', '—') if err else '—']
+            got_codes = [err.get('code', '-') if err else '-']
         
         if expect_code not in got_codes and expect_code not in str(d):
             print(f"  FAIL code={got_codes} expected={expect_code}: {label}")
@@ -354,8 +358,8 @@ try:
     
     print(f"  PASS: {label}")
 except json.JSONDecodeError as e:
-    print(f"  FAIL (invalid JSON): {label} — {e}")
-    print(f"  Raw: {open('je_gate.txt').read()[:200]}")
+    print(f"  FAIL (invalid JSON): {label} - {e}")
+    print(f"  Raw: {open(je_out).read()[:200]}")
     sys.exit(1)
 PYEOF
   if [[ $? -ne 0 ]]; then FAILURES+=("json-errors: $label"); fi
@@ -369,7 +373,7 @@ check_json "output is dir"      "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_
 check_json "output dir slash"   "false"  "ERR_INVALID_INPUT"      $CLI "$TMPDIR_TEST/basic.md" -o "$TMPDIR_TEST/"
 
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
-  info "Windows detected — skipping /etc traversal JSON tests"
+  info "Windows detected - skipping /etc traversal JSON tests"
 else
   check_json "path traversal"     "false"  "ERR_PATH_TRAVERSAL"     $CLI "$TMPDIR_TEST/basic.md" -o /etc/out.pdf
   check_json "path traversal warm" "false" "ERR_PATH_TRAVERSAL"     $CLI "$TMPDIR_TEST/basic.md" -o /etc/out.pdf
@@ -381,7 +385,7 @@ check_json "publish false"      "true"   "none"                   $CLI "$TMPDIR_
 check_json "no args"            "false"  "ERR_NO_INPUT"           $CLI
 
 # =============================================================================
-# GATE 7 — CACHE ORDERING (the BUG-20/BUG-21 regression test)
+# GATE 7 - CACHE ORDERING (the BUG-20/BUG-21 regression test)
 # =============================================================================
 section "GATE 7: Cache Ordering Invariants"
 
@@ -393,14 +397,14 @@ CHROME_PATH="${CHROME_FOR_TEST:-}" $CLI "$TMPDIR_TEST/basic.md" \
 
 # Path traversal must fail even when file is cached (BUG-20 regression)
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
-  info "Windows detected — skipping /etc traversal on warm cache (BUG-20 regression test)"
+  info "Windows detected - skipping /etc traversal on warm cache (BUG-20 regression test)"
 else
   CHROME_PATH="${CHROME_FOR_TEST:-}" $CLI "$TMPDIR_TEST/basic.md" \
     -o /etc/out.pdf > /dev/null 2>&1 || EXIT_TRAVERSAL=$?
   if [[ "${EXIT_TRAVERSAL:-0}" -ne 0 ]]; then
     pass "Path traversal blocked on warm cache (BUG-20 regression)"
   else
-    fail "Path traversal NOT blocked on warm cache — BUG-20 regression"
+    fail "Path traversal NOT blocked on warm cache - BUG-20 regression"
   fi
 fi
 
@@ -410,13 +414,13 @@ CHROME_PATH="${CHROME_FOR_TEST:-}" $CLI "$TMPDIR_TEST/basic.md" \
 if [[ "${EXIT_BROWSER:-0}" -ne 0 ]]; then
   pass "Invalid browser rejected on warm cache (BUG-21 regression)"
 else
-  fail "Invalid browser NOT rejected on warm cache — BUG-21 regression"
+  fail "Invalid browser NOT rejected on warm cache - BUG-21 regression"
 fi
 
 rm -rf "$CACHE_TMP"
 
 # =============================================================================
-# GATE 8 — NPM PACKAGE INTEGRITY
+# GATE 8 - NPM PACKAGE INTEGRITY
 # =============================================================================
 section "GATE 8: npm Package Integrity"
 
@@ -441,7 +445,7 @@ for banned in "test_" "fix-cache" "scratch" ".env" "tsconfig.json" "vitest.confi
 done
 pass "No banned file patterns in published package"
 
-# 8.2 npm audit — zero high/critical
+# 8.2 npm audit - zero high/critical
 if npm audit --omit=dev > /tmp/audit_out.txt 2>&1; then
   pass "npm audit: 0 vulnerabilities"
 else
@@ -461,7 +465,7 @@ EXISTING=$(npm view "@amitdevx/md2pdf@$PKG_VERSION" version 2>/dev/null || echo 
 if [[ "$EXISTING" == "NOT_FOUND" ]]; then
   pass "v$PKG_VERSION not yet published to npm (ready to publish)"
 else
-  fail "v$PKG_VERSION ALREADY EXISTS on npm — bump the version"
+  fail "v$PKG_VERSION ALREADY EXISTS on npm - bump the version"
 fi
 
 # =============================================================================
@@ -492,7 +496,7 @@ if [[ ${#FAILURES[@]} -eq 0 ]]; then
   echo ""
   exit 0
 else
-  echo -e "  ${RED}${BOLD}FAILED — ${#FAILURES[@]} gate(s) blocked publish:${RESET}"
+  echo -e "  ${RED}${BOLD}FAILED - ${#FAILURES[@]} gate(s) blocked publish:${RESET}"
   for f in "${FAILURES[@]}"; do
     echo -e "    ${RED}✖${RESET} $f"
   done
