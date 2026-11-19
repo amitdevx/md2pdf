@@ -24,13 +24,12 @@ Standard Obsidian callout blocks are supported with styled containers and Lucide
 ### Tags
 Inline tags such as `#tag` and nested tags like `#nested/tag` are identified and rendered as colored badge elements.
 
-### YAML Frontmatter
-The engine intelligently utilizes Obsidian's metadata fields to format the PDF:
-- **`title`**: Injects an `H1` at the absolute top of the document. If missing, it falls back to the filename automatically. (Disable with `--no-title`).
-- **`date`**: Renders a formatted date block immediately below the title.
-- **`cssclass`**: Applied to the `<body>` tag, enabling per-note custom CSS themes.
-- **`publish`**: If set to `false`, the CLI skips rendering this file completely.
-- Standard fields like `author`, `description`, etc. are mapped directly into the PDF's internal metadata (viewable in PDF properties).
+### YAML Frontmatter & Metadata
+The engine uses Obsidian's frontmatter fields for PDF metadata and optional visible titles:
+- **`title` & `date`**: Mapped into the PDF's internal document metadata. When visible heading injection is opted into via `--add-title` (or `--title <name>`), an `H1` title and date block are prepended to the rendered document body.
+- **`cssclass`**: Applied to the `<body>` tag, enabling per-note custom CSS styling.
+- **`publish`**: If set to `false`, the CLI skips rendering this note during batch processing.
+- **Standard metadata**: Fields like `author`, `description`, `tags`, and `keywords` are stored directly in the generated PDF metadata (viewable in PDF reader properties).
 
 ### Embeds & Transclusions
 Full support for Obsidian's embed syntax (`![[...]]`):

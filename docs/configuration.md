@@ -15,16 +15,18 @@ export default defineConfig({
   margin: '20mm',
   toc: true,
   tocDepth: 3,
-  title: true, // injects H1 at the top
-  cache: true, // enable incremental caching
+  addTitle: true, // injects document title and date into markdown body
 
   header: {
     enabled: true,
-    template: '<div style="font-size:9px; padding: 0 15mm">{title}</div>',
+    // Custom templates support Playwright classes (<span class="title"></span>, <span class="date"></span>)
+    // and frontmatter variables ({frontmatter.<key>})
+    template: '<div style="font-size:9px; padding: 0 15mm; width: 100%; display: flex; justify-content: space-between;"><span class="title"></span><span>{frontmatter.author}</span></div>',
   },
   footer: {
     enabled: true,
-    template: '<div style="font-size:9px; text-align:right; padding: 0 15mm">Page {page} of {totalPages}</div>',
+    // Page numbering uses Playwright classes <span class="pageNumber"></span> and <span class="totalPages"></span>
+    template: '<div style="font-size:9px; text-align:right; width: 100%; padding: 0 15mm;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>',
   },
 
   mermaid: {
@@ -103,4 +105,4 @@ Configuration settings are merged in the following order (from highest priority 
 4. **Base Configuration File** (`md2pdf.config.ts`, `.md2pdfrc.json`, etc.)
 5. **Default Built-in Options**
 
-This allows you to define your common defaults in the configuration file, override them per-file using YAML frontmatter, and easily override everything ad-hoc via CLI flags.
+This allows you to define common defaults in the configuration file, override them per-file using YAML frontmatter, and override settings via CLI flags. Note that per-document rendering options (such as themes, paper format, and margins) follow this merge order, while invocation-level options like `--output`, `--watch`, and `--merge` operate at the CLI command level.

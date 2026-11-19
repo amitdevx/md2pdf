@@ -47,7 +47,7 @@ await convert({
 
 ### CLI
 
-Math rendering is enabled by default. To disable it, use the `--no-math` flag (if supported) or configure it through a config file when available.
+Math rendering is enabled by default. To disable it, use the `--no-math` flag:
 ```bash
-md2pdf document.md --math
+md2pdf document.md --no-math
 ```

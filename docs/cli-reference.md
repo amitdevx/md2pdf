@@ -26,9 +26,11 @@ Prepends an image, PDF, or markdown file as a cover page before your main conten
 Processes multiple files and merges them into a single PDF output.
 `md2pdf "chapters/*.md" --output full-book.pdf --merge`
 
-### Background Watching (Daemon)
-Watches input files for changes and automatically rebuilds the PDF in the background.
+### Watch Mode
+Watches input files for changes and automatically rebuilds the PDF on save.
 `md2pdf draft.md --output live.pdf --watch`
+
+For long-running background service execution, use the dedicated `md2pdf daemon` command (`md2pdf daemon start`).
 
 ### Academic and Technical Documents
 Generates an academic paper with numbered figures and tables, Table of Contents, and outline bookmarks.
@@ -40,18 +42,24 @@ Generates an academic paper with numbered figures and tables, Table of Contents,
 - `--toc`                         Generate a Table of Contents
 - `--toc-depth <depth>`           Maximum heading depth for TOC (1-6)
 - `--toc-title <title>`           Title for the TOC section
+- `--toc-page-break`              Insert a page break after the Table of Contents
 - `--font-size <px>`              Base font size (e.g. 14px or 12pt)
 - `--line-height <ratio>`         Base line height (e.g. 1.5)
 - `--header`                      Enable default running header
 - `--footer`                      Enable default running footer
-- `--page-numbers [position]`     Show page numbers (bottom-center, bottom-right, top-center, top-right)
+- `--page-numbers [position]`     Show page numbers (top-left, top-center, top-right, bottom-left, bottom-center, bottom-right)
 - `--outline`                     Generate PDF bookmarks/outline from headings
 - `--header-template <template>`  Custom HTML template for header
 - `--footer-template <template>`  Custom HTML template for footer
 - `--figure-captions`             Auto-number figure captions under images
 - `--table-captions`              Auto-number table captions above tables
 - `--paper <format>`              Page format: A4, Letter, Legal, A3 (default: "A4")
-- `--margin <margin>`             Page margin (e.g., 20mm, 1in, 0) (default: "20mm")
+- `--margin <margin>`             Page margin (e.g., 20mm, 1in, 0, or CSS 4-value "10mm 15mm")
+- `--margin-top <margin>`         Top page margin (e.g., 20mm, 1in)
+- `--margin-bottom <margin>`      Bottom page margin (e.g., 20mm, 1in)
+- `--margin-left <margin>`        Left page margin (e.g., 20mm, 1in)
+- `--margin-right <margin>`       Right page margin (e.g., 20mm, 1in)
+- `--permissive-mermaid`          Render error callout box instead of failing build on Mermaid syntax errors
 - `--hr-page-break`               Treat --- as a page break
 - `--h1-new-page`                 Force a page break before each H1 heading
 - `--theme <theme>`               Active md2pdf theme (default, github, obsidian-light, etc.)
@@ -71,7 +79,8 @@ Generates an academic paper with numbered figures and tables, Table of Contents,
 - `--debug`                       Enable debug diagnostics
 - `--verbose`                     Enable verbose output
 - `--stdin`                       Read markdown from stdin instead of files
-- `--no-title`                    Disable automatic document title injection from frontmatter/filename
+- `--add-title`                   Inject document title and date into markdown body
+- `--title <string>`              Explicitly set the document title (implies --add-title)
 - `--json-errors`                 Output errors in JSON format
 - `--hide-tags`                   Hide inline Obsidian tags in PDF output
 - `--resolve-links`               Attempt to visually indicate resolvable vs unresolvable wiki links
@@ -87,3 +96,15 @@ Generates an academic paper with numbered figures and tables, Table of Contents,
 - `--dry-run`                     Preview which files would be processed without actually converting them
 - `-q, --quiet`                   Suppress all output except errors
 - `-h, --help`                    display help for command
+
+## Commands
+- `md2pdf doctor [options]`       Check system health and prerequisites
+- `md2pdf init`                   Interactive guided setup for new environments
+- `md2pdf daemon <action>`        Manage the md2pdf background daemon (start, stop, status)
+- `md2pdf list-themes`            List all available built-in themes
+- `md2pdf clear-cache`            Clear the incremental rendering cache
+
+## Exit Codes
+- `0`: Success
+- `1`: Usage, validation, or configuration error (e.g. missing file, invalid argument)
+- `2`: Runtime error (e.g. missing browser executable, document conversion failure)

@@ -57,7 +57,7 @@ These cannot be automated without a live browser but take under 5 minutes:
 - [ ] `md2pdf doctor` shows the correct browser path
 - [ ] `md2pdf basic.md` produces a real PDF (open it and check it renders)
 - [ ] `md2pdf mermaid.md` produces a PDF with a visible diagram
-- [ ] `md2pdf --list-themes` lists all 7 themes
+- [ ] `md2pdf list-themes` lists all 7 themes
 - [ ] `md2pdf --version` shows the new version number
 
 ---
