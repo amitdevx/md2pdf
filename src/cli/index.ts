@@ -140,7 +140,7 @@ program.command('clear-cache')
 
 program
   .name('md2pdf')
-  .description('Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, batch processing, TOC, and custom themes. CLI + Node.js API.')
+  .description('A Markdown-to-PDF CLI and Node.js library with support for Mermaid diagrams, KaTeX math, syntax highlighting, themes, and selected Obsidian features.')
   .version(pkg.version, '-V, --version', 'output the current version')
   .argument('[inputs...]', 'Input markdown files (supports wildcards like *.md)')
   .option('-o, --output <output>', 'Output PDF file (or directory if multiple inputs)')
