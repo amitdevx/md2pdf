@@ -8,7 +8,7 @@ Convert a single markdown file to a PDF:
 
 ### The "Full Document" Setup
 Generates a highly structured PDF with a table of contents, bookmarks, running headers and footers, page numbers, and custom margins.
-`md2pdf input.md --output result.pdf --toc --toc-depth 2 --outline --header --footer --page-numbers bottom-right --add-filename --margin 20mm`
+`md2pdf input.md --output result.pdf --toc --toc-depth 2 --outline --header --footer --page-numbers bottom-right --margin 20mm`
 
 ### Security and Watermarking
 Generates a protected PDF with an AES-256 password and a diagonal watermark.
@@ -45,15 +45,12 @@ Generates an academic paper with numbered figures and tables, Table of Contents,
 - `--header`                      Enable default running header
 - `--footer`                      Enable default running footer
 - `--page-numbers [position]`     Show page numbers (bottom-center, bottom-right, top-center, top-right)
-- `--add-date`                    Add the current date/time to the PDF header
-- `--add-filename`                Add the filename/title to the PDF header
-- `--document-meta`               Add page numbers, date, and filename all at once
 - `--outline`                     Generate PDF bookmarks/outline from headings
 - `--header-template <template>`  Custom HTML template for header
 - `--footer-template <template>`  Custom HTML template for footer
 - `--figure-captions`             Auto-number figure captions under images
 - `--table-captions`              Auto-number table captions above tables
-- `--paper <format>`              Page format: A4, Letter, Legal (default: "A4")
+- `--paper <format>`              Page format: A4, Letter, Legal, A3 (default: "A4")
 - `--margin <margin>`             Page margin (e.g., 20mm, 1in, 0) (default: "20mm")
 - `--hr-page-break`               Treat --- as a page break
 - `--h1-new-page`                 Force a page break before each H1 heading

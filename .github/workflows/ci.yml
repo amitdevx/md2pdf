@@ -86,8 +86,19 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
         shell: bash
 
-      - name: Install Playwright Browsers
+      - name: Install Poppler (macOS)
+        if: runner.os == 'macOS'
+        run: brew install poppler
+        shell: bash
+
+      - name: Install Playwright Browsers (Linux)
+        if: runner.os == 'Linux'
         run: npx playwright install chromium --with-deps
+        shell: bash
+
+      - name: Install Playwright Browsers (non-Linux)
+        if: runner.os != 'Linux'
+        run: npx playwright install chromium
         shell: bash
 
       - name: Run Test Suite
@@ -97,7 +108,7 @@ jobs:
       - name: Packed Consumer Verification (Canonical)
         if: matrix.is-canonical
         run: |
-          TARBALL=$(npm pack)
+          TARBALL=$(npm pack --ignore-scripts | tail -n 1)
           CONSUMER_DIR=$(mktemp -d)
           cp "$TARBALL" "$CONSUMER_DIR/"
           pushd "$CONSUMER_DIR"

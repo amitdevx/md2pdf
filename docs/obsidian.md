@@ -1,10 +1,10 @@
 # Obsidian Compatibility
 
-The `@amitdevx/md2pdf` engine converts Obsidian vaults into PDFs without requiring manual formatting changes. 
+The `@amitdevx/md2pdf` engine provides support for selected Obsidian syntax and note structures when exporting to PDF. 
 
 ## Supported Syntax (v0.6.0)
 
-As of version 0.6.0, `md2pdf` achieves strict visual parity with Obsidian's native exports. The following core Obsidian features are supported out-of-the-box:
+Supports selected Obsidian syntax, including callouts, wiki links, and embeds. Output may differ from Obsidian's native exporter. The following features are currently supported:
 
 ### Wiki Links
 Standard Obsidian internal links using double brackets are parsed and rendered as styled text spans. 
@@ -15,7 +15,7 @@ Standard Obsidian internal links using double brackets are parsed and rendered a
 *Note: In PDF output, wiki links are treated as internal references. If `--resolve-links` is disabled (default), they appear as muted text to signify an unresolved cross-reference.*
 
 ### Callouts
-All standard Obsidian callout blocks are fully supported with **strict visual parity**.
+Standard Obsidian callout blocks are supported with styled containers and Lucide icons.
 - **Native SVGs**: We use exact Lucide SVG inline icons, eliminating standard text emojis.
 - **Exact Colors**: Backgrounds and borders match Obsidian's strict RGBA values (e.g. Cyan for `[!important]`).
 - Supported types: `note`, `info`, `tip`, `success`, `question`, `warning`, `failure`, `danger`, `example`, `quote`, `important`, `summary`, etc.
@@ -50,7 +50,7 @@ Attachments are resolved smartly through your vault structure:
 Obsidian's internal block references (e.g., `^re-definition`) at the end of paragraphs are natively detected, stripped from the visible text, and transformed into HTML `id` attributes so they don't leak into the printed PDF, but remain internally linkable.
 
 ### Minimalist Tables & Flow
-By using the `--theme obsidian-light` or `--theme obsidian-dark` flags, `md2pdf` will perfectly mimic Obsidian's minimalist table layout (horizontal lines only, no shading). Mermaid diagrams also securely evaluate and naturally left-align to follow standard document flow.
+The `--theme obsidian-light` and `--theme obsidian-dark` flags apply Obsidian-style minimalist table layouts and matching color palettes.
 
 ## Configuration Options
 

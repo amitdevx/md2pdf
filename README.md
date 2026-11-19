@@ -12,7 +12,7 @@
   </p>
 </div>
 
-Convert Markdown to PDF with Mermaid diagrams, KaTeX math, Obsidian syntax, syntax highlighting, raw HTML rendering, batch processing, secure file sandboxing, file merging, watch mode, and Table of Contents generation. Available as a CLI and Node.js API.
+md2pdf is a Markdown-to-PDF CLI and Node.js library. Convert Markdown files into styled PDFs with support for Mermaid diagrams, KaTeX math, syntax highlighting, themes, and selected Obsidian features.
 
 ## Installation
 
@@ -54,7 +54,7 @@ md2pdf document.md --toc --page-numbers
 
 Batch convert multiple files:
 ```bash
-md2pdf docs/*.md --output-dir dist/
+md2pdf docs/*.md --output dist/
 ```
 
 Merge multiple Markdown files into a single PDF:

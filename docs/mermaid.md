@@ -1,6 +1,6 @@
 # Mermaid Diagrams
 
-md2pdf includes built-in support for rendering [Mermaid](https://mermaid.js.org/) diagrams inside your PDFs. The rendering is done locally and offline using Playwright, ensuring crisp vector graphics and perfect reproduction of all 12+ diagram types.
+md2pdf renders supported [Mermaid](https://mermaid.js.org/) diagrams locally using Playwright, producing vector graphics without external CDN dependencies. Diagram appearance and pagination can vary with complexity; review large diagrams in the generated PDF.
 
 ## Supported Diagrams
 
@@ -76,7 +76,7 @@ You can also specify custom CSS theme strings for Mermaid if you're using advanc
 
 ## Sizing and Layout Constraints
 
-By default, Mermaid diagrams automatically scale based on their intrinsic dimensions and will never overflow the page. They are strictly bounded to `100%` of the page width and `100%` of the page height.
+By default, Mermaid diagrams scale based on their intrinsic dimensions bounded by the page container width and height. Complex or wide diagrams may require custom maxWidth or maxHeight settings to fit cleanly on a single page.
 
 You can override these bounding constraints globally:
 

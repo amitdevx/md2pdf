@@ -18,6 +18,16 @@ export async function inspectPdf(pdfPath: string): Promise<PdfInspection> {
   return { pageCount, pageSize };
 }
 
+export function hasPdftotext(): boolean {
+  try {
+    const cmd = process.platform === 'win32' ? 'where pdftotext' : 'which pdftotext';
+    execSync(cmd, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function extractPdfText(pdfPath: string, options?: { layout?: boolean }): string {
   try {
     const layoutFlag = options?.layout ? '-layout' : '';
