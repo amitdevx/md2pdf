@@ -1,10 +1,10 @@
 # Math Support (KaTeX)
 
-`md2pdf` includes native, print-perfect LaTeX equation rendering powered by KaTeX.
+`md2pdf` renders supported LaTeX math using KaTeX, with bundled math fonts.
 
 ## Features
 
-- **High-Fidelity Rendering**: Equations are rendered using KaTeX with inline base64-encoded WOFF2 fonts. This guarantees no flash of unstyled math (FOUT), no external CDN dependencies, and perfect offline rendering.
+- **Offline Rendering**: Equations are rendered using KaTeX with inline base64-encoded WOFF2 fonts, avoiding runtime CDN requests and font loading flicker.
 - **Unified Pipeline**: Built securely into the AST pipeline via `remark-math` and `rehype-katex`.
 - **Customizable**: Supports custom macros, strict error modes, and explicit enable/disable settings.
 
@@ -47,7 +47,7 @@ await convert({
 
 ### CLI
 
-Math rendering is enabled by default. To disable it, use the `--no-math` flag (if supported) or configure it through a config file when available.
+Math rendering is enabled by default. To disable it, use the `--no-math` flag:
 ```bash
-md2pdf document.md --math
+md2pdf document.md --no-math
 ```

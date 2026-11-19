@@ -12,17 +12,17 @@ md2pdf document.md --theme <theme-name>
 
 To see a list of all currently available themes on your machine, run:
 ```bash
-md2pdf --list-themes
+md2pdf list-themes
 ```
 
 ### Available Themes
-1. **`default`**: Our flagship style. Features crisp typography (Inter & JetBrains Mono), clean gray borders, and a beautiful padded structure optimized for high-quality printing.
-2. **`github`**: Accurately mimics the standard GitHub Markdown style for a familiar, developer-centric layout.
-3. **`obsidian-light`**: **Strict Parity Theme**. Achieves a 1:1 visual match with Obsidian's light mode reading view, including minimalist tables (no vertical borders or shading).
-4. **`obsidian-dark`**: **Strict Parity Theme**. A rich dark-mode theme identical to Obsidian's default dark mode, perfect for digital distribution.
-5. **`dracula`**: The legendary Dracula color palette for a vibrant, high-contrast dark aesthetic.
-6. **`nord`**: The arctic, north-bluish Nord theme for a cool, calm reading experience.
-7. **`academic`**: A formal, serif-based theme (using Source Serif 4) tailored specifically for research papers, thesis documents, and academic publications.
+1. **`default`**: Standard clean style. Features clear typography (Inter & JetBrains Mono), neutral gray borders, and padded margins.
+2. **`github`**: Modeled after standard GitHub Markdown styling for a familiar developer layout.
+3. **`obsidian-light`**: An Obsidian-inspired light theme styled after Obsidian reading view, including minimalist tables (horizontal borders without shading).
+4. **`obsidian-dark`**: An Obsidian-inspired dark theme matching Obsidian dark mode palette, suitable for digital reading.
+5. **`dracula`**: The Dracula color palette for a vibrant, high-contrast dark aesthetic.
+6. **`nord`**: The arctic Nord theme for a cool, calm reading experience.
+7. **`academic`**: A formal, serif-based theme (using Source Serif 4) tailored for research papers, thesis documents, and academic publications.
 
 ## Custom Themes (CSS)
 

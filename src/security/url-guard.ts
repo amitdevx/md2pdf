@@ -187,82 +187,92 @@ export async function fetchSafeRemoteImage(
           'User-Agent': 'md2pdf-bot/1.0 (+https://github.com/amitdevx/md2pdf)'
         }
       });
-    } catch (err: unknown) {
-      clearTimeout(timer);
-      const error = err as Error;
-      return {
-        success: false,
-        warning: `Failed to load remote image: ${currentUrl} (${error.message})`
-      };
-    } finally {
-      clearTimeout(timer);
-    }
 
-    // 3. Handle 3xx redirects
-    if (res.status >= 300 && res.status < 400) {
-      const location = res.headers.get('location');
-      if (!location) {
-        return {
-          success: false,
-          warning: `Failed to load remote image: ${currentUrl} (Redirect missing location header)`
-        };
+      // 3. Handle 3xx redirects
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get('location');
+        if (!location) {
+          return {
+            success: false,
+            warning: `Failed to load remote image: ${currentUrl} (Redirect missing location header)`
+          };
+        }
+        if (hop === maxHops) {
+          return {
+            success: false,
+            warning: `Skipped remote image (too many redirects): ${initialUrl}`
+          };
+        }
+        try {
+          currentUrl = new URL(location, currentUrl).href;
+        } catch {
+          return {
+            success: false,
+            warning: `Failed to load remote image: Invalid redirect location '${location}'`
+          };
+        }
+        continue;
       }
-      if (hop === maxHops) {
+
+      if (!res.ok) {
         return {
           success: false,
-          warning: `Skipped remote image (too many redirects): ${initialUrl}`
-        };
-      }
-      try {
-        currentUrl = new URL(location, currentUrl).href;
-      } catch {
-        return {
-          success: false,
-          warning: `Failed to load remote image: Invalid redirect location '${location}'`
-        };
-      }
-      continue;
-    }
-
-    if (!res.ok) {
-      return {
-        success: false,
-        warning: `Failed to load remote image: ${currentUrl} (HTTP ${res.status})`
-      };
-    }
-
-    // 4. Content-Type check (must be an image)
-    const contentType = (res.headers.get('content-type') || '').toLowerCase();
-    const mimeType = contentType.split(';')[0].trim();
-    if (!mimeType.startsWith('image/')) {
-      return {
-        success: false,
-        warning: `Skipped remote image (invalid content-type '${contentType}'): ${currentUrl}`
-      };
-    }
-
-    // 5. Size cap check (Content-Length header)
-    const contentLengthHeader = res.headers.get('content-length');
-    if (contentLengthHeader) {
-      const contentLength = parseInt(contentLengthHeader, 10);
-      if (!isNaN(contentLength) && contentLength > maxBytes) {
-        return {
-          success: false,
-          warning: `Skipped remote image (size ${contentLength} bytes exceeds limit ${maxBytes} bytes): ${currentUrl}`
-        };
-      }
-    }
-
-    // 6. Read buffer with size check
-    try {
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.length > maxBytes) {
-        return {
-          success: false,
-          warning: `Skipped remote image (size ${buf.length} bytes exceeds limit ${maxBytes} bytes): ${currentUrl}`
+          warning: `Failed to load remote image: ${currentUrl} (HTTP ${res.status})`
         };
       }
 
+      // 4. Content-Type check (must be an image)
+      const contentType = (res.headers.get('content-type') || '').toLowerCase();
+      const mimeType = contentType.split(';')[0].trim();
+      if (!mimeType.startsWith('image/')) {
+        return {
+          success: false,
+          warning: `Skipped remote image (invalid content-type '${contentType}'): ${currentUrl}`
+        };
+      }
+
+      // 5. Size cap check (Content-Length header)
+      const contentLengthHeader = res.headers.get('content-length');
+      if (contentLengthHeader) {
+        const contentLength = parseInt(contentLengthHeader, 10);
+        if (!isNaN(contentLength) && contentLength > maxBytes) {
+          return {
+            success: false,
+            warning: `Skipped remote image (size ${contentLength} bytes exceeds limit ${maxBytes} bytes): ${currentUrl}`
+          };
+        }
+      }
+
+      // 6. Read stream with bounded size cap and active timeout
+      // ponytail: streaming reader avoids buffering oversized responses into memory
+      if (!res.body) {
+        return {
+          success: false,
+          warning: `Failed to read remote image: ${currentUrl} (empty response body)`
+        };
+      }
+
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let totalBytes = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          totalBytes += value.length;
+          if (totalBytes > maxBytes) {
+            controller.abort();
+            return {
+              success: false,
+              warning: `Skipped remote image (size exceeded limit ${maxBytes} bytes): ${currentUrl}`
+            };
+          }
+          chunks.push(value);
+        }
+      }
+
+      const buf = Buffer.concat(chunks.map(c => Buffer.from(c)));
       const dataUri = `data:${mimeType};base64,${buf.toString('base64')}`;
       return {
         success: true,
@@ -272,8 +282,10 @@ export async function fetchSafeRemoteImage(
       const error = err as Error;
       return {
         success: false,
-        warning: `Failed to read remote image: ${currentUrl} (${error.message})`
+        warning: `Failed to load remote image: ${currentUrl} (${error.message})`
       };
+    } finally {
+      clearTimeout(timer);
     }
   }
 

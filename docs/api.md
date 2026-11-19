@@ -18,9 +18,8 @@ const result: ConvertResult = await convert(options);
 |----------|------|---------|-------------|
 | `input` | `string` | **Required** | The path to the input Markdown file. |
 | `output` | `string` | **Required** | The path where the PDF will be saved. |
-| `theme` | `string` | `'default'` | The CSS theme to apply (feature in progress). |
-| `paper` | `'A4' \| 'Letter' \| 'Legal'` | `'A4'` | The paper format for the PDF. |
-| `landscape` | `boolean` | `false` | Page orientation. |
+| `theme` | `string` | `'default'` | The CSS theme to apply (built-in themes: default, github, academic, dracula, nord, obsidian-dark, obsidian-light, or custom CSS file path). |
+| `paper` | `'A4' \| 'Letter' \| 'Legal' \| 'A3'` | `'A4'` | The paper format for the PDF. |
 | `margin` | `string` | `'20mm'` | The margin string applied to all sides. |
 | `toc` | `boolean` | `false` | Enables Table of Contents generation. |
 | `tocDepth` | `number` | `3` | Maximum heading depth to include in the TOC. |
@@ -29,9 +28,9 @@ const result: ConvertResult = await convert(options);
 | `header` | `boolean \| { template?: string }` | `undefined` | Enables running headers on PDF pages. |
 | `footer` | `boolean \| { template?: string }` | `undefined` | Enables running footers on PDF pages. |
 | `pageBreaks` | `{ h1NewPage?: boolean, hrAsPageBreak?: boolean }` | `undefined` | Configuration for automatic page breaks. |
-| `mermaid` | `object` | `{ enabled: true }` | Configuration for Mermaid diagram rendering. |
-| `math` | `object` | `{ enabled: true }` | Configuration for KaTeX math rendering. |
-| `captions` | `boolean \| CaptionsConfig` | `undefined` | Automatic figure and table caption numbering configuration. |
+| `mermaid` | `object` | `{ enabled: true }` | Configuration for Mermaid diagram rendering (theme, timeout, maxWidth, maxHeight). |
+| `math` | `object` | `{ enabled: true }` | Configuration for KaTeX math rendering (enabled, macros, numbering, strict). |
+| `captions` | `object` | `undefined` | Automatic figure and table caption numbering configuration. |
 | `obsidian` | `object` | `undefined` | Compatibility options for Obsidian syntax. |
 | `plugins` | `AnyPlugin[]` | `undefined` | Array of custom plugins to extend md2pdf capabilities. |
 | `sharedBrowser` | `Browser` | `undefined` | Inject an existing Playwright `Browser` instance (optimizes batch processing). |

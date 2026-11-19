@@ -1,6 +1,6 @@
 # Mermaid Diagrams
 
-md2pdf includes built-in support for rendering [Mermaid](https://mermaid.js.org/) diagrams inside your PDFs. The rendering is done locally and offline using Playwright, ensuring crisp vector graphics and perfect reproduction of all 12+ diagram types.
+md2pdf renders supported [Mermaid](https://mermaid.js.org/) diagrams locally using Playwright, producing vector graphics without external CDN dependencies. Diagram appearance and pagination can vary with complexity; review large diagrams in the generated PDF.
 
 ## Supported Diagrams
 
@@ -22,7 +22,7 @@ All standard Mermaid diagrams are supported, including:
 
 Just use the standard markdown code block syntax with the `mermaid` language identifier:
 
-```markdown
+````markdown
 ```mermaid
 graph TD;
     A-->B;
@@ -30,7 +30,7 @@ graph TD;
     B-->D;
     C-->D;
 ```
-```
+````
 
 ## Theming
 
@@ -51,12 +51,12 @@ Mermaid diagrams are automatically themed based on your active md2pdf theme:
 You can override the theme for all diagrams using the CLI or Frontmatter, or for specific diagrams using the code fence metadata.
 
 **1. Per-diagram override:**
-```markdown
+````markdown
 ```mermaid {theme=dark}
 graph TD;
     A-->B;
 ```
-```
+````
 
 **2. Global override via Frontmatter:**
 ```yaml
@@ -76,7 +76,7 @@ You can also specify custom CSS theme strings for Mermaid if you're using advanc
 
 ## Sizing and Layout Constraints
 
-By default, Mermaid diagrams automatically scale based on their intrinsic dimensions and will never overflow the page. They are strictly bounded to `100%` of the page width and `100%` of the page height.
+By default, Mermaid diagrams scale based on their intrinsic dimensions bounded by the page container width and height. Complex or wide diagrams may require custom maxWidth or maxHeight settings to fit cleanly on a single page.
 
 You can override these bounding constraints globally:
 
@@ -91,11 +91,11 @@ mermaid:
 
 ## Error Handling & Timeouts
 
-If a diagram has invalid syntax, `md2pdf` will **not crash**. Instead, it will gracefully insert a styled error placeholder showing the syntax error and the source code, allowing the rest of the document to render successfully.
+By default, invalid Mermaid syntax causes conversion to fail with an error. To render a styled error callout box in place of the invalid diagram instead of failing the conversion, use the `--permissive-mermaid` flag.
 
-If a diagram takes too long to render, it will timeout. The default timeout is 10,000ms (10 seconds).
+Diagram rendering times out if a diagram takes too long to process. The default timeout is 30,000ms (30 seconds).
 
-You can configure this timeout or completely disable Mermaid processing:
+You can configure this timeout or disable Mermaid processing:
 
 **Via Frontmatter:**
 ```yaml
@@ -113,10 +113,10 @@ md2pdf input.md --mermaid-timeout 15000
 
 ## High-Quality Vector Output
 
-Mermaid diagrams are rendered with `deviceScaleFactor: 2` (High-DPI) and injected as raw `<svg>` elements into the final PDF. This means your diagrams will remain perfectly crisp even if the reader zooms in to 400% or prints the document.
+Mermaid diagrams are rendered with `deviceScaleFactor: 2` (High-DPI) and injected as `<svg>` elements into the final PDF.
 
 ## Version Parity (v10 vs v11)
 
-md2pdf includes `mermaid.min.js` v11 natively. If you previously used md2pdf versions utilizing Mermaid v10, you might notice some layout engine differences. Specifically, some structural charts (like `erDiagram` or `classDiagram`) may render slightly larger or with adjusted padding in v11. All core syntax remains 100% compatible, and diagrams will not overflow the page.
+md2pdf bundles `mermaid.min.js` v11. If you previously used md2pdf versions with Mermaid v10, layout differences may appear in some structural charts (such as `erDiagram` or `classDiagram`), which may render with adjusted padding in v11.
 
-Additionally, md2pdf actively intercepts and preprocesses Mermaid diagrams containing unescaped quote strings (`\"`) and empty parenthetical node groupings (`()`) to ensure 100% rendering parity with Obsidian's native exporter, safely circumventing fatal syntax errors commonly triggered by strict v11 parsing.
+Additionally, md2pdf preprocesses common syntax patterns like unescaped quotes in labels to improve compatibility when exporting complex diagrams.

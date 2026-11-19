@@ -8,8 +8,7 @@
 |---|---|---|
 | `0` | Success | The document was converted, or successfully skipped (e.g. `publish: false`). |
 | `1` | Usage Error | Invalid command-line flags, missing input files, bad YAML frontmatter, or invalid options. |
-| `2` | Environment Error | Missing browser binary, browser launch failure, permission denied, file too large, conversion timeout, or complex document. |
-| `3` | Internal Bug | An unexpected unhandled internal error occurred within the engine. |
+| `2` | Runtime Error | Missing browser binary, browser launch failure, permission denied, file too large, conversion timeout, or complex document. |
 
 ## Error Taxonomy
 

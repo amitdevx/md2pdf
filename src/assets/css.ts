@@ -120,11 +120,19 @@ table {
   border-spacing: 0;
   border-collapse: collapse;
   width: 100%;
+  max-width: 100%;
 }
 
 table th, table td {
   padding: 8px 12px;
   border: 1px solid var(--md2pdf-color-border);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+table code {
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 table thead {
@@ -351,6 +359,20 @@ export const printCss = `
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
     overflow-x: hidden !important;
+  }
+
+  /* ponytail: Wrap table cells and code tokens to prevent clipping on page boundaries */
+  table {
+    max-width: 100% !important;
+  }
+  table th, table td {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+  table code {
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+    white-space: pre-wrap !important;
   }
 
   .katex-display {

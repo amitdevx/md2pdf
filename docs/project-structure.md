@@ -2,23 +2,23 @@
 
 This document outlines the internal directories of `md2pdf` and their purposes.
 
-## `src/` - Source Code
+## `src/`: Source Code
 The core conversion pipeline and CLI orchestrator. Refer to `architecture.md` for a deeper dive into the system design.
 
-## `docs/` - Documentation
+## `docs/`: Documentation
 All official documentation for `@amitdevx/md2pdf`. Contains guides for configuration, plugins, themes, and APIs.
 
-## `examples/` - Example Outputs
+## `examples/`: Example Outputs
 Example Markdown files and their rendered PDF outputs. These demonstrate what `md2pdf` can produce, and serve as quick-start references.
 
-## `tests/` - Test Suite
-Test suite for `@amitdevx/md2pdf`. Contains unit tests (`parser/`, `renderer/`, `pdf/`), E2E tests (`cli/`), and performance tests (`benchmarks/`).
+## `tests/`: Test Suite
+Test suite for `@amitdevx/md2pdf`. Contains unit tests (`parser/`, `renderer/`, `pdf/`), E2E regression tests (`e2e/`), and performance tests (`benchmarks/`).
 
-### `tests/fixtures/` - Golden Documents
-Permanent, curated Markdown files that cover every rendering concern. They act as "Golden Documents".
+### `tests/fixtures/`: Golden Documents
+Curated Markdown files that cover specific rendering concerns and regression test cases.
 
-### `tests/snapshots/` - Visual Snapshots
-Approved rendered output of all golden documents. Snapshots are committed to git and serve as the reference for visual regression. Approval is always a deliberate human act - review the diff before approving (`npm run golden:approve`).
+### `tests/e2e/`: End-to-End and Regression Tests
+End-to-end integration tests and PDF output regression tests verifying generated PDF properties, structure, encryption, paper size, and layout invariants across supported platforms.
 
-### `tests/benchmarks/` - Performance Benchmarks
-Performance benchmark suite added in v0.8.0. Targets <1s cold render for simple files and <60s for a 200-file mock vault.
+### `tests/benchmarks/`: Performance Benchmarks
+Performance benchmark suite verifying cold and warm rendering times.

@@ -1,6 +1,6 @@
 # Getting Started with md2pdf
 
-`@amitdevx/md2pdf` is a production-quality engine for converting Markdown into beautiful PDF documents.
+`@amitdevx/md2pdf` is a Markdown-to-PDF CLI and Node.js library with support for Mermaid, math, themes, and Obsidian syntax.
 
 ## Installation
 
@@ -10,6 +10,22 @@ npm install -g @amitdevx/md2pdf
 
 # Local installation (for programmatic usage)
 npm install @amitdevx/md2pdf
+```
+
+## System Prerequisites
+
+`md2pdf` requires a compatible Chromium-based browser to render PDFs.
+
+Verify your environment, dependencies, and browser setup by running:
+
+```bash
+md2pdf doctor
+```
+
+If Chromium is not present on your system, install it using Playwright:
+
+```bash
+npx playwright install chromium
 ```
 
 ## CLI Usage

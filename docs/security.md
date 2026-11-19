@@ -11,10 +11,10 @@ File access via local URLs (e.g., `file://`) is strictly limited to:
 - The system temporary directory (used for caching).
 
 **Base64 Image Injection:**
-To eliminate Chromium security risks and event-loop deadlocks, all local images and remote HTTP/HTTPS images are now pre-fetched and converted to Base64 data URIs securely within the Node.js context before being passed to Chromium. Chromium is restricted from making any outbound requests.
+To reduce Chromium exposure and avoid event-loop stalls, all local images and remote HTTP/HTTPS images are pre-fetched and converted to Base64 data URIs within the Node.js context before being passed to Chromium. Chromium is restricted from making outbound network requests via page routing rules.
 
 **SSRF Protection:**
-Server-Side Request Forgery (SSRF) bypasses are prevented by a background DNS resolver that actively blocks HTTP requests to cloud metadata endpoints (e.g. AWS `169.254.x.x`), local loopbacks (`localhost`, `127.0.0.1`), and private IP ranges before they are fetched.
+Server-Side Request Forgery (SSRF) risks are mitigated by a URL guard and DNS resolver that blocks HTTP requests to cloud metadata endpoints (such as AWS `169.254.169.254`), local loopbacks (`localhost`, `127.0.0.1`), and private IP ranges before fetching. For environments processing untrusted input, running md2pdf inside an isolated container or dedicated process sandbox is strongly recommended.
 
 **Raw HTML Sanitization:**
 Raw HTML nodes in Markdown are passed through `rehype-sanitize` to allow basic inline styling while aggressively stripping dangerous tags like `<script>`, `<iframe>`, `<object>`, and `<embed>`. Any markdown images or external assets attempting to traverse outside of the allowed directories (e.g., `![hack](/etc/passwd)`) will be strictly blocked.
@@ -30,7 +30,7 @@ When specifying a custom browser executable path via the `CHROME_PATH` environme
 
 ## Threat Model
 
-`md2pdf` is designed to safely process untrusted markdown inputs even in multi-tenant servers, automated build pipelines, and containerized CI environments.
+`md2pdf` includes safeguards to handle markdown inputs with reduced risk. When processing untrusted user input in multi-tenant servers or automated pipelines, always combine these safeguards with operating system or container isolation.
 
 ### Core Assumptions
 - The markdown source and frontmatter content may be supplied by an untrusted third party.
@@ -41,7 +41,7 @@ When specifying a custom browser executable path via the `CHROME_PATH` environme
   3. **Local File Disclosure:** Reading `/etc/passwd` or private workspace files via local path traversal.
   4. **Denial of Service (DoS):** Triggering resource exhaustion via recursive redirects, massive file downloads, or deeply nested markdown structures.
 
-### Defense-in-Depth Guarantees
+### Defense-in-Depth Safeguards
 
 1. **Zero Chromium Network Requests:**
    Chromium runs in a sandboxed context where all outbound HTTP and HTTPS network requests are unconditionally aborted by `page.route('**/*')`. Only `data:`, `blob:`, and validated sandboxed `file:` URIs are served to Chromium.

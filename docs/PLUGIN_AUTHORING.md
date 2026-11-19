@@ -85,8 +85,10 @@ Theme plugins allow you to register custom CSS themes to be used in configuratio
 import { createThemePlugin } from '@amitdevx/md2pdf';
 
 export const brandTheme = createThemePlugin({
-  name: 'my-brand',
+  name: 'my-brand-plugin',
   theme: {
+    name: 'my-brand',
+    description: 'Custom corporate theme with brand colors',
     css: 'body { color: #333; }',
     shikiTheme: 'github-dark'
   }

@@ -1,3 +1,23 @@
+## [1.0.0] - 2026-11-18
+
+### Breaking Changes
+- Updated Node.js runtime engine requirement to `>=22` in package.json (dropping end-of-life Node 20). Supported maintained LTS lines are Node 22, 24, and 26.
+
+### Core and PDF Output Fixes
+- Prevented wide table clipping on printable pages by enabling word breaking (`overflow-wrap: anywhere`, `word-break: break-word`) and code breaking in table cells.
+- Fixed malformed URI decoding error when converting Markdown containing percent signs or raw URL tokens in fenced code blocks and inline spans.
+- Added encrypted PDF batch merge support with password protection and invalid password rejection.
+- Added support for A3 paper format (`842.88pt x 1191.12pt`) and fixed configuration option overrides.
+- Added `--no-link-underline` flag to suppress underline styling while preserving link destinations.
+- Hardened sandbox path boundaries against sibling directory traversal attacks and replaced blocked assets with placeholders.
+- Enforced strict streaming size limits and timeouts for remote asset downloads.
+- Added auto-number figure and table captions using CSS counters.
+
+### Testing and CI Infrastructure
+- Restructured GitHub Actions CI workflow to replace the 9-job Cartesian matrix with an explicit 5-platform matrix (Ubuntu Node 22, Ubuntu Node 24 canonical, Ubuntu Node 26, Windows Node 24, macOS Node 24) plus a dedicated Ubuntu quality job.
+- Added automated end-to-end PDF output regression suite verifying real generated PDF geometry, encryption, text extraction, and sandbox enforcement.
+- Added packed consumer verification testing the packed tarball in an isolated consumer project.
+
 ## [0.9.11] - 2026-11-04
 
 ### Margins and Layout
@@ -143,7 +163,7 @@
 ## [0.9.5] - 2026-09-10
 
 ### Added
-- **`--outline`**: Generates PDF bookmarks/outline from markdown headings (H1–H6), navigable in any PDF reader sidebar. Implemented using `pdf-lib` without relying on Playwright's native (broken) outline support.
+- **`--outline`**: Generates PDF bookmarks/outline from markdown headings (H1-H6), navigable in any PDF reader sidebar. Implemented using `pdf-lib` without relying on Playwright's native (broken) outline support.
 - **`--add-date`**: Injects the current date/time into the PDF header (top-right). Does not require `--page-numbers` to be set.
 - **`--add-filename`**: Injects the document title/filename into the PDF header (top-left).
 - **`--document-meta`**: Super flag :  enables `--page-numbers`, `--add-date`, and `--add-filename` all at once for a fully annotated PDF in a single flag.

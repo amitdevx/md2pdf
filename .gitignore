@@ -20,7 +20,7 @@ scratch/
 /phase/
 docs/brain.md
 
-# Golden document render output (not committed — only snapshots/ is committed)
+# Golden document render output (not committed - only snapshots/ is committed)
 tests/output/
 tests/diff/
 
@@ -83,3 +83,4 @@ tests/fixtures-json-errors/
 dummy_dir/
 md2pdf-bench/
 md2pdf_audit/
+pdf-recheck/

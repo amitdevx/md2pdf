@@ -8,10 +8,10 @@ Reference this when writing fixes - check if your fix is for a recurring pattern
 | ID | Pattern | Versions affected | Status |
 |----|---------|------------------|--------|
 | RP01 | Debug/scratch scripts committed to repo root | v0.8.4, v0.8.5 | Fixed v0.8.6 |
-| RP02 | `assets/mermaid.min.js` missing from published package | v0.8.0–v0.8.2 | Fixed v0.8.3 |
-| RP03 | `process.exitCode` overwritten by async cleanup (chmod 000 exits 0) | v0.7.1–v0.8.6 | Partial fix |
-| RP04 | Validation check happens AFTER cache check, bypassed on warm hit | v0.8.4–v0.8.5 | Fixed v0.8.6 |
-| RP05 | New error paths added without `code` field in `--json-errors` output | v0.8.1–v0.8.5 | Partial fix |
+| RP02 | `assets/mermaid.min.js` missing from published package | v0.8.0 to v0.8.2 | Fixed v0.8.3 |
+| RP03 | `process.exitCode` overwritten by async cleanup (chmod 000 exits 0) | v0.7.1 to v0.8.6 | Partial fix |
+| RP04 | Validation check happens AFTER cache check, bypassed on warm hit | v0.8.4 to v0.8.5 | Fixed v0.8.6 |
+| RP05 | New error paths added without `code` field in `--json-errors` output | v0.8.1 to v0.8.5 | Partial fix |
 | RP06 | `playwright-core` version mismatch breaks `md2pdf init` on fresh install | v0.8.5 | Partial fix |
 | RP07 | Untested code paths ship with wrong exit codes | all versions | Ongoing |
 

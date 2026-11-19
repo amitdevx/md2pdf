@@ -45,7 +45,7 @@ describe('Exit Code Contract (27 Matrix Rows)', () => {
     expect(runCli(txtFile).status).toBe(1);
   });
   it('5. Input/output same path -> exits 1', () => { expect(runCli(`"${basicMd}" -o "${basicMd}"`).status).toBe(1); });
-  it('6. Invalid paper -> exits 1', () => { expect(runCli(`"${basicMd}" --paper A3`).status).toBe(1); });
+  it('6. Invalid paper -> exits 1', () => { expect(runCli(`"${basicMd}" --paper INVALID`).status).toBe(1); });
   it('7. Invalid margin -> exits 1', () => { expect(runCli(`"${basicMd}" --margin 20`).status).toBe(1); });
   it('8. Invalid Mermaid theme -> exits 1', () => { expect(runCli(`"${basicMd}" --mermaid-theme invalid-theme`).status).toBe(1); });
   it('9. Invalid Mermaid timeout -> exits 1', () => { expect(runCli(`"${basicMd}" --mermaid-timeout -5`).status).toBe(1); });

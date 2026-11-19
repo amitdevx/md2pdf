@@ -33,7 +33,7 @@ export interface ConvertOptions {
   noLinkUnderline?: boolean;
   linkColor?: string;
   theme?: string;
-  paper?: 'A4' | 'Letter' | 'Legal';
+  paper?: 'A4' | 'Letter' | 'Legal' | 'A3';
   margin?: string; // e.g., '20mm'
   marginTop?: string;
   marginBottom?: string;

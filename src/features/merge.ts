@@ -30,6 +30,7 @@ export async function mergePDFs(paths: string[], outputPath: string): Promise<vo
       }
     } catch (err) {
       console.warn(`Failed to merge ${pdfPath}:`, err instanceof Error ? err.message : err);
+      throw err;
     }
   }
 
