@@ -1,22 +1,30 @@
-## [1.0.0] - 2026-11-18
+## [1.0.0] - 2026-11-19
 
 ### Breaking Changes
 - Updated Node.js runtime engine requirement to `>=22` in package.json (dropping end-of-life Node 20). Supported maintained LTS lines are Node 22, 24, and 26.
 
-### Core and PDF Output Fixes
-- Prevented wide table clipping on printable pages by enabling word breaking (`overflow-wrap: anywhere`, `word-break: break-word`) and code breaking in table cells.
-- Fixed malformed URI decoding error when converting Markdown containing percent signs or raw URL tokens in fenced code blocks and inline spans.
-- Added encrypted PDF batch merge support with password protection and invalid password rejection.
-- Added support for A3 paper format (`842.88pt x 1191.12pt`) and fixed configuration option overrides.
-- Added `--no-link-underline` flag to suppress underline styling while preserving link destinations.
-- Hardened sandbox path boundaries against sibling directory traversal attacks and replaced blocked assets with placeholders.
-- Enforced strict streaming size limits and timeouts for remote asset downloads.
-- Added auto-number figure and table captions using CSS counters.
+### Added
+- Auto-numbered figure and table captions using CSS counters via `--figure-captions` and `--table-captions` (contributed by @mahdyarief). Bare `<img>` and `<table>` elements are wrapped in semantic `<figure>` and `<figcaption>` containers with configurable labels (`figLabel`, `tabLabel`). Fixed processor cache key to invalidate on caption options.
+- Support for A3 paper format (`842.88pt x 1191.12pt`) with verified PDF output geometry.
+- Encrypted PDF batch merge via `--password <secret>`, securing combined PDF chapters with AES-256 encryption.
+- Flag `--no-link-underline` to suppress underline styling on hyperlinks while preserving destinations.
 
-### Testing and CI Infrastructure
-- Restructured GitHub Actions CI workflow to replace the 9-job Cartesian matrix with an explicit 5-platform matrix (Ubuntu Node 22, Ubuntu Node 24 canonical, Ubuntu Node 26, Windows Node 24, macOS Node 24) plus a dedicated Ubuntu quality job.
-- Added automated end-to-end PDF output regression suite verifying real generated PDF geometry, encryption, text extraction, and sandbox enforcement.
-- Added packed consumer verification testing the packed tarball in an isolated consumer project.
+### Fixed
+- Prevented wide Markdown table clipping on printable pages by enabling cell-level word breaking (`overflow-wrap: anywhere`, `word-break: break-word`) and code breaking in table cells.
+- Fixed fatal `URI malformed` crash when processing Markdown documents containing literal percent signs or raw URL tokens in fenced code blocks or inline code spans.
+- Hardened sandbox path boundaries against directory traversal attempts outside allowed directories, replacing blocked assets with placeholder warnings.
+- Enforced strict 10MB streaming size limits and 15-second timeouts for remote asset pre-fetching in Node.js.
+- Reconciled documentation errors and command examples: corrected `--no-math` flag, `md2pdf list-themes` subcommand, valid configuration keys (`addTitle: true`), Playwright header/footer replacement classes, and exit codes (0, 1, 2).
+
+### Testing & CI Infrastructure
+- Restructured GitHub Actions CI workflow to an explicit 5-platform matrix (Ubuntu Node 22, Ubuntu Node 24 canonical, Ubuntu Node 26, Windows Node 24, macOS Node 24) plus a dedicated code quality job.
+- Added automated end-to-end PDF output regression suite (`tests/e2e/pdf-regression.test.ts`) verifying real generated PDF geometry, encryption, text extraction, and sandbox enforcement.
+- Added isolated consumer verification testing the packed tarball via `npm pack --ignore-scripts`.
+- Fixed cross-platform CI runner installation: Linux uses `--with-deps`, macOS installs Poppler via Homebrew, and Windows test assertions account for platform-specific line breaks.
+
+### Contributors
+- Amit Divekar (@amitdevx)
+- Mahdy Arief (@mahdyarief)
 
 ## [0.9.11] - 2026-11-04
 

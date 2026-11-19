@@ -58,7 +58,12 @@
     "type": "github",
     "url": "https://github.com/sponsors/amitdevx"
   },
-  "contributors": [],
+  "contributors": [
+    {
+      "name": "Mahdy Arief",
+      "url": "https://github.com/mahdyarief"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/amitdevx/md2pdf.git"
